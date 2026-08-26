@@ -984,10 +984,16 @@ h1{letter-spacing:-.016em}
 @keyframes soW{from{width:0;opacity:0}to{width:44px;opacity:.4}}
 
 /* ── شاشة الاسم: تدفّق صريح، لا تداخل ── */
-.namewrap{display:block;padding:26px 0 20px}
-.namelogo{display:flex;justify-content:center;margin-bottom:26px}
-.namefield{position:relative;z-index:2}
-.namebtn{margin-top:26px;position:relative;z-index:1}
+
+
+
+
+.namewrap{display:block;padding:30px 0 24px;min-height:100%}
+.namelogo{display:flex;justify-content:center;margin-bottom:22px;color:var(--glow)}
+.namefield{position:relative;z-index:5;margin-top:22px;padding:17px 16px;
+  font-size:17px;text-align:center;-webkit-user-select:text;user-select:text;
+  touch-action:manipulation}
+.namebtn{margin-top:22px;position:relative;z-index:1}
 .key{background:var(--glow-tint);border:1px solid var(--btn-line);border-radius:13px;
   padding:14px 16px;font-size:15px;line-height:1.85;color:var(--ink);margin:16px 0}
 .key b{color:var(--btn-ink);font-weight:600}
@@ -2006,8 +2012,15 @@ function render() {
     };
   }
   const ni = document.getElementById('nameIn');
-  if (ni) { setTimeout(() => ni.focus(), 120);
-    ni.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ACTIONS.saveName(); } }); }
+  if (ni) {
+    ni.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); ACTIONS.saveName(); } });
+    ni.addEventListener('input', () => {
+      const h = document.getElementById('nameHint');
+      if (h) h.textContent = 'تستطيع إضافة اسم العائلة إن أحببت.'; });
+    ['pointerup','click','touchend'].forEach(ev =>
+      ni.addEventListener(ev, () => { try { ni.focus(); } catch (e) {} }, { passive: true }));
+  }
   requestAnimationFrame(glideTab);
   el.querySelectorAll('.choice,.btn').forEach(b => b.addEventListener('pointerdown', e => {
     haptic(8);
@@ -2331,17 +2344,17 @@ function greetCard() {
 const SCREENS = {
 
 name: () => `<div class="namewrap">
-  <div class="namelogo"><span id="markTap" style="cursor:pointer">${markSVG(56)}</span></div>
-  <div class="glass">
-    <div class="eyebrow">أفق</div>
-    <h1>ما اسمك؟</h1>
-    <p class="soft" style="margin-top:10px">اسمك الأول يكفي.<br>لا بريد ولا رقم ولا شيء آخر.</p>
-    <input id="nameIn" class="namefield" type="text" autocomplete="given-name" spellcheck="false"
-      placeholder="مثال: عبدالله" value="${esc(S.name || '')}">
-    <p class="faint" id="nameHint" style="margin-top:10px;min-height:18px">
-      تستطيع إضافة اسم العائلة إن أحببت.</p>
-  </div>
+  <div class="namelogo"><span id="markTap" style="cursor:pointer">${markSVG(50)}</span></div>
+  <div class="eyebrow" style="text-align:center">أفق</div>
+  <h1 style="text-align:center;margin-top:8px">ما اسمك؟</h1>
+  <p class="soft" style="text-align:center;margin-top:10px">اسمك الأول يكفي.</p>
+  <input id="nameIn" class="namefield" type="text" inputmode="text"
+    autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false"
+    enterkeyhint="go" placeholder="اكتب اسمك هنا" value="${esc(S.name || '')}">
+  <p class="faint" id="nameHint" style="margin-top:10px;min-height:18px;text-align:center">
+    تستطيع إضافة اسم العائلة إن أحببت.</p>
   <button class="btn namebtn" data-act="saveName">تابِع</button>
+  <button class="btn ghost" data-act="skipName">تخطّي — ادخل بلا اسم</button>
 </div>`,
 
 pick: () => `<div class="center">
@@ -3281,13 +3294,15 @@ const ACTIONS = {
     const inp = document.getElementById('nameIn');
     const v = (inp ? inp.value : '').trim().replace(/\s+/g, ' ');
     const hint = document.getElementById('nameHint');
-    if (v.length < 2 || !/[\u0621-\u064AA-Za-z]/.test(v)) {
-      if (hint) hint.textContent = 'اكتب اسمك الأول على الأقل.';
-      if (inp) { inp.classList.add('shake'); setTimeout(() => inp.classList.remove('shake'), 420); }
+    if (!v) {
+      if (hint) hint.textContent = 'اكتب اسمك، أو اضغط «تخطّي».';
+      if (inp) { inp.classList.add('shake'); setTimeout(() => inp.classList.remove('shake'), 420);
+        try { inp.focus(); } catch (e) {} }
       haptic(24); return;
     }
     S.name = v; haptic(14); go('pick');
   },
+  skipName() { S.name = S.name || 'صديقي'; haptic(12); go('pick'); },
   toggleAudit() { S.audit = !S.audit; haptic(S.audit ? 18 : 9); render(); },
   toggleClean() { S.cleanOnly = !S.cleanOnly; S.suggestion = null; haptic(16); render(); },
   chooseTrack(t) {
