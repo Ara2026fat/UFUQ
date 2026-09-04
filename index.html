@@ -4470,11 +4470,13 @@ ${S.setTab===0 ? `
     <p class="note" style="margin-bottom:12px">جولتان قصيرتان تُثبّتان أكثر من جلسة واحدة بالمدّة نفسها.
       وهذا ليس رأيًا — هو أثر التوزيع، وأثبتُ ما في علم التعلّم.</p>
     <div class="thgrid" style="grid-template-columns:repeat(3,1fr)">
-      ${Object.entries(ROUND_PRESETS).map(([k, v]) => `<button class="thcard ${S.preset === k ? 'sel' : ''}"
+      ${Object.entries(ROUND_PRESETS).map(([k, v]) => {
+        const rs = v[S.schedTab || 'week'] || v.week;
+        return `<button class="thcard ${S.preset === k ? 'sel' : ''}"
         data-act="setPreset" data-arg="${k}" style="padding:13px 6px;text-align:center">
         <span style="display:block;font-family:var(--display);font-size:14px;color:var(--ink)">${esc(v.name)}</span>
-        <span style="font-size:11px">${ar(v.rounds.length)} ${v.rounds.length === 1 ? 'جولة' : 'جولات'}
-          · ${ar(v.rounds.reduce((a, r) => a + r.mins, 0))} د</span></button>`).join('')}
+        <span style="font-size:11px">${ar(rs.length)} ${rs.length === 1 ? 'جولة' : 'جولات'}
+          · ${ar(rs.reduce((a, r) => a + r.mins, 0))} د</span></button>`; }).join('')}
     </div>
     <div class="stabs" style="margin-top:12px">
       <button class="stb ${(S.schedTab||'week')==='week'?'on':''}" data-act="schedTab" data-arg="week">أيام الدراسة</button>
