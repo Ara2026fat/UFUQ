@@ -1813,6 +1813,52 @@ h1{font-size:clamp(23px,6.4vw,28px);line-height:1.45}
 .wq{font-size:15.5px;line-height:1.85;color:var(--ink);margin-top:5px}
 .wn{font-size:12px;color:var(--ink-soft);margin-top:4px;line-height:1.8}
 .wpunch{margin:18px 0 0;font-size:15px;line-height:1.9;color:var(--glow)}
+
+/* ══════ بُعد الانتقال بين التبويبات ══════ */
+:root{--wx:50%;--wy:-8%;--hue:var(--glow)}
+#shell::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(120% 62% at var(--wx) var(--wy),
+    color-mix(in srgb, var(--hue) 13%, transparent), transparent 68%);
+  transition:background .75s cubic-bezier(.2,.8,.3,1)}
+#app,#tabs,#brandbar{position:relative;z-index:1}
+@supports not (color: color-mix(in srgb, red 10%, blue)){
+  #shell::after{background:radial-gradient(120% 62% at var(--wx) var(--wy),var(--glow-tint),transparent 68%)}
+}
+/* شريط رفيع بلون التبويب أعلى المحتوى — علامة المكان */
+.stabs{position:relative}
+.stabs::after{content:'';position:absolute;inset-inline:0;bottom:-7px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--hue),transparent);opacity:.45;
+  transition:opacity .5s}
+.stb.on{border-color:var(--hue);color:var(--hue);background:transparent}
+/* انزلاق باتّجاه الحركة */
+[data-slide="f"] #app > *{animation:slF .42s cubic-bezier(.2,.8,.3,1) both}
+[data-slide="b"] #app > *{animation:slB .42s cubic-bezier(.2,.8,.3,1) both}
+@keyframes slF{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+@keyframes slB{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){
+  [data-slide] #app > *{animation:none}
+  #shell::after{transition:none}
+}
+
+/* شبكة السمات صفٌّ يُسحب أفقيًّا — بدل عمودٍ يطول */
+.thgrid{display:flex;gap:9px;overflow-x:auto;padding-bottom:6px;
+  scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.thgrid::-webkit-scrollbar{display:none}
+.thgrid .thcard{flex:0 0 42%;scroll-snap-align:start}
+.thgrid::after{content:'';flex:0 0 2px}
+
+/* ══════ التبويبات في صفّين — بلا انزلاق أفقيّ ══════ */
+.stabs{display:flex;flex-wrap:wrap;gap:5px;align-content:flex-start}
+.stb{flex:1 1 22%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding:9px 4px;font-size:12px}
+/* شبكة السمات تعود شبكةً لا صفًّا منزلقًا */
+.thgrid{display:grid !important;grid-template-columns:repeat(3,1fr);gap:8px;
+  overflow:visible !important;scroll-snap-type:none}
+.thgrid .thcard{flex:none;padding:7px 6px 8px;font-size:11.5px}
+.thgrid::after{display:none}
+/* شريط تبويبات أشكال التطوّر أيضًا في صفّ واحد بلا انزلاق */
+.vswitch{flex-wrap:wrap}
+.vsw{flex:1 1 22%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -3241,8 +3287,34 @@ function safeScreen(name) {
     </div>`;
   }
 }
+/* لكل تبويب جوٌّ خاصّ: موضع الضوء يتحرّك، ولون التمييز يتبدّل،
+   والصفحة تنزلق من الجهة التي جئت منها. فيُحسّ الانتقال قبل أن يُقرأ. */
+const PANE_AIR = [
+  { wx: '18%', wy: '0%',   hue: '#8FA8D8' },
+  { wx: '50%', wy: '-8%',  hue: '#E0D2B4' },
+  { wx: '82%', wy: '2%',   hue: '#9ED0B4' },
+  { wx: '50%', wy: '105%', hue: '#D8AE9A' },
+  { wx: '12%', wy: '95%',  hue: '#C3A8D8' }
+];
+let _pane = 0;
+function paneAir(i) {
+  const a = PANE_AIR[i % PANE_AIR.length], root = document.documentElement;
+  root.style.setProperty('--wx', a.wx);
+  root.style.setProperty('--wy', a.wy);
+  root.style.setProperty('--hue', a.hue);
+  root.dataset.slide = (i > _pane) ? 'f' : (i < _pane ? 'b' : '');
+  _pane = i;
+}
+function paneIndex() {
+  if (S.screen === 'settings') return (S.setTab || 0);
+  if (S.screen === 'progress') return (S.prTab || 0);
+  if (S.screen === 'errors') return 3;
+  if (S.screen === 'home') return 1;
+  return 1;
+}
 function render() {
   markDirty();
+  try { paneAir(paneIndex()); } catch (e) {}
   setTimeout(() => {
     document.querySelectorAll('.tin[data-round]').forEach(el => {
       el.onchange = () => { const i = +el.dataset.round, k = el.dataset.key || dayKey();
@@ -4684,7 +4756,7 @@ settings: () => {
     <div class="who"><b>${esc(S.name || '—')}</b><span>${esc(TRACKS[S.track].name)} · ${esc(TRACKS[S.track].tag)}</span></div>
     <button class="mini" data-act="editName">الاسم</button>
   </div>
-  <div class="stabs"><button class="stb ${S.setTab===0?'on':''}" data-act="setTab" data-arg="0">الدراسة</button><button class="stb ${S.setTab===1?'on':''}" data-act="setTab" data-arg="1">المظهر</button><button class="stb ${S.setTab===2?'on':''}" data-act="setTab" data-arg="2">حسابي</button><button class="stb ${S.setTab===3?'on':''}" data-act="setTab" data-arg="3">متقدّم</button><button class="stb ${S.setTab===4?'on':''}" data-act="setTab" data-arg="4">عن أُفق</button></div>
+  <div class="stabs"><button class="stb ${S.setTab===0?'on':''}" data-act="setTab" data-arg="0">الدراسة</button><button class="stb ${S.setTab===1?'on':''}" data-act="setTab" data-arg="1">المظهر</button><button class="stb ${S.setTab===2?'on':''}" data-act="setTab" data-arg="2">حسابي</button><button class="stb ${S.setTab===3?'on':''}" data-act="setTab" data-arg="3">متقدّم</button><button class="stb ${S.setTab===5?'on':''}" data-act="setTab" data-arg="5">التذكير</button><button class="stb ${S.setTab===6?'on':''}" data-act="setTab" data-arg="6">الجهاز</button><button class="stb ${S.setTab===4?'on':''}" data-act="setTab" data-arg="4">عن أُفق</button></div>
 ${S.setTab===0 ? `
   <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">جولات اليوم</span></div>
     <p class="note" style="margin-bottom:12px">جولتان قصيرتان تُثبّتان أكثر من جلسة واحدة بالمدّة نفسها.
@@ -4711,7 +4783,9 @@ ${S.setTab===0 ? `
         وتجنّبتُ ما بين المغرب والعشاء في المواعيد الافتراضية.</p>
     </div>
   </div>
-  <div class="group"><div class="group-h"><span class="t">متى تذاكر؟</span></div>
+` : ''}
+${S.setTab===5 ? `
+  <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">متى تذاكر؟</span></div>
     <p class="note" style="margin-bottom:10px">اربط جلستك بشيء تفعله أصلًا كل يوم.
       الموعد المرتبط بحدث يثبت أسرع من ساعة تُنسى.</p>
     <div class="thgrid">
@@ -4772,7 +4846,9 @@ ${S.setTab===1 ? `
   <div class="group"><div class="group-h"><span class="t">المظهر</span></div>
     ${themeGrid()}
   </div>
-  <div class="group"><div class="group-h"><span class="t">التطبيق على جهازك</span></div>
+` : ''}
+${S.setTab===6 ? `
+  <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">التطبيق على جهازك</span></div>
     ${installCard()}
     ${installDiag()}
   </div>
