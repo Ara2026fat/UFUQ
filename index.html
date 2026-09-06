@@ -1760,6 +1760,59 @@ h1{font-size:clamp(23px,6.4vw,28px);line-height:1.45}
 .tryres.no{border-inline-start-color:#C98A6A}
 .sc-key.locked{opacity:.85}
 .sc-key.locked .sk-q{color:var(--paper-faint)}
+
+/* ══════ الأفكار: شاشة واحدة · مسار واحد ══════ */
+.lwrap.ideas{display:flex;flex-direction:column;min-height:0;flex:1}
+.lwrap.ideas .lscene{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
+.lwrap.ideas .sc{max-width:23em;margin-inline:auto;width:100%}
+.sc-h .scn{font-style:normal;font-size:10.5px;color:var(--paper-faint);margin-inline-start:8px;
+  font-variant-numeric:tabular-nums}
+.lwrap.ideas .rail .rl{display:inline-block;width:auto;height:18px;padding:0 1px;pointer-events:none}
+.lwrap.ideas .lfoot{flex:0 0 auto;padding-top:14px}
+.lwrap.ideas .skipl{display:block;width:100%;margin-top:9px;background:none;border:0;
+  color:var(--paper-faint);font-size:12.5px;font-family:var(--body);cursor:pointer}
+/* تصغير محسوب ليدخل المشهد في شاشة واحدة */
+.lwrap.ideas .sk-t,.lwrap.ideas .stt,.lwrap.ideas .so-t{font-size:20px;line-height:1.7}
+.lwrap.ideas .sk-q,.lwrap.ideas .twt,.lwrap.ideas .ft,
+.lwrap.ideas .stp,.lwrap.ideas .note,.lwrap.ideas .so-w{font-size:15.5px;line-height:2}
+.lwrap.ideas .steps.num li{line-height:2}
+
+/* ══════ أشكال التطوّر ══════ */
+.vhead{margin-bottom:6px}
+.vstage{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:230px;animation:vIn .55s cubic-bezier(.2,.8,.3,1) both}
+@keyframes vIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.vsvg{display:block;width:100%;max-width:320px;height:auto}
+.vfoot{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  width:100%;max-width:320px;margin-top:12px;font-size:11.5px;line-height:1.8;color:var(--ink-faint)}
+.vfoot .vpc{font-size:22px;color:var(--glow)}
+.vswitch{display:flex;gap:6px;margin-top:14px}
+.vsw{flex:1;padding:9px 4px;border-radius:12px;cursor:pointer;font-family:var(--display);font-size:12px;
+  background:transparent;border:1px solid var(--line);color:var(--ink-faint);transition:.22s}
+.vsw.on{background:var(--glow-tint);border-color:var(--glow);color:var(--glow)}
+.vrg{transform-origin:center;opacity:0;animation:vrgIn .5s cubic-bezier(.2,.8,.3,1) forwards;
+  animation-delay:calc(var(--i)*65ms)}
+@keyframes vrgIn{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
+.vsun{animation:vUp 1s cubic-bezier(.2,.8,.3,1) both}
+@keyframes vUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+.vland{stroke-dasharray:400;stroke-dashoffset:400;animation:vDr 1s .2s ease-out forwards}
+@keyframes vDr{to{stroke-dashoffset:0}}
+.vmk{opacity:0;animation:vFade .35s forwards;animation-delay:calc(560ms + var(--i)*42ms)}
+@keyframes vFade{to{opacity:1}}
+.vtl{stroke-dasharray:44;stroke-dashoffset:44;animation:vDr2 .45s ease-out forwards;
+  animation-delay:calc(var(--i)*52ms)}
+@keyframes vDr2{to{stroke-dashoffset:0}}
+.vempty{text-align:center;padding:34px 10px;color:var(--ink-faint)}
+.vempty .vsp{display:block;font-size:22px;color:var(--glow);opacity:.6;margin-bottom:10px}
+.vempty p{font-size:13px;line-height:1.9;margin:0}
+.vwit{width:100%;max-width:320px;text-align:start}
+.wrow{border-inline-start:2px solid var(--line);padding-inline-start:13px;margin-bottom:16px}
+.wrow.bad{border-inline-start-color:#C98A6A}
+.wrow.good{border-inline-start-color:var(--glow)}
+.wd{font-size:10.5px;letter-spacing:.16em;color:var(--ink-faint)}
+.wq{font-size:15.5px;line-height:1.85;color:var(--ink);margin-top:5px}
+.wn{font-size:12px;color:var(--ink-soft);margin-top:4px;line-height:1.8}
+.wpunch{margin:18px 0 0;font-size:15px;line-height:1.9;color:var(--glow)}
 </style>
 </head>
 <body>
@@ -1936,7 +1989,7 @@ function freshState() {
     installAsked: false, installed: false, installReady: false,
     devUnlocked: false,
     preset: 'steady', sched: null, roundsDone: {}, showPct: false,
-    prTab: 0, exPick: null, exPickFor: null,
+    prTab: 0, exPick: null, exPickFor: null, vizMode: 'rings',
     lastExamDay: null, examLog: [],
     suggestion: null, activeStage: 's1'
   };
@@ -1944,7 +1997,7 @@ function freshState() {
 
 /* ---------- فصل المسارات: دفتر مستقلّ لكل اختبار ---------- */
 const TRACK_FIELDS = ['day','streak','lastActive','sessionCount','asked','review','history',
-  'notes','noteSeen','qMiss','duel','preset','sched','roundsDone','lastExamDay','examLog',
+  'notes','noteSeen','qMiss','duel','preset','sched','roundsDone','lastExamDay','examLog','vizMode',
   'seenLessons','activeStage','targetDiff','size','sizeManual','audio','examDays','corrected','tagCount','todayCount','lastWeak',
   'diag','lastSummary','session','anchor','reminder','logOpen','suggestion','introIdx','whyCount',
   'cardState','cardSess','lastCards','paceHist'];
@@ -3264,6 +3317,15 @@ function render() {
   el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
   el.querySelectorAll('[data-act]').forEach(b => b.onclick = () => ACTIONS[b.dataset.act](b.dataset.arg));
   tabsEl.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { haptic(11); go(b.dataset.go); });
+  /* شريط العلامة خارج #app و#tabs، فلم تكن أزراره مربوطة إطلاقًا —
+     ولذلك لم يعمل زرّ الترس في أيّ شاشة. */
+  if (bb && !bb.hidden) {
+    bb.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { haptic(11); go(b.dataset.go); });
+    bb.querySelectorAll('[data-act]').forEach(b => b.onclick = () => ACTIONS[b.dataset.act](b.dataset.arg));
+  }
+  if (sh) {
+    sh.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+  }
   const mt = document.getElementById('markTap');
   if (mt) {
     let n = 0, t0 = 0;
@@ -3966,24 +4028,27 @@ lesson: () => {
   });
   const cur = Math.min(S.lessonTab || 0, T.length - 1);
   const last = cur === T.length - 1;
+  /* مشهد «جرّب» لا يُتجاوز قبل المحاولة — لأن ترتيب التعلّم هو الفائدة */
+  const blocked = T[cur][0] === 'جرّب' && !(S.exPickFor === id && S.exPick != null);
   return `<div class="lwrap ideas sc-${T[cur][1]}">
     <div class="lbar2">
       <div class="lb-l"><span class="lg">${ideaGlyph(17)}</span>
         <span class="lb-tx"><span class="lb-n">${esc(ideaName(id))}</span>
         <span class="lb-w">أفكار ${esc(TRACKS[S.track].name)}</span></span></div>
-      <div class="rail">${T.map(([n], k) =>
-        `<button class="rl ${k === cur ? 'on' : ''} ${k < cur ? 'past' : ''}"
-          data-act="lessonTab" data-arg="${k}" aria-label="${esc(n)}"><i></i></button>`).join('')}</div>
+      <div class="rail">${T.map((x, k) =>
+        `<span class="rl ${k === cur ? 'on' : ''} ${k < cur ? 'past' : ''}"><i></i></span>`).join('')}</div>
     </div>
     <div class="lscene" key="${cur}">
-      <div class="sc-h">${esc(T[cur][0])}</div>
+      <div class="sc-h">${esc(T[cur][0])} <em class="scn">${ar(cur + 1)}/${ar(T.length)}</em></div>
       ${T[cur][2]}
     </div>
     <div class="lfoot">
-      ${!last
-        ? `<button class="btn ghost" data-act="lessonTab" data-arg="${cur + 1}">${esc(T[cur + 1][0])} ›</button>
-           <button class="skipl" data-act="lessonDone">تخطّي إلى التمرين</button>`
-        : `<button class="btn" data-act="lessonDone">جرّبها الآن</button>`}
+      ${blocked
+        ? `<button class="btn" disabled style="opacity:.45">اختر إجابةً أولًا</button>`
+        : (!last
+          ? `<button class="btn" data-act="lessonNext">${esc(T[cur + 1][0])} ›</button>`
+          : `<button class="btn" data-act="lessonDone">جرّبها الآن</button>`)}
+      ${cur ? `<button class="skipl" data-act="lessonPrev">‹ السابق</button>` : ''}
     </div>
   </div>`;
 },
@@ -4479,7 +4544,7 @@ progress: () => {
   const groups = [['mastered', 'بنيتَ'], ['near', 'تقترب'], ['building', 'قيد البناء']];
   const paused = mySkills().filter(s => S.skills[s.id].paused);
   if (S.prTab == null) S.prTab = 0;
-  const PT = ['الإتقان', 'الخريطة', 'الرحلة'];
+  const PT = ['التطوّر', 'الخريطة', 'الرحلة'];
   return `<div class="top backtop">
     <button class="backb" data-go="home" aria-label="رجوع">
       <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none"
@@ -4491,6 +4556,7 @@ progress: () => {
       data-act="prTab" data-arg="${i}">${n}</button>`).join('')}
   </div>
   ${S.prTab === 0 ? `
+  ${vizPane()}
   ${deltaPanel()}
   ${pctUnlocked() ? `<div class="glass mtop">
     <div class="mring">${ring(overallMastery(), 76)}<span class="mrv num">${ar(overallMastery())}<em>٪</em></span></div>
@@ -5097,6 +5163,9 @@ const ACTIONS = {
   setAnchor(a) { S.anchor = a; render(); },
   dismissIOS() { S.iosHinted = true; haptic(9); render(); },
   prTab(i) { S.prTab = +i; haptic(7); render(); },
+  setViz(m) { S.vizMode = m; haptic(9); saveState(); render(); },
+  lessonNext() { S.lessonTab = (S.lessonTab || 0) + 1; haptic(9); render(); },
+  lessonPrev() { S.lessonTab = Math.max(0, (S.lessonTab || 0) - 1); haptic(7); render(); },
   exPick(n) {
     S.exPick = +n; S.exPickFor = S.lessonFor;
     const L = LESSONS.lessons[S.lessonFor];
@@ -5366,6 +5435,161 @@ const QRC = (() => {
   }
   return { build };
 })();
+
+/* ══════════════════ أشكال التطوّر — أربعة أوضاع ══════════════════
+   كلّها تُبنى من بيانات الطالب الحقيقية: S.history و S.corrected و S.skills.
+   وكلّها SVG خالص يتلوّن بسمة الطالب ويعمل بلا إنترنت.
+   ═══════════════════════════════════════════════════════════════ */
+const VIZ = [
+  { id: 'rings',   n: 'الحلقات', b: 'رحلتك كلّها في دائرة' },
+  { id: 'horizon', n: 'الأفق',   b: 'الشمس ترتفع والأرض تتّسع' },
+  { id: 'thread',  n: 'الخيط',   b: 'يغلظ حيث واظبت' },
+  { id: 'witness', n: 'الشاهد',  b: 'دليلٌ لا رقم' }
+];
+
+/* يجمع السجلّ في أسابيع: [عدد الجلسات، الدقّة] */
+function weeksOf(maxW) {
+  const h = S.history || [];
+  if (!h.length) return [];
+  const today = S.day;
+  const first = Math.min(...h.map(x => x.day));
+  const nW = Math.min(maxW || 20, Math.max(1, Math.ceil((today - first + 1) / 7)));
+  const out = [];
+  for (let w = nW - 1; w >= 0; w--) {
+    const hi = today - w * 7, lo = hi - 6;
+    const inW = h.filter(x => x.day <= hi && x.day > lo - 1);
+    const tot = inW.reduce((a, x) => a + x.total, 0);
+    const rt = inW.reduce((a, x) => a + x.right, 0);
+    out.push([inW.length, tot ? rt / tot : 0]);
+  }
+  return out;
+}
+
+/* ── أ · حلقات النموّ ── */
+function vizRings() {
+  const W = weeksOf(20);
+  if (W.length < 1) return vizEmpty('أول حلقة تُرسم بعد جلستك الأولى');
+  const S0 = 300, cx = S0 / 2, cy = S0 / 2;
+  let r = 15, out = '';
+  W.forEach(([s, acc], i) => {
+    const th = 1.5 + Math.min(7, s) * 1.3;
+    const op = s ? (0.22 + acc * 0.78) : 0.11;
+    out += `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="none" stroke="var(--glow)"
+      stroke-opacity="${op.toFixed(2)}" stroke-width="${th.toFixed(1)}" class="vrg" style="--i:${i}"/>`;
+    r += th + 3.2;
+    if (r > S0 / 2 - 6) r = S0 / 2 - 6;
+  });
+  const gaps = W.filter(x => !x[0]).length;
+  const sess = W.reduce((a, x) => a + x[0], 0);
+  return `<svg viewBox="0 0 ${S0} ${S0}" class="vsvg">
+    ${out}<circle cx="${cx}" cy="${cy}" r="6.5" fill="var(--glow)" class="vrg" style="--i:${W.length}"/>
+  </svg>
+  <div class="vfoot"><span>${ar(W.length)} ${W.length === 1 ? 'أسبوع' : 'أسبوعًا'} · ${ar(sess)} جلسة</span>
+    <span>${gaps ? `${ar(gaps)} أسبوعًا بلا جلسة — وحلقاتها باقية` : 'بلا أسبوع فارغ'}</span></div>`;
+}
+
+/* ── ب · الأفق الذي يتّسع ── */
+function vizHorizon() {
+  const p = overallMastery() / 100;
+  const skills = mySkills().filter(x => hasContent(x.id));
+  const lit = skills.filter(x => mastery(x.id) >= 60).length;
+  const Wd = 330, H = 220, hy = H * 0.60, r = 42, rise = p * 44;
+  const span = (Wd - 56) * Math.max(0.06, skills.length ? lit / skills.length : 0.06);
+  let marks = '';
+  const n = Math.min(16, Math.max(6, skills.length));
+  for (let i = 0; i < n; i++) {
+    const t = n === 1 ? 0 : i / (n - 1), x = 28 + t * (Wd - 56);
+    const on = i < Math.round(n * (skills.length ? lit / skills.length : 0));
+    marks += `<line x1="${x.toFixed(1)}" y1="${hy + 15}" x2="${x.toFixed(1)}" y2="${hy + (on ? 29 : 21)}"
+      stroke="var(--glow)" stroke-opacity="${on ? '.85' : '.15'}" stroke-width="2.6"
+      stroke-linecap="round" class="vmk" style="--i:${i}"/>`;
+  }
+  return `<svg viewBox="0 0 ${Wd} ${H}" class="vsvg">
+    <defs>
+      <linearGradient id="vsky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="var(--glow)" stop-opacity="0"/>
+        <stop offset="1" stop-color="var(--glow)" stop-opacity=".15"/></linearGradient>
+      <linearGradient id="vsun" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="var(--glow)"/><stop offset="1" stop-color="var(--glow)" stop-opacity=".72"/></linearGradient>
+    </defs>
+    <rect x="0" y="0" width="${Wd}" height="${hy}" fill="url(#vsky)"/>
+    <g class="vsun"><path d="M ${Wd / 2 - r} ${(hy - rise).toFixed(1)} a ${r} ${r} 0 0 1 ${2 * r} 0 z" fill="url(#vsun)"/></g>
+    <line x1="16" y1="${hy}" x2="${Wd - 16}" y2="${hy}" stroke="var(--glow)" stroke-opacity=".26" stroke-width="1.3"/>
+    <line class="vland" x1="${((Wd - span) / 2).toFixed(1)}" y1="${hy}" x2="${((Wd + span) / 2).toFixed(1)}" y2="${hy}"
+      stroke="var(--glow)" stroke-width="3.2" stroke-linecap="round"/>
+    ${marks}
+  </svg>
+  <div class="vfoot"><span>${ar(lit)} من ${ar(skills.length)} مهارة مضيئة</span>
+    <span class="num vpc">${ar(overallMastery())}٪</span></div>`;
+}
+
+/* ── ج · الخيط ── */
+function vizThread() {
+  const W = weeksOf(14);
+  if (W.length < 2) return vizEmpty('الخيط يظهر بعد أسبوعين');
+  const Wd = 330, H = 200, n = W.length, step = (Wd - 40) / (n - 1);
+  const P = W.map(([s, a], i) => ({ x: 20 + i * step, y: H - 34 - (s ? a * (H - 70) : 0), s, a }));
+  let segs = '';
+  for (let i = 0; i < n - 1; i++) {
+    const a = P[i], b = P[i + 1];
+    const th = Math.max(1, 1 + ((Math.min(7, a.s) + Math.min(7, b.s)) / 2) * 0.85);
+    const op = (!a.s || !b.s) ? 0.16 : 0.34 + ((a.a + b.a) / 2) * 0.66;
+    segs += `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"
+      stroke="var(--glow)" stroke-opacity="${op.toFixed(2)}" stroke-width="${th.toFixed(1)}"
+      stroke-linecap="round" class="vtl" style="--i:${i}"/>`;
+  }
+  const dots = P.map(p => p.s
+    ? `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.3" fill="var(--glow)"/>`
+    : `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.9" fill="none" stroke="var(--ink-faint)" stroke-width="1"/>`).join('');
+  const first = W.find(x => x[0]), last = [...W].reverse().find(x => x[0]);
+  const d = (first && last) ? Math.round((last[1] - first[1]) * 100) : 0;
+  return `<svg viewBox="0 0 ${Wd} ${H}" class="vsvg">
+    <line x1="14" y1="${H - 18}" x2="${Wd - 14}" y2="${H - 18}" stroke="var(--line)"/>
+    ${segs}${dots}
+  </svg>
+  <div class="vfoot"><span>الارتفاع دقّتك · السُّمك مواظبتك</span>
+    <span class="num">${d > 0 ? '+' : ''}${ar(d)} نقطة</span></div>`;
+}
+
+/* ── د · الشاهد ── */
+function vizWitness() {
+  const c = (S.corrected || []).filter(x => byQ(x.qid));
+  if (!c.length) return vizEmpty('أول شاهد يظهر حين تُصيب سؤالًا أخطأتَ فيه');
+  const pick = c[(S.day + (S.visits || 0)) % c.length];
+  const q = byQ(pick.qid);
+  const right = q.choices.find(x => x.c);
+  const wrong = q.choices.find(x => !x.c && x.note);
+  const gap = Math.max(1, pick.day - Math.max(0, pick.day - 14));
+  return `<div class="vwit">
+    <div class="wrow bad"><div class="wd">أخطأتَ فيه</div>
+      <div class="wq">${esc(q.stem.slice(0, 80))}${q.stem.length > 80 ? '…' : ''}</div>
+      ${wrong ? `<div class="wn">${esc(wrong.note)}</div>` : ''}</div>
+    <div class="wrow good"><div class="wd">اليوم ${ar(pick.day)} — أصبتَه</div>
+      <div class="wq">${esc(right ? right.t : '')}</div>
+      <div class="wn">${esc(SKILLS[q.skill] ? SKILLS[q.skill].name : '')}</div></div>
+    <p class="wpunch">هذا أنت.<br>لا رقم يقول هذا.</p>
+  </div>
+  <div class="vfoot"><span>${ar(c.length)} ${c.length === 1 ? 'شاهد' : 'شواهد'} حتى الآن</span>
+    <span>يتبدّل كل يوم</span></div>`;
+}
+
+function vizEmpty(t) {
+  return `<div class="vempty"><span class="vsp">✦</span><p>${esc(t)}</p></div>`;
+}
+function vizRender(id) {
+  if (id === 'horizon') return vizHorizon();
+  if (id === 'thread')  return vizThread();
+  if (id === 'witness') return vizWitness();
+  return vizRings();
+}
+function vizPane() {
+  const id = S.vizMode || 'rings';
+  const meta = VIZ.find(v => v.id === id) || VIZ[0];
+  return `<div class="vhead"><div class="eyebrow">${esc(meta.b)}</div></div>
+  <div class="vstage" key="${id}">${vizRender(id)}</div>
+  <div class="vswitch">${VIZ.map(v => `<button class="vsw ${v.id === id ? 'on' : ''}"
+    data-act="setViz" data-arg="${v.id}">${esc(v.n)}</button>`).join('')}</div>`;
+}
 
 /* ══════════ بطاقة التقدّم ══════════ */
 function shareURL() {
