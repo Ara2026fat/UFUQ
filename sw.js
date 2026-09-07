@@ -1,5 +1,5 @@
 /* أُفق — عامل الخدمة: يجعل التطبيق يعمل بلا إنترنت ويحدّث نفسه بهدوء. */
-const V = 'ufuq-v19';
+const V = 'ufuq-v21';
 const SHELL = ['./', './index.html', './app.js', './bank.json', './keys.json',
   './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];

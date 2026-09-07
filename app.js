@@ -123,6 +123,9 @@ function applyTheme() {
 }
 
 /* ---------- helpers ---------- */
+/* حدّ الجلسات المجّانية — صفرٌ يعني بلا جدار اشتراك */
+const FREE_LIMIT = 0;
+
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
   const t = String(s || '');
@@ -156,7 +159,7 @@ function freshState() {
     day: 0, screen: 'name', haptics: true, name: '', visits: 0, skills, review: [], asked: {},
     sessionCount: 0, streak: 0, lastActive: null, session: null,
     targetDiff: 2, size: 30, reminder: '٨:٠٠ م', examDays: 60,
-    paid: false, diag: null, lastSummary: null, corrected: [],
+    paid: true, diag: null, lastSummary: null, corrected: [],
     tagCount: {}, tipsSeen: [], tip: null, track: 'qudurat', shareReport: true, tracks: {},
     theme: 'night', sheet: null, pace: false, paceHist: [],
     introIdx: 0, seenLessons: [], lessonFor: null, history: [], logOpen: null,
@@ -167,6 +170,7 @@ function freshState() {
     devUnlocked: false,
     preset: 'steady', sched: null, roundsDone: {}, showPct: false,
     prTab: 0, exPick: null, exPickFor: null, vizMode: 'rings',
+    forceSkill: null,
     lastExamDay: null, examLog: [],
     suggestion: null, activeStage: 's1'
   };
@@ -320,6 +324,12 @@ function prereqOk(s) {
   return p.status === 'near' || p.status === 'mastered';
 }
 function chooseActive() {
+  /* وصلة مباشرة: إن طُلبت مهارة بعينها من الخريطة أو من مفتاحها، فهي المقصودة */
+  if (S.forceSkill) {
+    const f = mySkills().find(x => x.id === S.forceSkill);
+    S.forceSkill = null;
+    if (f && hasContent(f.id)) return f;
+  }
   const all = stageSkills(S.activeStage)
     .filter(s => !S.skills[s.id].paused && prereqOk(s) && S.skills[s.id].status !== 'mastered');
   // المرفوضة ٣ مرات فأكثر تخرج من الاقتراح الرئيسي وتعود ضمنيًا داخل الجلسة
@@ -1852,6 +1862,101 @@ function pathDone() {
   const L = pathList(), seen = S.seenLessons || [];
   return { done: L.filter(o => seen.includes(o.id)).length, total: L.length };
 }
+/* ══════════════════ الخيط: عقلٌ واحد يقرّر الخطوة التالية ══════════════════
+   كل شاشة تسأله بدل أن تجتهد بنفسها — فلا تتناقض النصائح ولا تتكرّر.
+   الترتيب مقصود: الخطأ الذي لم يُشرح أولًا، لأن الخطأ الذي لم يُشرح يتكرّر.
+   ═══════════════════════════════════════════════════════════════════════ */
+function thread() {
+  const due = (S.review || []).filter(r => r.due <= S.day).length;
+  const seen = S.seenLessons || [];
+  const ls = S.lastSummary;
+
+  /* ١ · خطأ اليوم في مهارة لها مفتاح لم يُقرأ — أقوى لحظة تعليمية */
+  if (ls && ls.wrongQ && ls.wrongQ.length) {
+    const cnt = {};
+    ls.wrongQ.forEach(id => { const q = byQ(id); if (q) cnt[q.skill] = (cnt[q.skill] || 0) + 1; });
+    const cand = Object.keys(cnt)
+      .filter(k => LESSONS.lessons[k] && !seen.includes(k))
+      .sort((a, b) => cnt[b] - cnt[a])[0];
+    if (cand) return { k: 'key', skill: cand, act: 'openLesson', arg: cand,
+      go: null, label: `افتح مفتاح ${SKILLS[cand] ? SKILLS[cand].name : ''}`,
+      why: `أخطأتَ فيها ${ar(cnt[cand])} ${cnt[cand] === 1 ? 'مرّة' : 'مرّات'} — والمفتاح لم تقرأه بعد` };
+  }
+
+  /* ٢ · مهارة تكرّر خطؤه فيها ولها مفتاح */
+  const w = S.lastWeak;
+  if (w && LESSONS.lessons[w] && !seen.includes(w))
+    return { k: 'key', skill: w, act: 'openLesson', arg: w, go: null,
+      label: `افتح مفتاح ${SKILLS[w] ? SKILLS[w].name : ''}`,
+      why: 'تكرّر خطؤك فيها — والمفتاح لم تقرأه بعد' };
+
+  /* ٣ · أخطاء استحقّت المراجعة اليوم */
+  if (due >= 3) return { k: 'review', act: null, go: 'errors',
+    label: `راجِع ${ar(due)} من أخطائك`,
+    why: 'استحقّت المراجعة اليوم — والمراجعة في وقتها تُثبّت' };
+
+  /* ٤ · حان الاختبار الدوريّ */
+  try { if (examDue()) return { k: 'exam', act: 'examOpen', arg: 'full', go: null,
+    label: 'حان موعد قياسك', why: 'أسئلة لم ترها، بمؤقّت — هذا وحده يقول أين أنت' }; } catch (e) {}
+
+  /* ٥ · مفتاح جديد في مسارك */
+  const nx = pathNext();
+  if (nx) { const pd = pathDone();
+    return { k: 'key', skill: nx.id, act: 'openLesson', arg: nx.id, go: null,
+      label: `مفتاح ${SKILLS[nx.id] ? SKILLS[nx.id].name : ''}`,
+      why: `${nx.stage} · المفتاح ${ar(pd.done + 1)} من ${ar(pd.total)} في مسارك` }; }
+
+  /* ٦ · وإلا فالتدريب */
+  const g = S.suggestion || makeSuggestion();
+  return { k: 'drill', skill: g.skill, act: 'startSession', arg: null, go: null,
+    label: `${ar(g.size)} سؤالًا في ${g.name}`, why: g.why };
+}
+
+/* همسة «ثمّ» — تقول أين ينتهي المسار قبل أن يبدأ. ليست زرًّا بارزًا. */
+function thenWhisper() {
+  const n = thread();
+  if (n.k === 'drill') return '';
+  const attr = n.act ? `data-act="${n.act}"${n.arg ? ` data-arg="${esc(n.arg)}"` : ''}`
+                     : `data-go="${n.go}"`;
+  return `<button class="thenw" ${attr}>ثمّ: ${esc(n.label)} ›</button>`;
+}
+
+/* تسليمة النتيجة — زرٌّ واحد يتغيّر نصّه بحسب ما حدث فعلًا */
+function handOff() {
+  const n = thread();
+  const attr = n.act ? `data-act="${n.act}"${n.arg ? ` data-arg="${esc(n.arg)}"` : ''}`
+                     : `data-go="${n.go}"`;
+  const t = { key: 'خطوتك التالية', review: 'ما ينتظرك',
+              exam: 'حان القياس', drill: '' }[n.k] || '';
+  if (n.k === 'drill') return '';
+  return `<div class="hoff">
+    <div class="eyebrow">${esc(t)}</div>
+    <button class="btn" ${attr} style="margin-top:10px">${esc(n.label)}</button>
+    <p class="hwhy">${esc(n.why)}</p>
+  </div>`;
+}
+
+/* وصلة من سؤال إلى فكرته — تُستعمل في الشرح ودفتر الأخطاء */
+function keyLink(skillId, label) {
+  if (!skillId || !LESSONS.lessons[skillId]) return '';
+  const seen = (S.seenLessons || []).includes(skillId);
+  const nm = SKILLS[skillId] ? SKILLS[skillId].name : '';
+  return `<button class="klink" data-act="openLesson" data-arg="${esc(skillId)}">
+    <span class="kl-i">✦</span>
+    <span class="kl-t">${esc(label || (seen ? `راجِع فكرة ${nm}` : `هذه فكرة ${nm}`))}</span>
+    <span class="kl-a">›</span></button>`;
+}
+
+/* وصلة من مفتاح إلى تدريب قصير عليه */
+function drillLink(skillId) {
+  if (!skillId || !hasContent(skillId)) return '';
+  const nm = SKILLS[skillId] ? SKILLS[skillId].name : '';
+  return `<button class="klink go" data-act="drillSkill" data-arg="${esc(skillId)}">
+    <span class="kl-i">◆</span>
+    <span class="kl-t">جرّبها الآن على ${esc(nm)}</span>
+    <span class="kl-a">›</span></button>`;
+}
+
 function nextStep() {
   const g = S.suggestion || makeSuggestion();
   const sk = g.skill, hasKey = !!LESSONS.lessons[sk];
@@ -2282,7 +2387,7 @@ lesson: () => {
         ? `<button class="btn" disabled style="opacity:.45">اختر إجابةً أولًا</button>`
         : (!last
           ? `<button class="btn" data-act="lessonNext">${esc(T[cur + 1][0])} ›</button>`
-          : `<button class="btn" data-act="lessonDone">جرّبها الآن</button>`)}
+          : `<button class="btn" data-act="drillSkill" data-arg="${esc(id)}">جرّبها على ${esc(SKILLS[id] ? SKILLS[id].name : 'أسئلة')}</button>`)}
       ${cur ? `<button class="skipl" data-act="lessonPrev">‹ السابق</button>` : ''}
     </div>
   </div>`;
@@ -2417,7 +2522,9 @@ save: () => `<div class="center">
 home: () => {
   if (!S.suggestion) S.suggestion = makeSuggestion();
   const g = S.suggestion;
-  if (!S.paid && S.sessionCount >= 5) return SCREENS.paywall();
+  /* جدار الاشتراك مطفأ حتى تُقرّر التسعير — FREE_LIMIT = 0 يعني بلا حدّ.
+     لتفعيله لاحقًا: اجعله ٥ أو ما تشاء. */
+  if (FREE_LIMIT > 0 && !S.paid && S.sessionCount >= FREE_LIMIT) return SCREENS.paywall();
   const doneToday = S.lastActive === S.day && (S.todayCount || 0) > 0;
   const head = `<div class="top"><span class="brand" style="color:var(--glow)">${trackGlyph(S.track, 22)}
       <span class="eyebrow" style="margin:0">${esc(TRACKS[S.track].name)}</span></span>
@@ -2437,6 +2544,7 @@ home: () => {
     ${gradeNote()}
   </div>
   ${leadCard(true)}
+  ${thenWhisper()}
   <div class="spacer" style="flex:.85;min-height:16px"></div>
   ${mySkills().some(s => (cardsBySkill[s.id] || []).length)
     ? `<button class="btn ghost" data-act="startCards">بطاقات المصطلحات ›</button>` : ''}
@@ -2453,10 +2561,12 @@ home: () => {
     <p style="color:var(--glow);font-size:14.5px">${esc(g.gain)}</p>
   </div>
   ${leadCard()}
+  ${thenWhisper()}
   <p class="motto">${esc(TRACKS[S.track].motto)}</p>
   <div class="spacer" style="flex:.85;min-height:16px"></div>
   ${mySkills().some(s => (cardsBySkill[s.id] || []).length)
-    ? `<button class="btn ghost" data-act="startCards">بطاقات المصطلحات ›</button>` : ''}`;
+    ? `<button class="btn ghost" data-act="startCards">بطاقات المصطلحات ›</button>` : ''}
+  ${examInvite()}`;
 },
 
 learn: () => {
@@ -2616,6 +2726,7 @@ explain: () => {
         `<button class="lt ${k === cur ? 'on' : ''}" data-act="expTab" data-arg="${k}">${esc(n)}</button>`).join('')}</div>
     </div>
     <div class="lpane">${T[cur][1]}</div>
+    ${!right ? keyLink(q.skill) : ''}
     ${stopCard()}
     <div class="lfoot">
       ${cur < T.length - 1
@@ -2682,10 +2793,11 @@ summary: () => {
     ${r.duelWon ? `<div class="duelwin"><div class="dwrays"></div>
       <div class="dwt">هزمتَه</div>
       <p class="dwb">السؤال الذي أخطأتَ فيه مرّتين — أصبتَه اليوم.</p></div>` : ''}
-    ${(markWeak(r), keyInvite(r))}
+    ${(markWeak(r), '')}
+    ${handOff()}
     ${noteComposer()}
     <div class="spacer"></div>
-    <button class="btn" data-act="done">تم</button>
+    <button class="btn ghost" data-act="done">اكتفيتُ اليوم</button>
     <button class="btn ghost" data-act="shareCard">شارِك بطاقة النتيجة</button>
   </div>`;
 },
@@ -2829,10 +2941,11 @@ progress: () => {
     const cls = k === 'mastered' ? 'built' : k === 'near' ? 'near' : 'build';
     return `<div class="group"><div class="group-h"><span class="t">${label}</span>
       <span class="n num">${ar(list.length)}</span></div>
-      ${list.map(s => { const p = mastery(s.id), u = pctUnlocked(); return `<div class="srow mrow">
+      ${list.map(s => { const p = mastery(s.id), u = pctUnlocked(); return `<button class="srow mrow tap"
+        data-act="drillSkill" data-arg="${esc(s.id)}">
         <span class="pip ${cls}"></span><span class="mnm">${esc(s.name)}</span>
         <span class="mbar"><i style="width:${u ? p : 0}%"></i></span>
-        <span class="mpc num">${u ? ar(p) + '٪' : '—'}</span></div>`; }).join('')}</div>`;
+        <span class="mpc num">${u ? ar(p) + '٪' : '—'}</span></button>`; }).join('')}</div>`;
   }).join('')}
   ${!mySkills().some(s => ['mastered','near','building'].includes(S.skills[s.id].status) && !S.skills[s.id].paused)
     ? `<p class="soft" style="margin-top:22px">خريطتك تمتلئ مع كل جلسة. ما تبنيه يظهر هنا.</p>` : ''}
@@ -2888,6 +3001,7 @@ errors: () => {
     const rs = by[sk];
     return `<div class="egrp">
       <div class="eg-h"><span class="eg-n">${esc(SKILLS[sk].name)}</span>
+        ${LESSONS.lessons[sk] ? `<button class="eg-k" data-act="openLesson" data-arg="${sk}">فكرتها ›</button>` : ''}
         <span class="eg-c num">${ar(rs.length)}</span></div>
       ${rs.map(r => { const q = byQ(r.qid);
         const soon = r.due - S.day <= 0;
@@ -3402,6 +3516,14 @@ const ACTIONS = {
   setAnchor(a) { S.anchor = a; render(); },
   dismissIOS() { S.iosHinted = true; haptic(9); render(); },
   prTab(i) { S.prTab = +i; haptic(7); render(); },
+  /* وصلة: من أيّ موضع إلى تدريبٍ على مهارة بعينها */
+  drillSkill(id) {
+    if (!id || !hasContent(id)) return;
+    S.suggestion = null;
+    S.forceSkill = id;
+    haptic(14);
+    try { ACTIONS.startSession(); } catch (e) { go('home'); }
+  },
   setViz(m) { S.vizMode = m; haptic(9); saveState(); render(); },
   lessonNext() { S.lessonTab = (S.lessonTab || 0) + 1; haptic(9); render(); },
   lessonPrev() { S.lessonTab = Math.max(0, (S.lessonTab || 0) - 1); haptic(7); render(); },
