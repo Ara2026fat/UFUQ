@@ -1369,7 +1369,7 @@ S.visits = (S.visits || 0) + 1; S.size = keep; S.reminder = rem; S.theme = th; S
 function devScreen(name) {
   S.devOpen = false;
   if (!S.diag) markDiagDone();
-  if (name !== 'lesson' && name !== 'intro') S.seenLessons = Object.keys(LESSONS.lessons);
+  /* لا تكتب على رحلة الطالب. المعاينة تعرض ولا تعدّل — هذا ما أفسد رحلة طالب حقيقيّ. */
   if (name === 'question' || name === 'explain') {
     S.suggestion = S.suggestion || makeSuggestion();
     ACTIONS.startSession();
@@ -3206,6 +3206,18 @@ ${S.setTab===4 ? `
   </div>
 ` : ''}
 ${S.setTab===3 ? `
+  <div class="group"><div class="group-h"><span class="t">رحلة التفكير</span></div>
+    <div class="card">
+      <div class="kv" style="border:0;padding:0 0 10px">
+        <span>مفاتيح قرأتَها</span>
+        <span class="v num">${ar((S.seenLessons || []).length)} من ${ar(Object.keys(LESSONS.lessons).length)}</span>
+      </div>
+      <button class="btn ghost" data-act="resetJourney">صفّر الرحلة وابدأ من أوّلها</button>
+      <p class="note" style="padding-top:8px">يمحو ما قُرئ من المفاتيح فقط.
+        لا يمسّ أسئلتك ولا أخطاءك ولا تقدّمك في المهارات.</p>
+    </div>
+  </div>
+
   <div class="group"><div class="group-h"><span class="t">أفق ليس كل استعدادك</span></div>
     <p class="note" style="margin-bottom:10px">أفق يضمن ألّا يمرّ يوم بلا تدريب، ويتتبّع أخطاءك.
       لكن التأسيس والشرح المطوّل مكانهما خارجه:</p>
@@ -3516,6 +3528,11 @@ const ACTIONS = {
   setAnchor(a) { S.anchor = a; render(); },
   dismissIOS() { S.iosHinted = true; haptic(9); render(); },
   prTab(i) { S.prTab = +i; haptic(7); render(); },
+  resetJourney() {
+    S.seenLessons = [];
+    S.lessonFor = null; S.exPick = null; S.exPickFor = null;
+    haptic(16); saveState(); render();
+  },
   /* وصلة: من أيّ موضع إلى تدريبٍ على مهارة بعينها */
   drillSkill(id) {
     if (!id || !hasContent(id)) return;
@@ -3655,6 +3672,20 @@ function daysBetween(a, b) {
   const d = (new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000;
   return isFinite(d) ? Math.max(0, Math.round(d)) : 0;
 }
+/* إصلاح ذاتيّ: من المستحيل أن يُتمّ الطالب كلّ المفاتيح في جلسات قليلة.
+   إن وجدنا ذلك فهي حالة أفسدتها لوحة المعاينة — نعيدها إلى الصفر. */
+function healState(b) {
+  try {
+    const total = Object.keys(LESSONS.lessons).length;
+    const seen = (b.seenLessons || []).length;
+    if (total && seen >= total && (b.sessionCount || 0) < Math.max(8, total / 3)) {
+      b.seenLessons = [];
+      b._healed = true;
+    }
+    if (b.admin || b.audit) { b.admin = false; b.audit = false; }
+  } catch (e) {}
+  return b;
+}
 function loadState() {
   let raw = null;
   try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { return false; }
@@ -3675,6 +3706,7 @@ function loadState() {
     if (gap > 0) { base.day = (base.day || 0) + gap; base.todayCount = 0; }
   }
   base.session = null; base.exam = null; base.sheet = null; base.stopOffer = false;
+  healState(base);
   base.screen = (base.name && base.screen !== 'name') ? 'home' : (base.name ? 'home' : 'name');
   S = base;
   return true;
