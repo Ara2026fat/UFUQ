@@ -1,6 +1,6 @@
 /* أُفق — عامل الخدمة: يجعل التطبيق يعمل بلا إنترنت ويحدّث نفسه بهدوء. */
-const V = 'ufuq-v22';
-const SHELL = ['./', './index.html', './app.js', './bank.json', './keys.json',
+const V = 'ufuq-v78';
+const SHELL = ['./', './index.html', './app.js', './bank.bin', './keys.bin',
   './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
 
@@ -31,7 +31,7 @@ self.addEventListener('fetch', e => {
     return;
   }
   /* البيانات: تُقدَّم من الذاكرة فورًا، وتُحدَّث في الخلفية بلا انتظار */
-  if (/\/(bank|keys)\.json$/.test(new URL(r.url).pathname)) {
+  if (/\/(bank|keys)\.bin$/.test(new URL(r.url).pathname)) {
     e.respondWith(caches.match(r).then(hit => {
       const net = fetch(r).then(res => {
         if (res && res.ok) caches.open(V).then(c => c.put(r, res.clone()));

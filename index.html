@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+<!-- أُفق © ٢٠٢٦ عرفات الراجحي · جميع الحقوق محفوظة · لا يُنسخ بلا إذن خطّيّ -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#011766">
@@ -1883,6 +1884,100 @@ h1{font-size:clamp(23px,6.4vw,28px);line-height:1.45}
   cursor:pointer;padding:2px 6px;margin-inline-start:auto}
 .srow.tap{width:100%;background:none;border:0;cursor:pointer;font-family:inherit;text-align:start}
 .srow.tap:active .mnm{color:var(--glow)}
+
+/* ══════ الرئيسة: مركز ثقل واحد ══════ */
+.gline{margin:14px 0 4px;font-size:15px;line-height:1.9;color:var(--ink-soft)}
+.rline{display:flex;align-items:center;gap:10px;width:100%;
+  margin-top:12px;padding:11px 2px;background:none;border:0;cursor:pointer;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.rdots{display:flex;gap:5px;flex:0 0 auto}
+.rdot{width:7px;height:7px;border-radius:50%;background:var(--line);display:block}
+.rdot.done{background:var(--glow)}
+.rdot.now{background:var(--glow);box-shadow:0 0 0 3px var(--glow-tint)}
+.rdot.late{background:#C98A6A}
+.rtxt{flex:1;min-width:0;font-size:12.5px;color:var(--ink-faint);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* البطاقة الرئيسة تأخذ حقّها من الوزن البصريّ */
+.lead{border-radius:26px}
+
+/* ══════ التطبيق يقود: سبب ظهور كل سؤال ══════ */
+.rolen{display:flex;align-items:baseline;gap:8px;margin-top:12px;
+  font-size:12.5px;line-height:1.9;color:var(--ink-faint)}
+.rolen i{font-style:normal;color:var(--glow);font-size:12px;flex:0 0 auto}
+
+/* ══════ إصلاح: .wex أُدرج سهوًا في قاعدة الطبقات الزخرفية فورث pointer-events:none ══════
+   فكان كل ما داخل بطاقة السؤال غير قابل للنقر. هذا يعيد التفاعل إليه. */
+.wex{pointer-events:auto !important;position:relative}
+.wex .o.try{pointer-events:auto !important;position:relative;z-index:2}
+.sc-try .wex{pointer-events:auto !important}
+
+/* ══════ شريط التحديث ══════ */
+#updbar{position:fixed;inset-inline:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:900;
+  display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:16px;
+  background:var(--glass);border:1px solid var(--glow);box-shadow:0 14px 34px rgba(0,0,0,.45);
+  animation:ubIn .45s cubic-bezier(.2,.8,.3,1) both}
+@keyframes ubIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.ub-t{flex:1;min-width:0;font-size:13px;color:var(--ink)}
+.ub-b{flex:0 0 auto;padding:8px 16px;border-radius:11px;cursor:pointer;
+  background:var(--btn-bg);border:1px solid var(--btn-line);color:var(--btn-ink);
+  font-family:var(--display);font-size:13px}
+.ub-x{flex:0 0 auto;width:28px;height:28px;border-radius:9px;cursor:pointer;
+  background:none;border:1px solid var(--line);color:var(--ink-faint);font-size:13px}
+
+/* ══════ زيادة الجولات ونقصها ══════ */
+.rdadj{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;
+  border-top:1px solid var(--line)}
+.rdb{flex:1;padding:10px 6px;border-radius:12px;cursor:pointer;
+  background:transparent;border:1px solid var(--line);color:var(--ink-soft);
+  font-family:var(--display);font-size:13px;transition:.2s}
+.rdb:not([disabled]):active{border-color:var(--glow);color:var(--glow)}
+.rdb[disabled]{opacity:.35;cursor:default}
+.rdn{flex:0 0 auto;font-size:12px;color:var(--ink-faint);min-width:62px;text-align:center}
+
+/* ══════════ لمعة الشعار ══════════
+   على مبدأ نظام اللمعان: خطّ الضوء يتلاشى عند الحواف فيبدو انعكاسًا لا إطارًا.
+   يمرّ في نصف ثانية كل عشر ثوانٍ — لمحةٌ تُرى بطرف العين ولا تُلاحَق. */
+.bmark{position:relative;display:inline-flex;isolation:isolate}
+.bmark::before{
+  content:'';position:absolute;inset:0 14% auto;height:1px;top:14%;
+  background:linear-gradient(90deg,transparent,var(--edge),transparent);
+  opacity:.55;pointer-events:none;z-index:2}
+.ufmark{display:block;position:relative;z-index:1}
+.ufmark.shine{
+  -webkit-mask-image:linear-gradient(#000,#000);mask-image:linear-gradient(#000,#000)}
+.bmark::after{
+  content:'';position:absolute;inset:-18% -32%;pointer-events:none;z-index:3;
+  background:linear-gradient(105deg,
+    transparent 34%,
+    color-mix(in srgb, var(--glow) 55%, transparent) 46%,
+    color-mix(in srgb, var(--glow) 78%, transparent) 50%,
+    color-mix(in srgb, var(--glow) 55%, transparent) 54%,
+    transparent 66%);
+  transform:translateX(-140%) skewX(-14deg);
+  animation:ufShine 10s cubic-bezier(.25,.6,.3,1) infinite;
+  mix-blend-mode:screen;opacity:.7}
+@keyframes ufShine{
+  0%,88%   {transform:translateX(-140%) skewX(-14deg);opacity:0}
+  90%      {opacity:.75}
+  96%      {transform:translateX(140%)  skewX(-14deg);opacity:.75}
+  97%,100% {transform:translateX(140%)  skewX(-14deg);opacity:0}
+}
+@supports not (background: color-mix(in srgb, red 10%, blue)){
+  .bmark::after{background:linear-gradient(105deg,transparent 34%,var(--glow) 50%,transparent 66%)}
+}
+@media (prefers-reduced-motion: reduce){ .bmark::after{animation:none;opacity:0} }
+
+/* ══════ وسم القسم: لفظيّ أم كمّيّ ══════ */
+.parttag{display:inline-block;margin-top:6px;padding:3px 10px;border-radius:999px;
+  font-size:10.5px;letter-spacing:.12em;color:var(--ink-faint);
+  border:1px solid var(--line);background:transparent}
+
+/* ══════ اختيار القسم ══════ */
+.seg3{display:flex;gap:6px}
+.sg3{flex:1;padding:11px 4px;border-radius:13px;cursor:pointer;
+  background:transparent;border:1px solid var(--line);color:var(--ink-soft);
+  font-family:var(--display);font-size:13px;transition:.22s}
+.sg3.on{background:var(--glow-tint);border-color:var(--glow);color:var(--glow)}
 </style>
 </head>
 <body>
@@ -1893,9 +1988,12 @@ h1{font-size:clamp(23px,6.4vw,28px);line-height:1.45}
 
 
 <script>
-/* ══════ تحميل البيانات قبل التطبيق ══════ */
+/* ══════ تحميل البيانات قبل التطبيق ══════
+   البنك يُنقل مضغوطًا ومشفّرًا: ٥٫٧ ميجا تصير ٨٨٦ ك.ب،
+   ولا يُقرأ محتواه بفتح الرابط. */
 (function () {
   var app = document.getElementById('app');
+  var K = [0x3B,0x91,0xD7,0x4E,0xA2,0x6C,0xF5,0x18,0x83,0x2D,0xBE,0x57];
   function fail(msg) {
     if (app) app.innerHTML = '<div style="padding:60px 24px;text-align:center;color:#9A9585;' +
       'font-family:system-ui;line-height:2">' +
@@ -1904,10 +2002,20 @@ h1{font-size:clamp(23px,6.4vw,28px);line-height:1.45}
       '<div style="font-size:12px;margin-top:16px;color:#67635A">تأكّد من الاتصال ثمّ أعد الفتح.' +
       ' وبعد أول فتح ناجح يعمل التطبيق بلا إنترنت.</div></div>';
   }
-  Promise.all([
-    fetch('./bank.json').then(function (r) { if (!r.ok) throw 0; return r.json(); }),
-    fetch('./keys.json').then(function (r) { if (!r.ok) throw 0; return r.json(); })
-  ]).then(function (a) {
+  function load(path) {
+    return fetch(path).then(function (r) {
+      if (!r.ok) throw 0; return r.arrayBuffer();
+    }).then(function (buf) {
+      var b = new Uint8Array(buf);
+      for (var i = 0; i < b.length; i++) b[i] ^= K[i % K.length];
+      if (typeof DecompressionStream === 'undefined')
+        throw new Error('متصفّحك قديم — حدّثه ليعمل التطبيق.');
+      var ds = new DecompressionStream('gzip');
+      var st = new Blob([b]).stream().pipeThrough(ds);
+      return new Response(st).json();
+    });
+  }
+  Promise.all([load('./bank.bin'), load('./keys.bin')]).then(function (a) {
     window.__BANK = a[0]; window.__KEYS = a[1];
     var sc = document.createElement('script');
     sc.src = './app.js';
@@ -1919,8 +2027,8 @@ h1{font-size:clamp(23px,6.4vw,28px);line-height:1.45}
       }
     };
     document.body.appendChild(sc);
-  }).catch(function () {
-    fail('تعذّر تحميل بنك الأسئلة.');
+  }).catch(function (e) {
+    fail((e && e.message) || 'تعذّر تحميل بنك الأسئلة.');
   });
 })();
 </script>

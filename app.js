@@ -1,3 +1,14 @@
+/* ═══════════════════════════════════════════════════════════
+   أُفق — تدريب القدرات والتحصيلي وستيب
+   © ٢٠٢٦ عرفات الراجحي · Arafat AlRajhi · جميع الحقوق محفوظة.
+
+   هذا العمل — الأسئلة ومفاتيح الحلّ والمنهجية والتصميم —
+   مملوك لصاحبه. لا يُنسخ ولا يُعاد نشره ولا يُشتقّ منه
+   عملٌ آخر، كلًّا أو جزءًا، بلا إذن خطّيّ مسبق.
+
+   All rights reserved. Unauthorized copying, redistribution,
+   or derivative use of this content is prohibited.
+   ═══════════════════════════════════════════════════════════ */
 
 /* البنك ومفاتيح الحلّ في ملفّين مستقلّين: تحميلٌ واحد يُخزَّن على الجهاز،
    فلا يُعاد تنزيل ٤٫٥ ميجا كلّما صحّحنا سطرًا في التطبيق. */
@@ -126,6 +137,12 @@ function applyTheme() {
 /* حدّ الجلسات المجّانية — صفرٌ يعني بلا جدار اشتراك */
 const FREE_LIMIT = 0;
 
+/* ══════ نسخة أُفق ══════
+   يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
+const APP_VERSION = '5.3.0';
+const APP_DATE = '٩ سبتمبر ٢٠٢٦';
+const APP_BUILD = 78;   /* يطابق رقم ufuq-vNN في sw.js */
+
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
   const t = String(s || '');
@@ -158,7 +175,7 @@ function freshState() {
   return {
     day: 0, screen: 'name', haptics: true, name: '', visits: 0, skills, review: [], asked: {},
     sessionCount: 0, streak: 0, lastActive: null, session: null,
-    targetDiff: 2, size: 30, reminder: '٨:٠٠ م', examDays: 60,
+    targetDiff: 2, size: 30, reminder: '٨:٠٠ م', examDays: 90,
     paid: true, diag: null, lastSummary: null, corrected: [],
     tagCount: {}, tipsSeen: [], tip: null, track: 'qudurat', shareReport: true, tracks: {},
     theme: 'night', sheet: null, pace: false, paceHist: [],
@@ -169,7 +186,10 @@ function freshState() {
     installAsked: false, installed: false, installReady: false,
     devUnlocked: false,
     preset: 'steady', sched: null, roundsDone: {}, showPct: false,
-    prTab: 0, exPick: null, exPickFor: null, vizMode: 'rings',
+    prTab: 0, exPick: null, exPickFor: null, vizMode: 'rings', lastBackup: null,
+    lastActiveSkill: null, sameSkillRun: 0, phaseSeen: null,
+    lastBackupDay: null, restored: null, nudgeSeen: null,
+    focus: 'all',
     forceSkill: null,
     lastExamDay: null, examLog: [],
     suggestion: null, activeStage: 's1'
@@ -178,7 +198,7 @@ function freshState() {
 
 /* ---------- فصل المسارات: دفتر مستقلّ لكل اختبار ---------- */
 const TRACK_FIELDS = ['day','streak','lastActive','sessionCount','asked','review','history',
-  'notes','noteSeen','qMiss','duel','preset','sched','roundsDone','lastExamDay','examLog','vizMode',
+  'notes','noteSeen','qMiss','duel','preset','sched','roundsDone','lastExamDay','examLog','vizMode','lastBackup','lastBackupDay','focus','phaseSeen',
   'seenLessons','activeStage','targetDiff','size','sizeManual','audio','examDays','corrected','tagCount','todayCount','lastWeak',
   'diag','lastSummary','session','anchor','reminder','logOpen','suggestion','introIdx','whyCount',
   'cardState','cardSess','lastCards','paceHist'];
@@ -186,7 +206,8 @@ function blankTrack(t) {
   const st0 = trackStages(t)[0];
   return {
     day: 0, streak: 0, lastActive: null, sessionCount: 0, asked: {}, review: [], history: [],
-    seenLessons: [], activeStage: st0 ? st0.id : 's1', targetDiff: 2, size: 30, examDays: 60,
+    seenLessons: [], activeStage: st0 ? st0.id : 's1', targetDiff: 2, size: 30,
+    examDays: t === 'qudurat' ? 90 : 60,
     corrected: [], tagCount: {}, todayCount: 0, diag: null, lastSummary: null, session: null,
     anchor: 'maghrib', reminder: '٨:٠٠ م', logOpen: null, suggestion: null, introIdx: 0,
     whyCount: 0, cardState: {}, cardSess: null, lastCards: null, paceHist: []
@@ -258,14 +279,20 @@ function mastery(id) {
   /* الرسوخ: طول المدّة بين أول لمسة وآخرها */
   const span = (st.last != null && st.first != null) ? st.last - st.first : 0;
   const pSpan = Math.min(1, span / 10) * 10;
-  let v = pAcc + pDays + pCover + pSpan;
+  /* الدقّة حاكمةٌ لا شريكة.
+     كانت نقاط السلوك (الأيام والاتّساع والرسوخ) تُمنح كاملةً مهما كانت الدقّة،
+     فيُظهر التطبيق ٨٤٪ لطالب دقّته ٦٠٪ — وهذه إشارةٌ كاذبة تُطمئنه قبل أوانه.
+     الآن: نقاط السلوك تتناسب مع الدقّة، والنسبة لا تتجاوز الدقّة إلا بهامش صغير. */
+  const gate = Math.min(1, a / 0.80);
+  let v = pAcc + (pDays + pCover + pSpan) * gate;
   /* المعامل الخفيّ */
   const md = medianTime(st);
   if (md !== null && a >= 0.75) {
     if (md <= 25) v += 4; else if (md <= 45) v += 2;
   }
   if (st.paused) v *= 0.9;
-  return Math.max(0, Math.min(100, Math.round(v)));
+  const ceiling = a * 100 + 8;      /* لا يُظهَر إتقانٌ يفوق دقّته بأكثر من ثمانٍ */
+  return Math.max(0, Math.min(100, Math.round(Math.min(v, ceiling))));
 }
 function masteryWord(p) {
   if (p >= 85) return 'راسخة';
@@ -303,15 +330,30 @@ function isClean(q) { return !S.cleanOnly || q.origin !== 'sourced'; }
 function cleanCount(skillId) {
   return (qBySkill[skillId] || []).filter(q => q.origin !== 'sourced').length;
 }
+/* اختيار السؤال — قاعدتان تمنعان الحفظ بدل الفهم:
+   ① لا يعود سؤالٌ ما دام في المهارة سؤالٌ لم يُرَ بعد. كان يعود بعد سبعة أيام،
+      فيراه الطالب ثماني مرّات في شهرين فيحفظ الجواب ويبدو متقنًا وهو ليس كذلك.
+   ② حين تنفد الجدّة، نعود إلى الأقدم عهدًا لا إلى الأقرب.
+   والاختيار من شريحة واسعة لا من ثلاثة، فلا يتشابه طالبان. */
 function pool(skillId, diff, used, noImg) {
   const all = (qBySkill[skillId] || []).filter(q =>
     !used.has(q.id) && !(noImg && q.img) && isClean(q));
-  const fresh = all.filter(q => (S.asked[q.id] == null) || (S.day - S.asked[q.id] >= 7));
-  const base = fresh.length ? fresh : all;
-  if (!base.length) return null;
+  if (!all.length) return null;
+  const never = all.filter(q => S.asked[q.id] == null);
+  let base;
+  if (never.length) {
+    base = never;
+  } else {
+    const byAge = all.slice().sort((a, b) => (S.asked[a.id] || 0) - (S.asked[b.id] || 0));
+    base = byAge.slice(0, Math.max(6, Math.ceil(byAge.length * 0.4)));
+  }
   let best = base.filter(q => q.d === diff);
-  if (!best.length) best = base.slice().sort((a, b) => Math.abs(a.d - diff) - Math.abs(b.d - diff));
-  return best[Math.floor(Math.random() * Math.min(best.length, 3))];
+  if (best.length < 3) {
+    const near = base.slice().sort((a, b) => Math.abs(a.d - diff) - Math.abs(b.d - diff));
+    best = best.concat(near.filter(q => best.indexOf(q) < 0)).slice(0, Math.max(6, best.length));
+  }
+  const span = Math.min(best.length, 8);
+  return best[Math.floor(Math.random() * span)];
 }
 
 /* ---------- skill selection ---------- */
@@ -323,6 +365,62 @@ function prereqOk(s) {
   const p = S.skills[s.prereq];
   return p.status === 'near' || p.status === 'mastered';
 }
+/* تركيز الطالب: يختار قسمًا فيلزمه التطبيق حتى يبدّله بنفسه.
+   نمط التفكير في اللفظيّ غيره في الكمّيّ، والتنقّل بينهما يوميًّا يُشتّت. */
+function focusOK(id) {
+  if (S.track !== 'qudurat') return true;
+  const f = S.focus || 'all';
+  return f === 'all' || partOf(id) === f;
+}
+function focusSkills() {
+  const m = mySkills().filter(x => focusOK(x.id) && hasContent(x.id));
+  return m.length ? m : mySkills();
+}
+/* ══════ ضمان الشموليّة ══════
+   الجدولة كانت تتمسّك بالمهارة حتى تُبنى، فيمضي شهران ولم يرَ الطالب نصف مهاراته.
+   قاعدتان تحلّان ذلك:
+   ① دوران: لا تزيد الجلسات المتتالية على مهارة واحدة عن ستّ.
+   ② سباق مع الوقت: إذا لم يبقَ من الأيام إلا بقدر ما يكفي المهارات التي لم تُبدأ،
+      قُدِّمت المهارة الجديدة على تعميق القديمة — لأن مرورًا سطحيًّا على الكلّ
+      خيرٌ من إتقان النصف وجهل النصف يوم الاختبار. */
+const ROTATE_AFTER = 6;
+
+/* ══════════ مراحل الاستعداد للقدرات ══════════
+   ثلاثة أشهر مقسّمة كما انتهى إليه الحساب:
+   أربعة أسابيع لفظيّ (٦ مهارات) — ثمّ خمسة كمّيّ (١٠ مهارات) — ثمّ ثلاثة للمراجعة والنماذج.
+   واللفظيّ أولًا لأن ستّ مهارات أسرع في إعطاء شعور بالإنجاز من عشر. */
+const PLAN_PHASES = [
+  { until: 28, focus: 'verbal', name: 'المرحلة اللفظية',
+    note: 'ستّ مهارات لفظية. أربعة أسابيع تكفيها بجلستين يوميًّا.' },
+  { until: 63, focus: 'quant',  name: 'المرحلة الكمّية',
+    note: 'عشر مهارات كمّية. خمسة أسابيع — وهي أطول المراحل لأنها أوسعها.' },
+  { until: 999, focus: 'all',   name: 'مرحلة المراجعة',
+    note: 'الاثنان معًا: أخطاؤك ونماذج كاملة. هنا يُقاس ما بنيتَه.' }
+];
+function phaseNow() {
+  if (S.track !== 'qudurat') return null;
+  return PLAN_PHASES.find(p => S.day < p.until) || PLAN_PHASES[PLAN_PHASES.length - 1];
+}
+function phaseLeft() {
+  const p = phaseNow(); if (!p || p.until > 900) return null;
+  return Math.max(0, p.until - S.day);
+}
+function untouchedSkills() {
+  return focusSkills().filter(x => {
+    const st = S.skills[x.id];
+    return st && !st.paused && (st.days || []).length === 0 && hasContent(x.id);
+  });
+}
+function coverageUrgent() {
+  /* الإلحاح يُقاس بنهاية المرحلة لا بنهاية الأفق.
+     فالمرحلة اللفظية أربعة أسابيع لستّ مهارات — وإن لم تُبدأ كلّها فيها لم تُبدأ بعدها.
+     وهذا ما كان يحجب نصف المهارات: المراحل تمرّ والجدولة تعمّق في ثلاث. */
+  const ph = phaseLeft();
+  const left = ph != null ? ph : Math.max(0, (S.examDays || 90) - S.day);
+  const un = untouchedSkills().length;
+  if (!un) return false;
+  return left / un < 4;
+}
 function chooseActive() {
   /* وصلة مباشرة: إن طُلبت مهارة بعينها من الخريطة أو من مفتاحها، فهي المقصودة */
   if (S.forceSkill) {
@@ -330,15 +428,34 @@ function chooseActive() {
     S.forceSkill = null;
     if (f && hasContent(f.id)) return f;
   }
-  const all = stageSkills(S.activeStage)
+  /* ① دوران بعد ستّ جلسات متتالية على المهارة نفسها */
+  if (S.lastActiveSkill && (S.sameSkillRun || 0) >= ROTATE_AFTER) {
+    const others = focusSkills().filter(x => x.id !== S.lastActiveSkill
+      && !S.skills[x.id].paused && S.skills[x.id].status !== 'mastered' && prereqOk(x));
+    if (others.length) {
+      const fresh = others.filter(x => (S.skills[x.id].days || []).length === 0);
+      return (fresh.length ? fresh : others)[0];
+    }
+  }
+  /* ② سباق مع الوقت: مهارة لم تُبدأ تتقدّم.
+     وعند الإلحاح يُرفع شرط المتطلَّب السابق — لأن مهارةً رآها الطالب ولو بلا تمهيد
+     خيرٌ من مهارةٍ لم يرَها قطّ لأن ما قبلها لم يُتقَن. */
+  if (coverageUrgent()) {
+    const un = untouchedSkills();
+    const ready = un.filter(x => prereqOk(x));
+    const pick = ready.length ? ready : un;
+    if (pick.length) return pick[0];
+  }
+  const all = stageSkills(S.activeStage).filter(x => focusOK(x.id))
     .filter(s => !S.skills[s.id].paused && prereqOk(s) && S.skills[s.id].status !== 'mastered');
   // المرفوضة ٣ مرات فأكثر تخرج من الاقتراح الرئيسي وتعود ضمنيًا داخل الجلسة
   const quiet = all.filter(s => S.skills[s.id].ignore < 3);
   const cands = quiet.length ? quiet : all;
   if (!cands.length) {
     const st2 = trackStages(S.track)[1];
-    const next = (st2 ? stageSkills(st2.id) : []).filter(s => !S.skills[s.id].paused && S.skills[s.id].status !== 'mastered');
-    return next[0] || stageSkills(S.activeStage)[0] || mySkills()[0];
+    const next = (st2 ? stageSkills(st2.id) : []).filter(s =>
+      !S.skills[s.id].paused && S.skills[s.id].status !== 'mastered' && focusOK(s.id));
+    return next[0] || focusSkills()[0] || stageSkills(S.activeStage)[0] || mySkills()[0];
   }
   const rank = { building: 0, near: 1, new: 2 };
   cands.sort((a, b) => {
@@ -378,7 +495,10 @@ function buildSession() {
   }
 
   const active = chooseActive();
-  const returning = size >= 15 ? chooseReturning(active.id) : null;
+  if (S.lastActiveSkill === active.id) S.sameSkillRun = (S.sameSkillRun || 0) + 1;
+  else { S.lastActiveSkill = active.id; S.sameSkillRun = 1; }
+  let returning = size >= 15 ? chooseReturning(active.id) : null;
+  if (returning && S.track === 'qudurat' && !samePart(returning.id, active.id)) returning = null;
   const st = S.skills[active.id];
   let diff = S.targetDiff;
   if (st.stuckSince !== null && S.day - st.stuckSince > 10) diff = Math.max(1, diff - 2);
@@ -388,13 +508,18 @@ function buildSession() {
   const nRet = returning ? 1 : 0;
   const nActive = size - nWarm - nReview - nRet;
 
-  const warmPool = masteredSkills();
+  /* الإحماء والمراجعة من قسم المهارة النشطة نفسه */
+  const PART = partOf(active.id);
+  const inPart = id => S.track !== 'qudurat' || partOf(id) === PART;
+  const warmPool = masteredSkills().filter(x => inPart(x.id));
   const warm = [], act = [], rev = [], ret = [];
   for (let i = 0; i < nWarm; i++) {
     const s = warmPool.length ? warmPool[i % warmPool.length] : active;
     const q = pool(s.id, 1, used); if (q) { used.add(q.id); warm.push({ qid: q.id, role: 'warmup', done: false }); }
   }
-  const due = S.review.filter(r => r.due <= S.day).sort((a, b) => a.due - b.due).slice(0, nReview);
+  const due = S.review
+    .filter(r => { const q = byQ(r.qid); return r.due <= S.day && q && inPart(q.skill); })
+    .sort((a, b) => a.due - b.due).slice(0, nReview);
   due.forEach(r => { if (!used.has(r.qid)) { used.add(r.qid); rev.push({ qid: r.qid, role: 'review', done: false }); } });
 
   const order = [0, 1, -1, 1, 0, -1, 1, 0];
@@ -429,7 +554,8 @@ function buildSession() {
   // إن نفد مخزون المهارة النشطة، تُملأ الجلسة من مهارات المجال نفسه
   if (seq.length < size) {
     const filler = mySkills().filter(s => hasContent(s.id) && s.id !== active.id
-      && !S.skills[s.id].paused && s.domain === active.domain && prereqOk(s));
+      && !S.skills[s.id].paused && s.domain === active.domain && prereqOk(s)
+      && inPart(s.id));
     for (const s of filler) {
       while (seq.length < size) {
         const q = pool(s.id, S.targetDiff, used);
@@ -444,8 +570,9 @@ function buildSession() {
   // ضمان ألّا تقتصر الجلسة على مهارة واحدة
   const distinct = () => new Set(seq.map(x => byQ(x.qid).skill)).size;
   if (distinct() < 3) {
+    /* التنويع لا يكسر القسم: نبحث في القسم نفسه، فإن لم نجد اكتفينا بما لدينا */
     const others = mySkills().filter(s => hasContent(s.id) && !S.skills[s.id].paused
-      && !seq.some(x => byQ(x.qid).skill === s.id) && prereqOk(s));
+      && !seq.some(x => byQ(x.qid).skill === s.id) && prereqOk(s) && inPart(s.id));
     for (const s of others) {
       if (distinct() >= 3) break;
       const q = pool(s.id, Math.max(1, S.targetDiff - 1), used);
@@ -471,7 +598,7 @@ function buildSession() {
     seq.push({ qid: S.duel.qid, role: 'duel', done: false });
   }
   return { items: seq, idx: 0, right: 0, wrong: 0, rStreak: 0, wStreak: 0,
-    skill: active.id, returning: returning ? returning.id : null, resume: false, size: seq.length };
+    skill: active.id, part: PART, returning: returning ? returning.id : null, resume: false, size: seq.length };
 }
 const byQ = id => Q.find(q => q.id === id);
 
@@ -493,6 +620,12 @@ const EXAM = {
     note:'ثلاثة أقسام قصيرة.' }
 };
 const VERBAL_SK = ['completion','analogy','odd_one','association','reading','context_error'];
+/* القدرات قسمان لا يختلطان: لفظيّ وكمّيّ.
+   الاختبار يفصل بينهما بالتناوب، والجلسة التدريبية يجب أن تفصل كذلك —
+   لأن انتقال الذهن بين نمطين في جلسة واحدة يكلّفه ولا يفيده. */
+const PART_NAME = { verbal: 'لفظيّ', quant: 'كمّيّ' };
+function partOf(skillId) { return VERBAL_SK.includes(skillId) ? 'verbal' : 'quant'; }
+function samePart(a, b) { return partOf(a) === partOf(b); }
 function examSpec() { return EXAM[S.track] || EXAM.tahsili; }
 function examBuild(secIdx) {
   const sp = examSpec(), used = new Set((S.exam && S.exam.seen) || []);
@@ -632,7 +765,56 @@ function examInvite() {
 }
 /* كانت الرئيسة تكدّس أربع بطاقات ثانوية فتطول. الآن واحدة بالأولوية. */
 function oneCard() {
-  return noteBack() || gradeCard() || installInvite() || iosHint() || '';
+  return restoredCard() || backupNudge() || phaseCard() || noteBack()
+      || gradeCard() || installInvite() || iosHint() || '';
+}
+/* بعد الاستعادة: يُطمأن الطالب أنه لم يبدأ من الصفر، ويُرى له أين وقف */
+function restoredCard() {
+  const r = S.restored;
+  if (!r) return '';
+  return `<div class="hoff" style="margin-top:14px">
+    <div class="eyebrow">استُعيدت نسختك</div>
+    <p class="hwhy" style="margin-top:8px;color:var(--ink)">
+      ${esc(r.name)} — اليوم ${ar(r.day)} · ${esc(r.phase)}</p>
+    <div class="kv" style="margin-top:10px"><span>الجلسات</span><span class="v num">${ar(r.sessions)}</span></div>
+    <div class="kv"><span>السلسلة</span><span class="v num">${ar(r.streak)} ${r.streak === 1 ? 'يوم' : 'يومًا'}</span></div>
+    <div class="kv"><span>مهارات بدأتَها</span><span class="v num">${ar(r.skills)}</span></div>
+    <div class="kv" style="border:0"><span>أخطاء محفوظة</span><span class="v num">${ar(r.errors)}</span></div>
+    <p class="hwhy" style="margin-top:10px">لم تبدأ من جديد. تابع من حيث وقفت.</p>
+    <button class="btn" style="margin-top:12px" data-act="clearRestored">تمام</button>
+  </div>`;
+}
+/* تذكير هادئ بالحفظ: كل أسبوعين، أو بعد نموذج كامل */
+function backupNudge() {
+  if (!S.name || (S.sessionCount || 0) < 5) return '';
+  const last = S.lastBackupDay;
+  const since = last == null ? S.day : S.day - last;
+  if (since < 14) return '';
+  if (S.nudgeSeen === S.day) return '';
+  return `<div class="hoff" style="margin-top:14px">
+    <div class="eyebrow">احفظ نسختك</div>
+    <p class="hwhy" style="margin-top:8px">${last == null
+      ? 'تقدّمك محفوظ في متصفّح هذا الجهاز وحده. مسحُ بياناته يمحوه.'
+      : `مضى ${ar(since)} يومًا على آخر نسخة حفظتَها.`}
+      احفظ ملفًّا وأرسله إلى نفسك — دقيقة تحمي ${ar(S.sessionCount)} جلسة.</p>
+    <button class="btn" style="margin-top:12px" data-act="exportState">احفظ الآن</button>
+    <button class="skipl" data-act="dismissNudge">لاحقًا</button>
+  </div>`;
+}
+/* حين تتبدّل المرحلة، يقترح التطبيق التحوّل مرّةً واحدة ولا يفرضه */
+function phaseCard() {
+  const p = phaseNow();
+  if (!p || !S.name) return '';
+  const cur = S.focus || 'all';
+  if (cur === p.focus) return '';
+  if (S.phaseSeen === p.name) return '';
+  return `<div class="hoff" style="margin-top:14px">
+    <div class="eyebrow">${esc(p.name)}</div>
+    <p class="hwhy" style="margin-top:8px">${esc(p.note)}</p>
+    <button class="btn" style="margin-top:12px" data-act="takePhase" data-arg="${p.focus}">
+      انتقل إلى ${p.focus === 'all' ? 'المراجعة' : 'القسم ' + PART_NAME[p.focus]}</button>
+    <button class="skipl" data-act="dismissPhase" data-arg="${esc(p.name)}">أكمل على ما أنا عليه</button>
+  </div>`;
 }
 function noteBack() {
   const ns = (S.notes || []).filter(n => n.day < S.day);
@@ -764,6 +946,14 @@ function finishSession(sess) {
 
 /* ---------- الخطة: تتوقّع ولا تُلزِم، وتُعاد حسابها كل يوم ---------- */
 const TRACK_THEME = { qudurat:'royal', tahsili:'forest', kfupm:'obsidian', step:'plum', aramco:'petrol' };
+/* ══════════ المسارات المعروضة ══════════
+   البترول وأرامكو مؤجَّلان: محتواهما باقٍ كاملًا في البنك ولا يُعرَضان للطالب.
+   السبب أن مواصفتيهما لم تُدرَسا بالقدر الذي دُرست به القدرات والتحصيلي وستيب،
+   وأن جمهورهما مختلف في وقته ورسالته. يُفتحان حين تكتمل الجاهزية.
+   لإعادتهما: أضف 'kfupm' و'aramco' إلى OPEN_TRACKS — ولا حاجة إلى شيء آخر. */
+const OPEN_TRACKS = ['qudurat', 'tahsili', 'step'];
+const isOpenTrack = t => OPEN_TRACKS.includes(t);
+
 const TRACKS = {
   qudurat: { id:'qudurat', accentDay:'#3A5F8F', tintDay:'rgba(58,95,143,.13)', name:'القدرات', stages:['s1','s2','s3'], accent:'#7FA8D9', tint:'rgba(127,168,217,.13)',
     journey:'رحلة التفكير', verb:'تُفكّر', motto:'الاختبار لا يسأل عمّا حفظتَ، بل عن كيف تفكّر.',
@@ -1012,6 +1202,15 @@ const ROUND_KINDS = {
 };
 /* جدولان مستقلّان: أيام الدراسة تختلف عن نهاية الأسبوع.
    والمواعيد الافتراضية تتجنّب ما بين المغرب والعشاء. */
+/* الطالب يزيد جولاته وينقصها بنفسه حتى ثماني جولات في اليوم.
+   الأنماط اقتراحٌ لا سقف. */
+const MAX_ROUNDS = 8;
+const ROUND_TEMPLATE = [
+  { at: '15:30', mins: 15, kind: 'new' },    { at: '16:45', mins: 15, kind: 'new' },
+  { at: '18:00', mins: 12, kind: 'review' }, { at: '19:15', mins: 12, kind: 'new' },
+  { at: '20:30', mins: 12, kind: 'review' }, { at: '21:30', mins: 10, kind: 'new' },
+  { at: '22:15', mins: 8,  kind: 'ideas' },  { at: '22:50', mins: 8,  kind: 'review' }
+];
 const ROUND_PRESETS = {
   light:  { name: 'خفيف', week: [{ at: '16:30', mins: 15, kind: 'new' },
                                  { at: '21:00', mins: 10, kind: 'review' }],
@@ -1035,6 +1234,7 @@ const ROUND_PRESETS = {
 /* نهاية الأسبوع في السعودية: الجمعة والسبت */
 function isWeekend() { const d = new Date().getDay(); return d === 5 || d === 6; }
 function dayKey() { return isWeekend() ? 'wknd' : 'week'; }
+function roundKind(k) { return ROUND_KINDS[k] || ROUND_KINDS.new; }
 function nowMin() { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
 function hm2min(t) { const [h, m] = t.split(':').map(Number); return h * 60 + m; }
 function fmtTime(t) {
@@ -1217,18 +1417,36 @@ function horizonBar(done, total, label) {
       <span class="hz-n">${ar(done)} / ${ar(total)}</span></div>
   </div>`;
 }
-function markSVG(h) {
-  const w = Math.round(h * 0.92);
-  return `<svg width="${w}" height="${h}" viewBox="0 30 512 400" aria-hidden="true">
-    <defs><linearGradient id="mk${h}" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="var(--glow)" stop-opacity=".2"/>
-      <stop offset=".5" stop-color="var(--glow)"/>
-      <stop offset="1" stop-color="var(--glow)" stop-opacity=".2"/></linearGradient></defs>
-    <path d="M26,410 Q256,296 486,410" fill="none" stroke="url(#mk${h})" stroke-width="21" stroke-linecap="round"/>
-    <path d="M268,132 L268,304 Q268,350 232,368" fill="none" stroke="var(--ink)"
-      stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>
-    <rect x="235" y="21" width="54" height="54" rx="9" transform="rotate(45 262 48)" fill="var(--ink)"/>
-    <circle cx="232" cy="368" r="23" fill="var(--glow)"/></svg>`;
+function markSVG(h, shine) {
+  /* هذا هو شعار الأيقونة نفسه: شمسٌ نصف بازغة وأشعّة وطريق يتّجه إليها.
+     كان في التطبيق شعارٌ آخر (حرف أ مع قوس) فاختلف عمّا يراه الطالب على شاشته. */
+  const u = 'mk' + h + (shine ? 's' : '');
+  const rays = [];
+  for (let k = 0; k < 5; k++) {
+    const ang = Math.PI + (k + 0.5) * (Math.PI / 5);
+    const x1 = 256 + Math.cos(ang) * 132, y1 = 250 + Math.sin(ang) * 132;
+    const x2 = 256 + Math.cos(ang) * (k === 2 ? 192 : k === 1 || k === 3 ? 176 : 162);
+    const y2 = 250 + Math.sin(ang) * (k === 2 ? 192 : k === 1 || k === 3 ? 176 : 162);
+    rays.push(`<line x1="${x1.toFixed(0)}" y1="${y1.toFixed(0)}" x2="${x2.toFixed(0)}" y2="${y2.toFixed(0)}"
+      stroke="var(--glow)" stroke-opacity=".82" stroke-width="17" stroke-linecap="round"/>`);
+  }
+  return `<svg width="${h}" height="${h}" viewBox="0 40 512 430" aria-hidden="true"
+    class="ufmark${shine ? ' shine' : ''}">
+    <defs>
+      <linearGradient id="${u}sun" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="var(--glow)"/>
+        <stop offset="1" stop-color="var(--glow)" stop-opacity=".72"/></linearGradient>
+      <linearGradient id="${u}rd" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="var(--glow)" stop-opacity=".55"/>
+        <stop offset="1" stop-color="var(--glow)"/></linearGradient>
+    </defs>
+    ${rays.join('')}
+    <path d="M 148 250 a 108 108 0 0 1 216 0 z" fill="url(#${u}sun)"/>
+    <path d="M 40 292 Q 256 236 472 292" fill="none" stroke="var(--glow)"
+      stroke-opacity=".75" stroke-width="13" stroke-linecap="round"/>
+    <path d="M 248 272 C 300 318 206 344 240 386 L 118 468 L 400 468 L 306 384
+             C 276 344 352 320 268 272 Z" fill="url(#${u}rd)"/>
+  </svg>`;
 }
 
 /* ---------- معلومات الاختبار ---------- */
@@ -1510,7 +1728,7 @@ function render() {
       ? Math.min(1, (ss.idx || 0) / ss.items.length) : 0;
     document.getElementById('shell').style.setProperty('--dawn', (0.06 + pr * 0.16).toFixed(3));
   } catch (e) {}
-  bb.innerHTML = bb.hidden ? '' : `<span class="bmark">${markSVG(19)}</span>
+  bb.innerHTML = bb.hidden ? '' : `<span class="bmark">${markSVG(19, true)}</span>
     <span class="bname">أفق</span>
     <button class="gearbtn" data-go="settings" aria-label="الإعدادات">
       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -1915,10 +2133,10 @@ function thread() {
 /* همسة «ثمّ» — تقول أين ينتهي المسار قبل أن يبدأ. ليست زرًّا بارزًا. */
 function thenWhisper() {
   const n = thread();
+  /* البطاقة الكبرى صارت تعرض قرار الخيط، فلا تكرّره الهمسة.
+     ولا تظهر إلا لتدلّ على التدريب حين يقود الخيط إلى غيره. */
   if (n.k === 'drill') return '';
-  const attr = n.act ? `data-act="${n.act}"${n.arg ? ` data-arg="${esc(n.arg)}"` : ''}`
-                     : `data-go="${n.go}"`;
-  return `<button class="thenw" ${attr}>ثمّ: ${esc(n.label)} ›</button>`;
+  return `<button class="thenw" data-act="startSession">ثمّ: ${ar((S.suggestion || makeSuggestion()).size)} سؤالًا في ${esc(SKILLS[nextStep().skill].name)} ›</button>`;
 }
 
 /* تسليمة النتيجة — زرٌّ واحد يتغيّر نصّه بحسب ما حدث فعلًا */
@@ -1937,6 +2155,21 @@ function handOff() {
 }
 
 /* وصلة من سؤال إلى فكرته — تُستعمل في الشرح ودفتر الأخطاء */
+/* التطبيق يقود: كل سؤال يقول لماذا وقع هنا بالذات.
+   الطالب الذي يعرف سبب السؤال يعامله معاملةً مختلفة. */
+function roleNote(item, sess) {
+  const n = sess.idx + 1, tot = sess.items.length;
+  if (item.role === 'duel') return '';
+  if (item.role === 'review')
+    return `<p class="rolen"><i>↺</i> أخطأتَ فيه من قبل — تذكّر قبل أن تقرأ الخيارات.</p>`;
+  if (item.role === 'warm' || n === 1)
+    return `<p class="rolen"><i>◦</i> نبدأ هادئين. هذا سؤال تمهيد.</p>`;
+  if (n === tot)
+    return `<p class="rolen"><i>✦</i> آخر أسئلة الجلسة.</p>`;
+  if (item.role === 'stretch' || (item.d && item.d >= 5))
+    return `<p class="rolen"><i>▲</i> هذا أصعب ممّا سبق — خُذ وقتك.</p>`;
+  return '';
+}
 function keyLink(skillId, label) {
   if (!skillId || !LESSONS.lessons[skillId]) return '';
   const seen = (S.seenLessons || []).includes(skillId);
@@ -1974,40 +2207,72 @@ function nextStep() {
     return { kind: 'key', skill: sk, why: 'مهارة جديدة — ابدأ بمفتاح حلّها' };
   return { kind: 'drill', skill: sk, why: g.why };
 }
+/* ══════════ البطاقة القائدة ══════════
+   أُفق يقود ولا يترك الطالب يتجوّل. فالبطاقة الكبرى هي قرار «الخيط» نفسه
+   لا خيارًا منافسًا له: مفتاحٌ يُقرأ، أو خطأٌ يُراجَع، أو نموذجٌ حان وقته،
+   أو تدريب. وما عداه همسٌ باهت تحتها.
+   وقاعدتها: فعلٌ واحد بارز في الشاشة، والباقي يخفت. */
+const LEAD_HEAD = {
+  key:    'خطوتك الآن',
+  review: 'ما ينتظرك',
+  exam:   'حان وقت القياس',
+  drill:  'جلسة اليوم'
+};
+const LEAD_BADGE = {
+  key:    'مفتاح الحلّ',
+  review: 'دفتر أخطائك',
+  exam:   'نموذج كامل',
+  drill:  null
+};
 function leadCard(again) {
   const g = S.suggestion || makeSuggestion();
-  const n = nextStep();
-  const isKey = n.kind === 'key' && !again;
-  return `<div class="lead ${isKey ? 'key' : 'drill'}"
-      data-act="${isKey ? 'openLesson' : (again ? 'again' : 'startSession')}"
-      ${isKey ? `data-arg="${n.skill}"` : ''}>
-    <div class="ld-h">${esc(TRACKS[S.track].journey)} · ${isKey ? 'خطوتك الآن' : 'جلسة اليوم'}</div>
-    <div class="ld-t">${esc(SKILLS[n.skill].name)}</div>
-    <div class="ld-w">${esc(isKey ? n.why : g.why)}</div>
+  const n = thread();
+  /* «أعد» بعد جلسةٍ أُنجزت تبقى تدريبًا مهما قال الخيط */
+  const k = again && n.k !== 'exam' ? 'drill' : n.k;
+  const act = k === 'drill' ? (again ? 'again' : 'startSession') : n.act;
+  const arg = k === 'drill' ? null : n.arg;
+  const go  = k === 'drill' ? null : n.go;
+  const attr = act ? `data-act="${act}"${arg ? ` data-arg="${esc(arg)}"` : ''}`
+                   : `data-go="${go}"`;
+  const title = k === 'drill' ? SKILLS[nextStep().skill].name : n.label;
+  const why   = k === 'drill' ? g.why : (n.why || g.why);
+  const badge = LEAD_BADGE[k];
+  return `<div class="lead ${k === 'drill' ? 'drill' : 'key'}" ${attr}>
+    <div class="ld-h">${esc(TRACKS[S.track].journey)} · ${esc(LEAD_HEAD[k] || 'خطوتك الآن')}</div>
+    <div class="ld-t">${esc(title)}</div>
+    <div class="ld-w">${esc(why)}</div>
     <div class="ld-f">
-      <span class="ld-b">${isKey ? 'مفتاح الحلّ' : `${ar(g.size)} سؤالًا`}</span>
-      ${isKey ? `<span class="ld-n">ثم ${ar(g.size)} سؤالًا</span>` : ''}
+      <span class="ld-b">${badge ? esc(badge) : `${ar(g.size)} سؤالًا`}</span>
+      ${badge ? `<span class="ld-n">ثم ${ar(g.size)} سؤالًا</span>` : ''}
       <span class="ld-a">›</span>
     </div>
-  </div>
-  <button class="detour" data-go="learn">أو تصفّح مفاتيح الحلّ</button>`;
+  </div>`;
 }
+/* الرئيسة: مركز ثقل واحد.
+   التحية سطر، والجولات سطر، والإحصاءات موضعها «التقدّم» لا هنا. */
 function greetCard() {
-  const st = statSummary();
-  const rows = [
-    ['جلسات', st.sessions],
-    ['مهارات بدأتَها', st.seen],
-    ['مهارات أتقنتَها', st.done]
-  ];
-  const pct = st.sk ? Math.round(100 * st.done / st.sk) : 0;
-  return `<div class="greet">
-    <div class="gl">${esc(greetLine())}</div>
-    ${(!S.day && !S.sessionCount) ? '' : `<div class="gstats">
-      ${rows.map(([n, v]) => `<div><b>${ar(v)}</b><span>${n}</span></div>`).join('')}
-    </div>
-    ${horizonBar(st.done, st.sk || 1, 'خريطة مهاراتك')}
-    <div class="gfoot">${ar(pct)}٪ من خريطة ${esc(TRACKS[S.track].name)} · اليوم ${ar(S.day + 1)}${
-      st.streak > 1 ? ` · ${ar(st.streak)} أيام متتابعة فيه` : ''}</div>`}
+  return `<p class="gline">${esc(greetLine())}</p>`;
+}
+/* سطر الجولات: ثلاث نقاط ونصّ واحد — لا بطاقة */
+function roundsLine() {
+  const rs = myRounds();
+  if (!rs.length || !S.name) return '';
+  const done = ((S.roundsDone || {})[S.day] || []).length;
+  const nx = nextRound();
+  const dots = rs.map((r, i) => {
+    const stt = roundState(i);
+    return `<i class="rdot ${stt}"></i>`;
+  }).join('');
+  const note = nx
+    ? (nx.st === 'late'
+        ? `كان موعد «${esc(roundKind(nx.r.kind).t)}» ${esc(fmtTime(nx.r.at))} — لا بأس`
+        : nx.st === 'now'
+          ? `حان وقت «${esc(roundKind(nx.r.kind).t)}»`
+          : `التالية ${esc(fmtTime(nx.r.at))}`)
+    : 'أتممتَ جولات اليوم';
+  return `<div class="rline" data-go="settings">
+    <span class="rdots">${dots}</span>
+    <span class="rtxt">${esc(done)}‏/‏${ar(rs.length)} · ${note}</span>
   </div>`;
 }
 
@@ -2095,7 +2360,7 @@ pick: () => `<div class="center">
     <p class="soft" style="margin-top:8px">أيّ اختبار تستعدّ له؟<br>تستطيع تغييره في أيّ وقت.</p>
   </div>
   <div class="tracks">
-    ${Object.values(TRACKS).map(t => {
+    ${Object.values(TRACKS).filter(t => isOpenTrack(t.id)).map(t => {
       const dd = trackDays(t.id), sk = trackStreak(t.id);
       const note = dd ? `اليوم ${ar(dd + 1)}${sk > 1 ? ` · ${ar(sk)} متتابعة` : ''}` : 'لم يبدأ بعد';
       return `<button class="tcard ${S.track === t.id ? 'sel' : ''} ${dd ? 'started' : ''}"
@@ -2529,7 +2794,7 @@ home: () => {
   const head = `<div class="top"><span class="brand" style="color:var(--glow)">${trackGlyph(S.track, 22)}
       <span class="eyebrow" style="margin:0">${esc(TRACKS[S.track].name)}</span></span>
     <span class="topr"><span class="faint num">اليوم ${ar(S.day + 1)}</span>${dayToggle()}</span></div>`
-    + auditBar() + greetCard() + roundsCard() + oneCard();
+    + auditBar() + greetCard();
   if (doneToday) return head + `
   <div class="spacer" style="flex:.4;min-height:0"></div>
   <div class="glass">
@@ -2544,7 +2809,9 @@ home: () => {
     ${gradeNote()}
   </div>
   ${leadCard(true)}
+  ${roundsLine()}
   ${thenWhisper()}
+  ${oneCard()}
   <div class="spacer" style="flex:.85;min-height:16px"></div>
   ${mySkills().some(s => (cardsBySkill[s.id] || []).length)
     ? `<button class="btn ghost" data-act="startCards">بطاقات المصطلحات ›</button>` : ''}
@@ -2561,8 +2828,9 @@ home: () => {
     <p style="color:var(--glow);font-size:14.5px">${esc(g.gain)}</p>
   </div>
   ${leadCard()}
+  ${roundsLine()}
   ${thenWhisper()}
-  <p class="motto">${esc(TRACKS[S.track].motto)}</p>
+  ${oneCard()}
   <div class="spacer" style="flex:.85;min-height:16px"></div>
   ${mySkills().some(s => (cardsBySkill[s.id] || []).length)
     ? `<button class="btn ghost" data-act="startCards">بطاقات المصطلحات ›</button>` : ''}
@@ -2651,9 +2919,11 @@ question: () => {
     `<span class="dot ${i < s.idx ? 'on' : i === s.idx ? 'now' : ''}"></span>`).join('')}</div>
   ${S.pace ? `<div class="pacebar"><i id="pacefill"></i></div>` : ''}
   ${sessionRail()}
-  <div class="skilltag">${esc(SKILLS[q.skill].name)}</div>
+  <div class="skilltag">${esc(SKILLS[q.skill].name)}${
+    ''}</div>
+  ${S.track === 'qudurat' ? `<div class="parttag">القسم ${esc(PART_NAME[s.part || partOf(q.skill)])}</div>` : ''}
   ${pre ? `<div class="diag" style="margin-top:14px">${esc(q.steps[0])} — تذكير سريع قبل السؤال</div>` : ''}
-  ${item.role === 'review' ? `<p class="faint" style="margin-top:12px">رأيتَ هذا من قبل — حاول أن تتذكّر قبل أن تقرأ الخيارات.</p>` : ''}
+  ${roleNote(item, s)}
   ${item.role === 'duel' ? `<div class="duelpre"><span class="dmark">✦</span>هذا السؤال هزمك مرّتين.<span>مضى عليه أسبوعان. جرّبه الآن.</span></div>` : ''}
   ${q.passage && PASSAGES[q.passage] ? (() => {
       const ps = PASSAGES[q.passage];
@@ -3035,7 +3305,24 @@ settings: () => {
   </div>
   <div class="stabs"><button class="stb ${S.setTab===0?'on':''}" data-act="setTab" data-arg="0">الدراسة</button><button class="stb ${S.setTab===1?'on':''}" data-act="setTab" data-arg="1">المظهر</button><button class="stb ${S.setTab===2?'on':''}" data-act="setTab" data-arg="2">حسابي</button><button class="stb ${S.setTab===3?'on':''}" data-act="setTab" data-arg="3">متقدّم</button><button class="stb ${S.setTab===5?'on':''}" data-act="setTab" data-arg="5">التذكير</button><button class="stb ${S.setTab===6?'on':''}" data-act="setTab" data-arg="6">الجهاز</button><button class="stb ${S.setTab===4?'on':''}" data-act="setTab" data-arg="4">عن أُفق</button></div>
 ${S.setTab===0 ? `
-  <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">جولات اليوم</span></div>
+  ${S.track === 'qudurat' ? `
+  <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">تركيز التدريب</span></div>
+    <p class="note" style="margin-bottom:12px">القدرات قسمان: لفظيّ وكمّيّ، ونمط التفكير فيهما مختلف.
+      اختر قسمًا والزَمه أسبوعين أو ثلاثة، ثمّ بدّل. والتنقّل اليوميّ بينهما يُشتّت ولا يُفيد.</p>
+    <div class="seg3">
+      ${[['all','الاثنان'],['verbal','لفظيّ'],['quant','كمّيّ']].map(([k, n]) =>
+        `<button class="sg3 ${(S.focus || 'all') === k ? 'on' : ''}"
+          data-act="setFocus" data-arg="${k}">${n}</button>`).join('')}
+    </div>
+    ${phaseNow() ? `<div class="kv" style="margin-top:12px"><span>${esc(phaseNow().name)}</span>
+      <span class="v">${phaseLeft() != null ? `يبقى ${ar(phaseLeft())} يومًا` : 'حتى الاختبار'}</span></div>` : ''}
+    <p class="note" style="padding-top:10px">${
+      (S.focus || 'all') === 'all'
+        ? `التطبيق ينتقل بين القسمين بحسب حاجتك — مناسبٌ قرب الاختبار.`
+        : `تدريبك الآن في القسم ${esc(PART_NAME[S.focus])} وحده.
+           ${ar(mySkills().filter(x => partOf(x.id) === S.focus && hasContent(x.id)).length)} مهارات فيه.`}</p>
+  </div>` : ''}
+  <div class="group"><div class="group-h"><span class="t">جولات اليوم</span></div>
     <p class="note" style="margin-bottom:12px">جولتان قصيرتان تُثبّتان أكثر من جلسة واحدة بالمدّة نفسها.
       وهذا ليس رأيًا — هو أثر التوزيع، وأثبتُ ما في علم التعلّم.</p>
     <div class="thgrid" style="grid-template-columns:repeat(3,1fr)">
@@ -3053,8 +3340,13 @@ ${S.setTab===0 ? `
     </div>
     <div class="card" style="margin-top:10px">
       ${myRounds(S.schedTab || 'week').map((r, i) => `<div class="kv">
-        <span>${esc(ROUND_KINDS[r.kind].t)} <em class="faint" style="font-style:normal">${ar(r.mins)} د</em></span>
+        <span>${esc(roundKind(r.kind).t)} <em class="faint" style="font-style:normal">${ar(r.mins)} د</em></span>
         <input class="tin" type="time" value="${r.at}" data-round="${i}" data-key="${S.schedTab || 'week'}"></div>`).join('')}
+      <div class="rdadj">
+        <button class="rdb" data-act="dropRound" ${myRounds(S.schedTab || 'week').length <= 1 ? 'disabled' : ''}>− جولة</button>
+        <span class="rdn num">${ar(myRounds(S.schedTab || 'week').length)} من ${ar(MAX_ROUNDS)}</span>
+        <button class="rdb" data-act="addRound" ${myRounds(S.schedTab || 'week').length >= MAX_ROUNDS ? 'disabled' : ''}>+ جولة</button>
+      </div>
       <p class="note" style="padding-top:10px">التقديم مسموح دائمًا ولا يُحسب تأخيرًا.
         وإن فاتت جولة، يذكّرك التطبيق مرّة واحدة بلا لوم.
         وتجنّبتُ ما بين المغرب والعشاء في المواعيد الافتراضية.</p>
@@ -3113,11 +3405,12 @@ ${S.setTab===5 ? `
       : `<button class="btn ghost" style="text-align:right;width:auto;padding-inline-start:0"
           data-act="openPause">إيقاف مهارة ›</button>`}
   </div>
-  <div class="dev"><h3>محاكاة (للعرض فقط)</h3>
+  ${S.devUnlocked ? `<div class="dev"><h3>محاكاة (للعرض فقط)</h3>
     <div class="seg">
       <button data-act="advance" data-arg="1">+ يوم</button>
       <button data-act="advance" data-arg="3">+ ٣ أيام</button>
       <button data-act="advance" data-arg="9">+ ٩ أيام</button>
+    </div></div>` : ''}
 ` : ''}
 ${S.setTab===1 ? `
   <div class="group"><div class="group-h"><span class="t">المظهر</span></div>
@@ -3125,7 +3418,15 @@ ${S.setTab===1 ? `
   </div>
 ` : ''}
 ${S.setTab===6 ? `
-  <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">التطبيق على جهازك</span></div>
+  <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">النسخة</span></div>
+    <div class="card">
+      <div class="kv"><span>نسخة أُفق</span><span class="v num">${APP_VERSION.split('.').map(x=>ar(x)).join('٫')}</span></div>
+      <div class="kv"><span>تمّ التحديث بتاريخ</span><span class="v">${esc(APP_DATE)}</span></div>
+      <div class="kv" style="border:0"><span>الحالة</span><span class="v">محدَّث</span></div>
+      <button class="btn ghost" style="margin-top:10px" data-act="checkUpdate">ابحث عن تحديث</button>
+    </div>
+  </div>
+  <div class="group"><div class="group-h"><span class="t">التطبيق على جهازك</span></div>
     ${installCard()}
     ${installDiag()}
   </div>
@@ -3176,7 +3477,8 @@ ${S.setTab===4 ? `
   <div class="abt">
     <div class="abmark">${markSVG(48)}</div>
     <h2 class="abn">أُفق</h2>
-    <p class="abv">النسخة ١٫٠ · ${ar(Q.length)} سؤالًا · ${ar(mySkills().length)} مهارة في مسارك</p>
+    <p class="abv">النسخة ${APP_VERSION.split('.').map(x=>ar(x)).join('٫')} · ${ar(mySkills().length)} مهارة في مسارك</p>
+    <p class="abv" style="margin-top:5px">آخر تحديث ${esc(APP_DATE)}</p>
     <p class="abd">تدريبٌ يوميّ قصير على اختبارات القدرات والتحصيلي وستيب.
       بُني على فكرة واحدة: <b>الاستمرار قبل الكمّية</b> — عشر دقائق كلّ يوم
       تفعل ما لا تفعله عشر ساعات في يوم واحد.</p>
@@ -3199,6 +3501,13 @@ ${S.setTab===4 ? `
       لاختبارات هيئة تقويم التعليم والتدريب. وما استُعين به من مراجع فللمعايرة
       — للأسلوب والصعوبة والتوزيع — لا للنقل.</p></div>
   </div>
+  <div class="group"><div class="group-h"><span class="t">شروط الاستعمال</span></div>
+    <div class="card"><p class="note" style="padding:0">
+      أُفق للاستعمال الشخصيّ للطالب وحده. لا يجوز نسخ أسئلته ولا مفاتيح الحلّ
+      ولا إعادة نشرها ولا استعمالها في منتج آخر — كلًّا أو جزءًا — بلا إذن خطّيّ مسبق.
+      وأيّ تدريس جماعيّ أو تجاريّ يحتاج ترخيصًا.
+    </p></div>
+  </div>
   <div class="credit">
     <div class="crm">© ٢٠٢٦ عرفات الراجحي</div>
     <div class="crs">Arafat AlRajhi · جميع الحقوق محفوظة</div>
@@ -3206,6 +3515,18 @@ ${S.setTab===4 ? `
   </div>
 ` : ''}
 ${S.setTab===3 ? `
+  <div class="group"><div class="group-h"><span class="t">نسخة احتياطية</span></div>
+    <div class="card">
+      <p class="note" style="padding:0 0 12px">تقدّمك محفوظ في متصفّح هذا الجهاز وحده.
+        مسحُ بيانات المتصفّح يمحوه. احفظ نسخة كل أسبوع، أو قبل تغيير الجهاز.</p>
+      <div class="kv"><span>ما لديك الآن</span>
+        <span class="v">${ar(S.sessionCount || 0)} جلسة · ${ar((S.review || []).length)} خطأ · ${ar((S.seenLessons || []).length)} مفتاحًا</span></div>
+      <div class="kv"><span>آخر نسخة حفظتَها</span>
+        <span class="v">${S.lastBackup ? esc(S.lastBackup) : 'لم تحفظ بعد'}</span></div>
+      <button class="btn" style="margin-top:12px" data-act="exportState">احفظ نسخة الآن</button>
+      <button class="btn ghost" data-act="importState">استعد من نسخة</button>
+    </div>
+  </div>
   <div class="group"><div class="group-h"><span class="t">رحلة التفكير</span></div>
     <div class="card">
       <div class="kv" style="border:0;padding:0 0 10px">
@@ -3528,6 +3849,85 @@ const ACTIONS = {
   setAnchor(a) { S.anchor = a; render(); },
   dismissIOS() { S.iosHinted = true; haptic(9); render(); },
   prTab(i) { S.prTab = +i; haptic(7); render(); },
+  clearRestored() { S.restored = null; haptic(9); saveState(); render(); },
+  dismissNudge() { S.nudgeSeen = S.day; haptic(7); saveState(); render(); },
+  takePhase(f) { S.phaseSeen = null; ACTIONS.setFocus(f); },
+  dismissPhase(n) { S.phaseSeen = n; haptic(7); saveState(); render(); },
+  setFocus(f) {
+    if (!['all','verbal','quant'].includes(f)) return;
+    S.focus = f; S.suggestion = null; S.forceSkill = null;
+    haptic(14); saveState(); render();
+  },
+  addRound() {
+    const k = S.schedTab || 'week';
+    const rs = myRounds(k);
+    if (rs.length >= MAX_ROUNDS) return;
+    const t = ROUND_TEMPLATE[Math.min(rs.length, ROUND_TEMPLATE.length - 1)];
+    rs.push(Object.assign({}, t));
+    S.preset = 'custom'; haptic(14); saveState(); render();
+  },
+  dropRound() {
+    const k = S.schedTab || 'week';
+    const rs = myRounds(k);
+    if (rs.length <= 1) return;
+    rs.pop();
+    S.preset = 'custom'; haptic(9); saveState(); render();
+  },
+  exportState() {
+    try {
+      const o = {}; Object.keys(S).forEach(k => { if (!NOSAVE.includes(k)) o[k] = S[k]; });
+      o._v = 1; o._at = new Date().toISOString().slice(0, 10); o._app = 'ufuq';
+      const blob = new Blob([JSON.stringify(o)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ufuq-' + (S.name || 'backup') + '-يوم' + (S.day + 1) + '-' + o._at + '.json';
+      a.click(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+      S.lastBackup = o._at; S.lastBackupDay = S.day; haptic(16); saveState(); render();
+    } catch (e) { alert('تعذّر حفظ النسخة.'); }
+  },
+  importState() {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'application/json,.json';
+    inp.onchange = () => {
+      const f = inp.files && inp.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => {
+        try {
+          const o = JSON.parse(r.result);
+          if (!o || o._app !== 'ufuq') { alert('هذا ليس ملفّ نسخة من أُفق.'); return; }
+          const base = freshState();
+          Object.keys(o).forEach(k => { if (k[0] !== '_') base[k] = o[k]; });
+          healState(base); ensureSkills.call(null);
+          base.session = null; base.exam = null; base.screen = base.name ? 'home' : 'name';
+          S = base; ensureSkills(); applyTheme(); saveState(); haptic(20);
+          const ph = phaseNow();
+          S.restored = {
+            name: S.name || '', day: S.day + 1,
+            phase: ph ? ph.name : (TRACKS[S.track] ? TRACKS[S.track].name : ''),
+            sessions: S.sessionCount || 0, streak: S.streak || 0,
+            skills: mySkills().filter(x => (S.skills[x.id].days || []).length).length,
+            errors: (S.review || []).length, at: o._at || ''
+          };
+          go('home');
+        } catch (e) { alert('تعذّرت قراءة الملفّ.'); }
+      };
+      r.readAsText(f);
+    };
+    inp.click();
+  },
+  checkUpdate() {
+    haptic(10);
+    if (!('serviceWorker' in navigator)) { alert('التحديث يعمل على الموقع لا على ملفّ محلّيّ.'); return; }
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (!reg) { alert('لم يُسجَّل عامل الخدمة بعد. أعد فتح التطبيق وأنت متّصل.'); return; }
+      reg.update().then(() => {
+        setTimeout(() => {
+          if (!document.getElementById('updbar')) alert('أنت على أحدث نسخة.');
+        }, 1200);
+      }).catch(() => alert('تعذّر التحقّق. تأكّد من الاتصال.'));
+    });
+  },
   resetJourney() {
     S.seenLessons = [];
     S.lessonFor = null; S.exPick = null; S.exPickFor = null;
@@ -3658,7 +4058,7 @@ function buildSessionFor(skillId) {
 
 /* ══════════ الحفظ: بدونه يبدأ الطالب من الصفر كلّ مرّة ══════════ */
 const SAVE_KEY = 'ufuq.v1';
-const NOSAVE = ['session','exam','sheet','devOpen','pendingRecord','breatheTimer','stopOffer','_dir','tip','suggestion'];
+const NOSAVE = ['session','exam','sheet','devOpen','pendingRecord','breatheTimer','stopOffer','_dir','tip','suggestion','restored','nudgeSeen'];
 function saveState() {
   try {
     const o = {};
@@ -3676,6 +4076,12 @@ function daysBetween(a, b) {
    إن وجدنا ذلك فهي حالة أفسدتها لوحة المعاينة — نعيدها إلى الصفر. */
 function healState(b) {
   try {
+    /* من كان على مسارٍ أُجّل يُنقَل إلى القدرات، ويبقى تقدّمه محفوظًا كما هو */
+    if (b && b.track && !isOpenTrack(b.track)) {
+      b.trackParked = b.track;
+      b.track = 'qudurat';
+      b.suggestion = null; b.forceSkill = null; b.session = null;
+    }
     const total = Object.keys(LESSONS.lessons).length;
     const seen = (b.seenLessons || []).length;
     if (total && seen >= total && (b.sessionCount || 0) < Math.max(8, total / 3)) {
@@ -4233,9 +4639,56 @@ function iosHint() {
 }
 
 /* عامل الخدمة: يعمل فقط عند التقديم من خادم — ويُتجاهَل بأمان من ملفّ محلّيّ */
+/* ══════ كشف التحديث ══════
+   حين يجد عامل الخدمة نسخةً جديدة ننبّه الطالب بشريط هادئ لا يقطع عمله.
+   ولا يُطبَّق التحديث إلا بضغطه — فلا تُفقَد جلسةٌ جارية. */
+let SW_WAITING = null;
+function showUpdateBar() {
+  if (document.getElementById('updbar')) return;
+  const d = document.createElement('div');
+  d.id = 'updbar';
+  d.innerHTML = '<span class="ub-t">تتوفّر نسخة جديدة من أُفق</span>' +
+    '<button class="ub-b" id="ubgo">تحديث</button>' +
+    '<button class="ub-x" id="ubno" aria-label="لاحقًا">✕</button>';
+  document.body.appendChild(d);
+  document.getElementById('ubgo').onclick = () => {
+    /* الحفظ أولًا دائمًا — لا يُحدَّث التطبيق وفي الذاكرة عملٌ لم يُكتب */
+    try { saveState(); } catch (e) {}
+    if (S.session && !S.session.done) {
+      const bar = document.getElementById('updbar');
+      if (bar && !bar.dataset.warned) {
+        bar.dataset.warned = '1';
+        bar.querySelector('.ub-t').textContent =
+          'أنت في جلسة. تقدّمك محفوظ — اضغط مرّة أخرى للتحديث.';
+        bar.querySelector('.ub-b').textContent = 'حدّث الآن';
+        return;
+      }
+    }
+    try { if (SW_WAITING) SW_WAITING.postMessage('skipWaiting'); } catch (e) {}
+    setTimeout(() => location.reload(), 400);
+  };
+  document.getElementById('ubno').onclick = () => d.remove();
+}
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (window.__reloading) return; window.__reloading = true; location.reload();
+  });
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      INSTALL_DIAG.sw = true;
+      if (reg.waiting) { SW_WAITING = reg.waiting; showUpdateBar(); }
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing; if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            SW_WAITING = nw; showUpdateBar();
+          }
+        });
+      });
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) { try { reg.update(); } catch (e) {} }
+      });
+    }).catch(() => { INSTALL_DIAG.sw = false; });
   });
 }
 
