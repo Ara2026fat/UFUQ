@@ -139,9 +139,9 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '5.3.0';
+const APP_VERSION = '7.2.0';
 const APP_DATE = '٩ سبتمبر ٢٠٢٦';
-const APP_BUILD = 78;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_BUILD = 97;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -187,7 +187,7 @@ function freshState() {
     devUnlocked: false,
     preset: 'steady', sched: null, roundsDone: {}, showPct: false,
     prTab: 0, exPick: null, exPickFor: null, vizMode: 'rings', lastBackup: null,
-    lastActiveSkill: null, sameSkillRun: 0, phaseSeen: null,
+    lastActiveSkill: null, sameSkillRun: 0, phaseSeen: null, course: null, goal: null, courses: [],
     lastBackupDay: null, restored: null, nudgeSeen: null,
     focus: 'all',
     forceSkill: null,
@@ -198,7 +198,7 @@ function freshState() {
 
 /* ---------- فصل المسارات: دفتر مستقلّ لكل اختبار ---------- */
 const TRACK_FIELDS = ['day','streak','lastActive','sessionCount','asked','review','history',
-  'notes','noteSeen','qMiss','duel','preset','sched','roundsDone','lastExamDay','examLog','vizMode','lastBackup','lastBackupDay','focus','phaseSeen',
+  'notes','noteSeen','qMiss','duel','preset','sched','roundsDone','lastExamDay','examLog','vizMode','lastBackup','lastBackupDay','focus','phaseSeen','course','goal','courses',
   'seenLessons','activeStage','targetDiff','size','sizeManual','audio','examDays','corrected','tagCount','todayCount','lastWeak',
   'diag','lastSummary','session','anchor','reminder','logOpen','suggestion','introIdx','whyCount',
   'cardState','cardSess','lastCards','paceHist'];
@@ -477,7 +477,77 @@ function masteredSkills() {
 }
 
 /* ---------- session generation ---------- */
+/* ══════ تشكيل محطّات الدورة ══════
+   كل محطّة لها شكلها. بلا هذا تصير المحطّات السبع جلسةً واحدة بأسماء مختلفة. */
+function stationSession(kind) {
+  const size = S.size, used = new Set(), items = [];
+  const c = S.course, sk = c ? (c.skills || []) : [];
+  const add = (q, role) => { if (q && !used.has(q.id)) { used.add(q.id);
+    items.push({ qid: q.id, role, done: false }); } };
+  const fill = (id, n, d) => { for (let i = 0; i < n; i++) add(pool(id, d, used), 'active'); };
+  const dueNow = (ids) => S.review
+    .filter(r => { const q = byQ(r.qid); return r.due <= S.day && q && (!ids || ids.includes(q.skill)); })
+    .sort((a, b) => a.due - b.due);
+  const myWrong = (ids) => {
+    const seen = new Set();
+    return (c && c.log || []).reduce((a, e) => a.concat(e.wrong || []), [])
+      .filter(id => { const q = byQ(id); if (!q) return false;
+        if (ids && !ids.includes(q.skill)) return false;
+        if (seen.has(id)) return false; seen.add(id); return true; });
+  };
+  const act = S.forceSkill || (sk[0] || chooseActive().id);
+
+  if (kind === 'intro') {
+    /* التعارف: سؤالان من كل مهارة بصعوبتين — ليعرف أُفق نقطة البداية */
+    sk.forEach(id => { fill(id, 2, 2); fill(id, 2, 3); fill(id, 2, 4); });
+    while (items.length < 12 && sk.length) fill(sk[items.length % sk.length], 1, 3);
+  } else if (kind === 'drill') {
+    /* التدريب: المهارة وحدها بصعوبة متدرّجة بعد قراءة مفتاحها */
+    fill(act, Math.round(size * 0.3), 2);
+    fill(act, Math.round(size * 0.45), 3);
+    fill(act, size - items.length, 4);
+  } else if (kind === 'firm') {
+    /* التثبيت: أصعب، ومعه أخطاء هذه المهارة نفسها */
+    myWrong([act]).slice(0, Math.round(size * 0.3))
+      .forEach(id => add(byQ(id), 'review'));
+    fill(act, Math.round(size * 0.4), 4);
+    fill(act, size - items.length, 5);
+  } else if (kind === 'link') {
+    /* الوصل: أخطاء المهارتين الأوليين مشتبكة حتى لا تنفصلا في ذهنه */
+    const two = sk.slice(0, 2);
+    myWrong(two).slice(0, Math.round(size * 0.5)).forEach(id => add(byQ(id), 'review'));
+    dueNow(two).slice(0, 4).forEach(r => add(byQ(r.qid), 'review'));
+    let i = 0; while (items.length < size && two.length) { fill(two[i++ % two.length], 1, 4); }
+  } else if (kind === 'review') {
+    /* المراجعة الكبرى: مهارات الدورة كلّها متناوبة */
+    let i = 0;
+    while (items.length < size && sk.length) {
+      const id = sk[i++ % sk.length];
+      fill(id, 1, 3 + (i % 3));
+    }
+  } else if (kind === 'notes') {
+    /* دفتر الأخطاء: ما أخطأ فيه في الدورة كلّها */
+    myWrong(sk).slice(0, size).forEach(id => add(byQ(id), 'review'));
+    dueNow(sk).slice(0, size - items.length).forEach(r => add(byQ(r.qid), 'review'));
+    let i = 0; while (items.length < Math.min(size, 20) && sk.length) fill(sk[i++ % sk.length], 1, 4);
+  } else if (kind === 'revive') {
+    /* العودة بعد غياب: إنعاشٌ سهل من مهارات الدورة */
+    let i = 0;
+    while (items.length < 12 && sk.length) { fill(sk[i++ % sk.length], 1, 2); }
+  } else return null;
+
+  if (items.length < 6) return null;
+  return { items, idx: 0, right: 0, wrong: 0, rStreak: 0, wStreak: 0,
+    skill: kind === 'drill' || kind === 'firm' ? act : null,
+    returning: null, resume: false, station: kind, size: items.length };
+}
+
 function buildSession() {
+  /* محطّة دورةٍ؟ فلها شكلها الخاصّ */
+  if (S.stationKind) {
+    const ss = stationSession(S.stationKind);
+    if (ss) { S.forceSkill = null; return ss; }
+  }
   const size = S.size;
   const gap = S.lastActive === null ? 0 : S.day - S.lastActive;
   const resume = gap > 7;
@@ -940,6 +1010,12 @@ function finishSession(sess) {
     changed, wrongQ: sess.items.filter(i => i.wrong).map(i => i.qid), resume: sess.resume,
     duelWon, stopped: !!sess.stopped
   };
+  /* إن كانت الجلسة محطّةَ دورةٍ فُتحت بها، سجّلها وافتح التي بعدها */
+  if (courseActive() && S.stationKind) {
+    courseAdvance(sess.right, sess.items.length,
+      sess.items.filter(i => i.wrong).map(i => i.qid));
+    S.stationKind = null;
+  }
   S.session = null;
 }
 
@@ -2084,7 +2160,280 @@ function pathDone() {
    كل شاشة تسأله بدل أن تجتهد بنفسها — فلا تتناقض النصائح ولا تتكرّر.
    الترتيب مقصود: الخطأ الذي لم يُشرح أولًا، لأن الخطأ الذي لم يُشرح يتكرّر.
    ═══════════════════════════════════════════════════════════════════════ */
+
+/* ══════════════ الدورة التدريبية ══════════════
+   أسبوعان · أربع عشرة محطّة · ثلاث مهارات لفظيًّا وأربع كمّيًّا.
+   مقفلة في الترتيب: لا تُفتَح محطّة حتى تُنجَز التي قبلها،
+   لأن الترتيب هو قيمة الدورة، ومن يقفز يأخذ الأسئلة ويترك البناء.
+   مفتوحة في الوقت: يخرج متى شاء فتُجمَّد ولا تُلغى، ويعود فيكمل. */
+
+
+/* ══════════════ الرحلة ══════════════
+   الدورة وحدها تُشعِر الطالب أنه أنهى حلقة. والرحلة تُشعِره أنه قطع مرحلةً
+   من طريقٍ له نهاية معلومة. فالمهارات تُقسَّم على دورات، وعددها معلوم من أول يوم. */
+function journeyPlan() {
+  if (S.track === 'qudurat') {
+    const v = mySkills().filter(x => partOf(x.id) === 'verbal' && hasContent(x.id)).length;
+    const q = mySkills().filter(x => partOf(x.id) === 'quant'  && hasContent(x.id)).length;
+    const legs = [];
+    for (let i = 0; i < Math.ceil(v / 3); i++) legs.push({ part: 'verbal', name: 'لفظيّ ' + ar(i + 1) });
+    for (let i = 0; i < Math.ceil(q / 4); i++) legs.push({ part: 'quant',  name: 'كمّيّ ' + ar(i + 1) });
+    legs.push({ part: 'mix', name: 'المراجعة' });
+    return legs;
+  }
+  const n = mySkills().filter(x => hasContent(x.id)).length;
+  const legs = [];
+  for (let i = 0; i < Math.ceil(n / 3); i++) legs.push({ part: 'other', name: 'الدورة ' + ar(i + 1) });
+  legs.push({ part: 'mix', name: 'المراجعة' });
+  return legs;
+}
+function journeyAt() { return (S.courses || []).length; }
+
+/* شريط الرحلة — نقاطٌ على طريق، لا أرقام */
+function journeyStrip(compact) {
+  const legs = journeyPlan(), at = journeyAt();
+  if (legs.length < 2) return '';
+  const inC = !!courseActive();
+  return `<div class="jstrip${compact ? ' mini' : ''}">
+    ${compact ? '' : `<div class="jhead">
+      <span class="jt">رحلتك</span>
+      <span class="jn">${ar(Math.min(at + (inC ? 1 : 0), legs.length))} من ${ar(legs.length)}</span>
+    </div>`}
+    <div class="jline">
+      ${legs.map((L, i) => {
+        const st = i < at ? 'done' : (i === at && inC ? 'now' : 'next');
+        return `<div class="jdot ${st} ${L.part}">
+          <i></i><span>${esc(L.name)}</span>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+/* ══════════════ الهدف ══════════════ */
+const GOALS = [
+  { v: 70, t: 'جيّد', w: 'يفتح لك أبوابًا كثيرة' },
+  { v: 80, t: 'متميّز', w: 'يضعك في المقدّمة' },
+  { v: 85, t: 'عالٍ', w: 'يبلغ بك أصعب التخصّصات' },
+  { v: 90, t: 'ممتاز', w: 'قليلٌ من يبلغه' }
+];
+function myGoal() { return S.goal || 85; }
+function goalGap() {
+  const last = (S.courses || []).slice(-1)[0];
+  const now = last ? last.overall : null;
+  if (now == null) return null;
+  return { now, goal: myGoal(), gap: Math.max(0, myGoal() - now) };
+}
+
+/* الحلقة المزدوجة: الهدف خارجًا وأنتَ داخله */
+function goalRing(now, goal, size) {
+  const R = 52, C = 2 * Math.PI * R, sz = size || 150;
+  const pn = Math.max(0, Math.min(100, now)) / 100;
+  const pg = Math.max(0, Math.min(100, goal)) / 100;
+  const band = now >= goal ? 'hit' : now >= goal - 8 ? 'near' : 'far';
+  return `<div class="gring ${band}" style="width:${sz}px;height:${sz}px">
+    <svg viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="${R}" class="gbg"/>
+      <circle cx="60" cy="60" r="${R}" class="ggoal"
+        stroke-dasharray="${(pg * C).toFixed(1)} ${C.toFixed(1)}"/>
+      <circle cx="60" cy="60" r="${R}" class="gnow"
+        stroke-dasharray="${(pn * C).toFixed(1)} ${C.toFixed(1)}"/>
+    </svg>
+    <div class="gmid">
+      <div class="gv">${ar(now)}<em>٪</em></div>
+      <div class="gg">الهدف ${ar(goal)}</div>
+    </div>
+  </div>`;
+}
+
+/* مشهد المسافة — درجاتٌ تُصعَد لا رقمٌ يُقرأ */
+function gapScene(now, goal) {
+  const gap = Math.max(0, goal - now);
+  const steps = Math.max(1, Math.min(6, Math.ceil(gap / 2)));
+  const done = gap === 0;
+  return `<div class="gap ${done ? 'done' : ''}">
+    <div class="gsteps">
+      ${Array.from({ length: 6 }, (_, i) =>
+        `<i class="${i < (6 - steps) || done ? 'on' : ''}" style="height:${28 + i * 11}px"></i>`).join('')}
+    </div>
+    <div class="gtext">
+      ${done
+        ? '<b>بلغتَ هدفك</b><span>ارفعه إن شئت، أو ثبّت ما وصلتَ إليه.</span>'
+        : `<b>تفصلك ${ar(gap)} ${gap === 1 ? 'نقطة' : gap === 2 ? 'نقطتان' : 'نقاط'}</b>
+           <span>عن هدفك. وكل دورةٍ تقرّبك خطوة.</span>`}
+    </div>
+  </div>`;
+}
+
+const COURSE_LEN = 14;
+const COURSE_SKILLS = { verbal: 3, quant: 4, other: 3 };
+
+/* بناء المحطّات: لكل مهارة ثلاث محطّات، وبينها وصلٌ ومراجعة وقياس */
+function courseMap(skills) {
+  const m = [];
+  m.push({ k: 'intro', label: 'التعارف', why: 'أسئلة قصيرة تعرّف أُفق بنقطة بدايتك' });
+  skills.forEach((sk, i) => {
+    m.push({ k: 'key',   skill: sk, label: 'المفتاح',  why: 'اقرأ طريقة الحلّ قبل أن تتدرّب عليها' });
+    m.push({ k: 'drill', skill: sk, label: 'التدريب',  why: 'أسئلة على المهارة بعد أن عرفتَ مفتاحها' });
+    m.push({ k: 'firm',  skill: sk, label: 'التثبيت',  why: 'أسئلة أصعب، وأخطاؤك في هذه المهارة' });
+    if (i === 1) m.push({ k: 'link', label: 'محطّة وصل', why: 'أخطاء المهارتين معًا حتى لا تنفصلا في ذهنك' });
+  });
+  m.push({ k: 'review', label: 'المراجعة الكبرى', why: 'مهارات الدورة مشتبكة في جلسة واحدة' });
+  m.push({ k: 'notes',  label: 'دفتر أخطائك',    why: 'كل ما أخطأتَ فيه في هذه الدورة' });
+  m.push({ k: 'test',   label: 'القياس',          why: 'نموذج مصغّر بمؤقّت — ليقول لك أين صرت' });
+  return m.slice(0, COURSE_LEN);
+}
+
+function courseActive() {
+  const c = S.course;
+  return c && !c.finished ? c : null;
+}
+function courseStation(n) {
+  const c = S.course; if (!c) return null;
+  return (c.map || [])[n == null ? c.at : n] || null;
+}
+/* المحطّة متاحة إن كانت الحالية أو منجَزة — وما بعدها مقفل */
+function stationState(i) {
+  const c = S.course; if (!c) return 'lock';
+  if (i < c.at) return 'done';
+  if (i === c.at) return 'now';
+  return 'lock';
+}
+/* غيابٌ طويل يستدعي محطّة عودة قبل الإكمال */
+function courseStale() {
+  const c = courseActive(); if (!c) return false;
+  return c.lastDay != null && (S.day - c.lastDay) >= 5 && !c.revived;
+}
+
+function startCourse(part) {
+  const p = part || (S.track === 'qudurat' ? (S.focus === 'quant' ? 'quant' : 'verbal') : 'other');
+  const n = COURSE_SKILLS[p] || 3;
+  /* نختار المهارات الأضعف التي لها محتوى — فالدورة تُبنى على حاجته لا على الترتيب */
+  const pool = mySkills().filter(x => hasContent(x.id) &&
+    (S.track !== 'qudurat' || partOf(x.id) === p));
+  const picked = pool
+    .map(x => ({ id: x.id, m: mastery(x.id), seen: (S.skills[x.id].days || []).length }))
+    .sort((a, b) => (a.m - b.m) || (a.seen - b.seen))
+    .slice(0, n).map(x => x.id);
+  if (!picked.length) return false;
+  S.course = {
+    part: p, skills: picked, map: courseMap(picked),
+    at: 0, startDay: S.day, lastDay: S.day, revived: false,
+    log: [], finished: false, round: ((S.course && S.course.round) || 0) + 1
+  };
+  S.suggestion = null; S.session = null;
+  saveState();
+  return true;
+}
+
+/* تسجيل نتيجة محطّة ثمّ فتح التي بعدها */
+function courseAdvance(right, total, wrongIds) {
+  const c = courseActive(); if (!c) return;
+  const st = courseStation();
+  c.log.push({ at: c.at, k: st ? st.k : '', skill: st ? st.skill : null,
+    right: right || 0, total: total || 0, wrong: (wrongIds || []).slice(0, 40), day: S.day });
+  c.lastDay = S.day; c.revived = false;
+  c.at += 1;
+  if (c.at >= (c.map || []).length) {
+    c.finished = true; c.endDay = S.day;
+    /* تُقيَّد الدورة في سجلّ الرحلة، فيُقارَن بها ما بعدها */
+    const R = courseReport();
+    if (R) {
+      S.courses = S.courses || [];
+      S.courses.push({ round: c.round || 1, part: c.part, day: S.day,
+        overall: R.overall, skills: R.rows.map(r => ({ id: r.id, acc: r.acc })) });
+    }
+  }
+  saveState();
+}
+
+/* التقرير: قوّة وضعف وأفكار تُعاد */
+function courseReport() {
+  const c = S.course; if (!c) return null;
+  const per = {};
+  (c.log || []).forEach(e => {
+    if (!e.skill) return;
+    const p = per[e.skill] || (per[e.skill] = { right: 0, total: 0, wrong: [] });
+    p.right += e.right; p.total += e.total; p.wrong = p.wrong.concat(e.wrong || []);
+  });
+  /* محطّات بلا مهارة (الوصل والمراجعة والقياس) تُوزَّع على مهارات الدورة */
+  (c.log || []).filter(e => !e.skill).forEach(e => {
+    (e.wrong || []).forEach(id => { const q = byQ(id); if (!q || !per[q.skill]) return;
+      per[q.skill].wrong.push(id); });
+  });
+  const rows = (c.skills || []).map(id => {
+    const p = per[id] || { right: 0, total: 0, wrong: [] };
+    const acc = p.total ? Math.round(100 * p.right / p.total) : 0;
+    return { id, name: SKILLS[id] ? SKILLS[id].name : id, acc,
+      right: p.right, total: p.total, wrong: [...new Set(p.wrong)] };
+  }).sort((a, b) => b.acc - a.acc);
+  const tot = rows.reduce((a, r) => ({ right: a.right + r.right, total: a.total + r.total }),
+    { right: 0, total: 0 });
+  const overall = tot.total ? Math.round(100 * tot.right / tot.total) : 0;
+  /* الأفكار التي تحتاج إعادة: أنواع المموّهات التي تكرّرت */
+  const tags = {};
+  rows.forEach(r => r.wrong.forEach(id => {
+    const q = byQ(id); if (!q) return;
+    const bad = q.choices.filter(ch => !ch.c && ch.tag);
+    bad.forEach(ch => { tags[ch.tag] = (tags[ch.tag] || 0) + 0; });
+  }));
+  const ideas = [];
+  rows.filter(r => r.acc < 75).forEach(r => {
+    const L = LESSONS.lessons[r.id];
+    if (L && L.idea) ideas.push({ skill: r.name, text: L.idea });
+    else ideas.push({ skill: r.name, text: 'راجع مفتاح هذه المهارة قبل الدورة القادمة.' });
+  });
+  /* الفرق هو ما يُشعِره بالتطوّر — لا القيمة */
+  const prev = (S.courses || []).filter(x => x.round !== (c.round || 1)).slice(-1)[0];
+  rows.forEach(r => {
+    const p = prev && (prev.skills || []).find(x => x.id === r.id);
+    r.prev = p ? p.acc : null;
+    r.delta = p ? r.acc - p.acc : null;
+  });
+  const prevOverall = prev ? prev.overall : null;
+  const days = (c.endDay != null ? c.endDay : S.day) - c.startDay + 1;
+  return { rows, overall, ideas, days, round: c.round || 1, prevOverall,
+    goal: myGoal(), gap: Math.max(0, myGoal() - overall),
+    part: c.part, strong: rows.filter(r => r.acc >= 80),
+    weak: rows.filter(r => r.acc < 65) };
+}
+
+/* نصّ المشاركة — واتساب لا يقبل تنسيقًا فنجعله واضحًا بالرموز */
+function reportText() {
+  const R = courseReport(); if (!R) return '';
+  const L = [];
+  L.push('📘 تقرير دورة أُفق');
+  L.push((S.name ? S.name + ' — ' : '') + 'الدورة ' + ar(R.round) +
+    ' · ' + (R.part === 'quant' ? 'القسم الكمّيّ' : R.part === 'verbal' ? 'القسم اللفظيّ' : 'الدورة'));
+  L.push('المدّة: ' + ar(R.days) + ' يومًا · النتيجة العامّة: ' + ar(R.overall) + '٪');
+  L.push('');
+  L.push('— المهارات —');
+  R.rows.forEach(r => {
+    const mark = r.acc >= 80 ? '🟢' : r.acc >= 65 ? '🟡' : '🔴';
+    L.push(mark + ' ' + r.name + ': ' + ar(r.acc) + '٪  (' + ar(r.right) + ' من ' + ar(r.total) + ')');
+  });
+  if (R.strong.length) { L.push(''); L.push('✅ نقاط القوّة: ' + R.strong.map(r => r.name).join(' · ')); }
+  if (R.weak.length)   { L.push('⚠️ يحتاج عملًا: ' + R.weak.map(r => r.name).join(' · ')); }
+  L.push('');
+  L.push('أُفق — من الثانوية إلى الجامعة');
+  return L.join('\n');
+}
+
 function thread() {
+  /* الدورة تسبق كل شيء: ما دامت جارية فالبطاقة الكبرى محطّتها التالية */
+  const c = courseActive();
+  if (c) {
+    if (courseStale()) return { k: 'revive', act: 'reviveCourse', arg: null, go: null,
+      label: 'عُدْ إلى دورتك', why: `غبتَ ${ar(S.day - c.lastDay)} أيام — محطّة قصيرة تنعش ما نسيتَ ثمّ تكمل` };
+    const st = courseStation();
+    if (st) return { k: 'station', act: 'runStation', arg: null, go: null,
+      label: `المحطّة ${ar(c.at + 1)}: ${st.label}${st.skill ? ' · ' + SKILLS[st.skill].name : ''}`,
+      why: st.why };
+  }
+  if (S.course && S.course.finished && !S.course.seen)
+    return { k: 'report', act: null, arg: null, go: 'report',
+      label: 'تقرير دورتك جاهز', why: 'ما أنجزتَه في أربع عشرة محطّة — وما يحتاج إعادة' };
+
   const due = (S.review || []).filter(r => r.due <= S.day).length;
   const seen = S.seenLessons || [];
   const ls = S.lastSummary;
@@ -2133,8 +2482,10 @@ function thread() {
 /* همسة «ثمّ» — تقول أين ينتهي المسار قبل أن يبدأ. ليست زرًّا بارزًا. */
 function thenWhisper() {
   const n = thread();
-  /* البطاقة الكبرى صارت تعرض قرار الخيط، فلا تكرّره الهمسة.
-     ولا تظهر إلا لتدلّ على التدريب حين يقود الخيط إلى غيره. */
+  /* أثناء الدورة لا همسة تنافس المحطّة. وبعدها عرضُ بدءِ دورةٍ جديدة. */
+  if (n.k === 'station' || n.k === 'revive' || n.k === 'report') return '';
+  if (!S.course || S.course.finished)
+    return `<button class="thenw" data-act="beginCourse">ابدأ دورةً جديدة — أسبوعان بأربع عشرة محطّة ›</button>`;
   if (n.k === 'drill') return '';
   return `<button class="thenw" data-act="startSession">ثمّ: ${ar((S.suggestion || makeSuggestion()).size)} سؤالًا في ${esc(SKILLS[nextStep().skill].name)} ›</button>`;
 }
@@ -2224,9 +2575,85 @@ const LEAD_BADGE = {
   exam:   'نموذج كامل',
   drill:  null
 };
+/* ══════════ الاستماع ══════════
+   لا ملفّات صوتية: يتكلّم المتصفّح نفسه بـ speechSynthesis.
+   فلا حجم يُحمَّل، ولا كلفة استضافة، ويعمل بلا إنترنت بعد أول فتح.
+   والنصّ لا يُرى إلا بعد الإجابة — وإلا صار قراءةً لا استماعًا. */
+const SPEAK = {
+  ok: () => typeof speechSynthesis !== 'undefined',
+  voice: null,
+  pick() {
+    if (this.voice) return this.voice;
+    const vs = speechSynthesis.getVoices() || [];
+    this.voice = vs.find(v => /^en-GB/i.test(v.lang))
+              || vs.find(v => /^en-US/i.test(v.lang))
+              || vs.find(v => /^en/i.test(v.lang)) || null;
+    return this.voice;
+  },
+  say(text, rate) {
+    if (!this.ok()) return false;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      const v = this.pick(); if (v) u.voice = v;
+      u.lang = (v && v.lang) || 'en-US';
+      u.rate = rate || 0.92;
+      u.onend = () => { S.speaking = false; const b = document.getElementById('playbtn');
+        if (b) b.classList.remove('on'); };
+      S.speaking = true;
+      speechSynthesis.speak(u);
+      return true;
+    } catch (e) { return false; }
+  },
+  stop() { try { speechSynthesis.cancel(); } catch (e) {} S.speaking = false; }
+};
+
+/* لوحة الاستماع: زرّ تشغيل ومرّات محدودة كما في الاختبار الحقيقيّ */
+function listenPane(q, item) {
+  if (!q.listen) return '';
+  const used = item.played || 0;
+  const left = Math.max(0, 2 - used);
+  if (!SPEAK.ok()) {
+    return `<div class="listen noaudio">
+      <div class="lbl">الاستماع</div>
+      <p class="p-para">${esc(q.listen)}</p>
+      <div class="faint">متصفّحك لا يدعم النطق، فعُرض النصّ بدلًا منه.</div>
+    </div>`;
+  }
+  return `<div class="listen">
+    <button class="playbtn${S.speaking ? ' on' : ''}" id="playbtn" data-act="playListen"
+      ${left ? '' : 'disabled'}>
+      <span class="pico">▶</span>
+      <span>${used ? 'أعِد الاستماع' : 'استمع'}</span>
+    </button>
+    <div class="faint">${left ? `يبقى ${ar(left)} من مرّتين` : 'انتهت مرّتاك — أجب بما سمعت'}</div>
+  </div>`;
+}
+
 function leadCard(again) {
   const g = S.suggestion || makeSuggestion();
   const n = thread();
+  /* الدورة تُعرَض بشكلها الخاصّ: مسارٌ لا جلسة */
+  if (n.k === 'station' || n.k === 'revive') {
+    const c = S.course, map = (c && c.map) || [];
+    return `${journeyStrip(true)}
+    <div class="lead key" data-act="${n.act}">
+      <div class="ld-h">دورتك · ${ar(Math.min(c.at + 1, map.length))} من ${ar(map.length)}</div>
+      <div class="ld-t">${esc(n.label)}</div>
+      <div class="ld-w">${esc(n.why)}</div>
+      <div class="ld-f"><span class="ld-b">ابدأ المحطّة</span>
+        <span class="ld-a">›</span></div>
+    </div>
+    <button class="detour" data-go="course">اعرض مسار الدورة كاملًا</button>`;
+  }
+  if (n.k === 'report') {
+    return `<div class="lead key" data-go="creport">
+      <div class="ld-h">دورتك · اكتملت</div>
+      <div class="ld-t">${esc(n.label)}</div>
+      <div class="ld-w">${esc(n.why)}</div>
+      <div class="ld-f"><span class="ld-b">اعرض التقرير</span><span class="ld-a">›</span></div>
+    </div>`;
+  }
   /* «أعد» بعد جلسةٍ أُنجزت تبقى تدريبًا مهما قال الخيط */
   const k = again && n.k !== 'exam' ? 'drill' : n.k;
   const act = k === 'drill' ? (again ? 'again' : 'startSession') : n.act;
@@ -2337,6 +2764,170 @@ function deltaPanel() {
 }
 
 const SCREENS = {
+
+
+/* ══════════ الهدف ══════════ */
+goal: () => {
+  const g = myGoal();
+  return `<div class="lwrap">
+    <div class="chead">
+      <button class="back" data-go="home">‹ الرئيسة</button>
+      <div class="ctitle">ما الدرجة التي تريدها؟</div>
+      <div class="csub">لتعرف كم يفصلك عنها في كل دورة</div>
+    </div>
+    <div class="gpick">
+      ${GOALS.map(x => `<button class="gopt ${x.v === g ? 'on' : ''}" data-act="setGoal" data-arg="${x.v}">
+        <div class="gnum">${ar(x.v)}</div>
+        <div class="gname">${esc(x.t)}</div>
+        <div class="gwhy">${esc(x.w)}</div>
+      </button>`).join('')}
+    </div>
+    <p class="gfoot">يمكنك تغييره متى شئت من الإعدادات.</p>
+    <button class="btn" data-go="home">تمام</button>
+  </div>`;
+},
+
+/* ══════════ افتتاح الدورة ══════════ */
+copen: () => {
+  const c = S.course;
+  if (!c) return SCREENS.home();
+  const prev = (S.courses || []).slice(-1)[0];
+  const carried = prev ? (c.skills || []).filter(id =>
+    (prev.skills || []).some(x => x.id === id && x.acc < 65)) : [];
+  return `<div class="lwrap copen">
+    <div class="cohead">
+      <div class="coring">
+        <svg viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" class="cobg"/>
+          <circle cx="60" cy="60" r="50" class="cofg" stroke-dasharray="0 314"/>
+        </svg>
+        <div class="conum">${ar(c.round || 1)}</div>
+      </div>
+      <h2 class="cot">دورتك ${ar(c.round || 1)}</h2>
+      <p class="cos">أسبوعان · أربع عشرة محطّة · ${ar((c.skills || []).length)} مهارات</p>
+    </div>
+    ${journeyStrip()}
+    <div class="colbl">ستعمل على</div>
+    ${(c.skills || []).map((id, i) => {
+      const carry = carried.includes(id);
+      return `<div class="coskill ${carry ? 'carry' : ''}">
+        <div class="con">${ar(i + 1)}</div>
+        <div><b>${esc(SKILLS[id] ? SKILLS[id].name : id)}</b>
+          ${carry ? '<span>جاءت من ضعفك في الدورة السابقة</span>' : ''}</div>
+      </div>`;
+    }).join('')}
+    ${carried.length ? `<div class="conote">
+      <b>${ar(carried.length)} منها</b> اخترناها لك لأنها كانت أضعف ما عندك. فضعفُ أمسِ صار موضوع اليوم.
+    </div>` : ''}
+    <button class="btn" data-go="course">ابدأ الدورة ›</button>
+  </div>`;
+},
+
+/* ══════════ مسار الدورة ══════════ */
+course: () => {
+  const c = S.course;
+  if (!c) return SCREENS.home();
+  const map = c.map || [];
+  const pct = Math.round(100 * Math.min(c.at, map.length) / map.length);
+  return `<div class="lwrap">
+    <div class="chead">
+      <button class="back" data-go="home">‹ الرئيسة</button>
+      <div class="ctitle">دورتك — ${esc(c.part === 'quant' ? 'القسم الكمّيّ' : c.part === 'verbal' ? 'القسم اللفظيّ' : 'أسبوعان')}</div>
+      <div class="csub">${ar(Math.min(c.at, map.length))} من ${ar(map.length)} محطّة · الدورة ${ar(c.round || 1)}</div>
+      <div class="cbar"><i style="width:${pct}%"></i></div>
+    </div>
+    ${journeyStrip()}
+    <ol class="path">
+      ${map.map((st, i) => {
+        const k = stationState(i);
+        const done = k === 'done', now = k === 'now';
+        const res = (c.log || []).find(e => e.at === i);
+        return `<li class="stn ${k}">
+          <div class="sdot">${done ? '✓' : now ? ar(i + 1) : '🔒'}</div>
+          <div class="sbody">
+            <div class="sname">${esc(st.label)}${st.skill ? ` · ${esc(SKILLS[st.skill].name)}` : ''}</div>
+            <div class="swhy">${now ? esc(st.why) : done && res && res.total
+              ? `${ar(res.right)} من ${ar(res.total)}` : esc(st.why)}</div>
+            ${now ? '<button class="btn sgo" data-act="runStation">ابدأ هذه المحطّة ›</button>' : ''}
+          </div>
+        </li>`;
+      }).join('')}
+    </ol>
+    ${c.finished ? '<button class="btn" data-go="creport">اعرض تقرير الدورة ›</button>' : ''}
+  </div>`;
+},
+
+/* ══════════ تقرير الدورة ══════════ */
+creport: () => {
+  const R = courseReport();
+  if (!R) return SCREENS.home();
+  const band = a => a >= 80 ? 'hi' : a >= 65 ? 'mid' : 'lo';
+  const word = a => a >= 80 ? 'متينة' : a >= 65 ? 'تحتاج تثبيتًا' : 'تحتاج عملًا';
+  return `<div class="lwrap rep">
+    <div class="rhead">
+      <div class="rring ${band(R.overall)}">
+        <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="rbg"/>
+          <circle cx="60" cy="60" r="52" class="rfg"
+            stroke-dasharray="${(R.overall / 100 * 326.7).toFixed(1)} 326.7"/></svg>
+        <div class="rnum">${ar(R.overall)}<span>٪</span></div>
+      </div>
+      <h2 class="rtitle">تقرير دورتك</h2>
+      <p class="rsub">${esc(S.name || '')}${S.name ? ' — ' : ''}الدورة ${ar(R.round)} · ${ar(R.days)} يومًا</p>
+      ${R.prevOverall != null ? `<div class="rdelta ${R.overall >= R.prevOverall ? 'up' : 'dn'}">
+        ${ar(R.prevOverall)}٪ <em>←</em> ${ar(R.overall)}٪
+        <b>${R.overall >= R.prevOverall ? '▲' : '▼'} ${ar(Math.abs(R.overall - R.prevOverall))}</b>
+      </div>` : ''}
+    </div>
+
+    <div class="rgoal">
+      ${goalRing(R.overall, R.goal, 160)}
+      ${gapScene(R.overall, R.goal)}
+    </div>
+
+    ${journeyStrip()}
+
+    <div class="rsec">
+      <div class="rlbl">مهاراتك في هذه الدورة</div>
+      ${R.rows.map(r => `<div class="rrow ${band(r.acc)}">
+        <div class="rtop"><span class="rname">${esc(r.name)}</span>
+          <span class="racc">${ar(r.acc)}٪${r.delta != null && r.delta !== 0
+            ? `<em class="rd ${r.delta > 0 ? 'up' : 'dn'}">${r.delta > 0 ? '▲' : '▼'}${ar(Math.abs(r.delta))}</em>` : ''}</span></div>
+        <div class="rmeter">
+          ${r.prev != null ? `<u style="width:${r.prev}%"></u>` : ''}
+          <i style="width:${r.acc}%"></i>
+        </div>
+        <div class="rfoot"><span>${r.prev != null ? `كانت ${ar(r.prev)}٪` : `${ar(r.right)} من ${ar(r.total)}`}</span><span>${word(r.acc)}</span></div>
+      </div>`).join('')}
+    </div>
+
+    ${R.strong.length ? `<div class="rcard good">
+      <div class="rct">نقاط قوّتك</div>
+      <p>${R.strong.map(r => esc(r.name)).join(' · ')}</p>
+      <div class="rnote">أتقنتَها في هذه الدورة. لا تُنفِق عليها وقتًا كثيرًا في القادمة.</div>
+    </div>` : ''}
+
+    ${R.weak.length ? `<div class="rcard warn">
+      <div class="rct">ما يحتاج عملًا</div>
+      <p>${R.weak.map(r => esc(r.name)).join(' · ')}</p>
+      <div class="rnote">ابدأ دورتك القادمة بها، واقرأ مفاتيحها قبل التدريب.</div>
+    </div>` : ''}
+
+    ${R.ideas.length ? `<div class="rsec">
+      <div class="rlbl">أفكار تحتاج إعادتها</div>
+      ${R.ideas.map(x => `<div class="ridea">
+        <div class="ritag">${esc(x.skill)}</div>
+        <p>${esc(x.text)}</p></div>`).join('')}
+    </div>` : ''}
+
+    <div class="ract">
+      <button class="btn wa" data-act="shareReport">شارِك التقرير مع والديك</button>
+      <button class="btn ghost" data-act="copyReport">${S.copied ? 'نُسخ ✓' : 'انسخ النصّ'}</button>
+      <button class="btn ghost" data-act="repeatCourse">أعِد هذه الدورة</button>
+      <button class="skipl" data-act="seenReport">تمام — إلى الرئيسة</button>
+    </div>
+  </div>`;
+},
+
 
 name: () => `<div class="namewrap">
   <div class="namelogo"><span id="markTap" style="cursor:pointer">${markSVG(50)}</span></div>
@@ -2936,6 +3527,7 @@ question: () => {
           `<p class="p-para"><b>(${ar(i+1)})</b> ${esc(t)}</p>`).join('')}
       </div>`;
     })() : ''}
+  ${listenPane(q, item)}
   ${q.fig ? `<figure class="fig-wrap">${q.fig}</figure>` : ''}
   ${q.img && !q.fig ? `<figure class="qimg"><img src="${q.img}" alt="" loading="lazy"></figure>` : ''}
   ${stemView(q)}
@@ -2955,6 +3547,12 @@ question: () => {
 
 explain: () => {
   const s = S.session, item = s.items[s.idx], q = byQ(item.qid);
+  SPEAK.stop();
+  /* نصّ الاستماع لا يُرى قبل الإجابة، ويُرى بعدها ليُقارَن بما سُمع */
+  const heard = q.listen ? `<div class="listen script">
+      <div class="lbl">ما سمعتَه</div>
+      <p class="p-para ltr">${esc(q.listen)}</p>
+    </div>` : '';
   const correctIdx = q.choices.findIndex(c => c.c);
   const chosen = item.choiceIdx;
   const right = chosen === correctIdx;
@@ -2996,6 +3594,7 @@ explain: () => {
         `<button class="lt ${k === cur ? 'on' : ''}" data-act="expTab" data-arg="${k}">${esc(n)}</button>`).join('')}</div>
     </div>
     <div class="lpane">${T[cur][1]}</div>
+    ${heard}
     ${!right ? keyLink(q.skill) : ''}
     ${stopCard()}
     <div class="lfoot">
@@ -3303,6 +3902,12 @@ settings: () => {
     <div class="who"><b>${esc(S.name || '—')}</b><span>${esc(TRACKS[S.track].name)} · ${esc(TRACKS[S.track].tag)}</span></div>
     <button class="mini" data-act="editName">الاسم</button>
   </div>
+  <button class="goalcard" data-go="goal">
+    <div class="gcnum">${ar(myGoal())}</div>
+    <div class="gcbody"><b>هدفك في الاختبار</b>
+      <span>${(S.courses||[]).length ? `آخر دورة ${ar((S.courses||[]).slice(-1)[0].overall)}٪` : 'اضغط لتغييره'}</span></div>
+    <span class="gcarrow">›</span>
+  </button>
   <div class="stabs"><button class="stb ${S.setTab===0?'on':''}" data-act="setTab" data-arg="0">الدراسة</button><button class="stb ${S.setTab===1?'on':''}" data-act="setTab" data-arg="1">المظهر</button><button class="stb ${S.setTab===2?'on':''}" data-act="setTab" data-arg="2">حسابي</button><button class="stb ${S.setTab===3?'on':''}" data-act="setTab" data-arg="3">متقدّم</button><button class="stb ${S.setTab===5?'on':''}" data-act="setTab" data-arg="5">التذكير</button><button class="stb ${S.setTab===6?'on':''}" data-act="setTab" data-arg="6">الجهاز</button><button class="stb ${S.setTab===4?'on':''}" data-act="setTab" data-arg="4">عن أُفق</button></div>
 ${S.setTab===0 ? `
   ${S.track === 'qudurat' ? `
@@ -3604,8 +4209,12 @@ const ACTIONS = {
     if (!LESSONS.lessons[id]) return;
     S.lessonFor = id; S.lessonTab = 0; S.lessonFrom = 'learn';
     if (!S.seenLessons.includes(id)) S.seenLessons.push(id);
+    /* محطّة المفتاح تُنجَز بقراءته — فتُفتَح التي بعدها عند الخروج */
+    const c = courseActive(), st = c && courseStation();
+    if (st && st.k === 'key' && st.skill === id) S.lessonIsStation = true;
     haptic(12); go('lesson');
   },
+
   expTab(i) { S.expTab = +i; haptic(9); render(); },
   speak(id) {
     const L = LESSONS.lessons[S.lessonFor];
@@ -3851,8 +4460,67 @@ const ACTIONS = {
   prTab(i) { S.prTab = +i; haptic(7); render(); },
   clearRestored() { S.restored = null; haptic(9); saveState(); render(); },
   dismissNudge() { S.nudgeSeen = S.day; haptic(7); saveState(); render(); },
+  beginCourse() {
+    if (startCourse()) { haptic(16); go(S.goal ? 'copen' : 'goal'); } else { haptic(7); render(); }
+  },
+  runStation() {
+    const c = courseActive(); if (!c) return;
+    const st = courseStation(); if (!st) return;
+    if (st.k === 'key' && st.skill) { ACTIONS.openLesson(st.skill); return; }
+    if (st.k === 'test') { ACTIONS.examOpen('short'); return; }
+    /* المحطّات الأخرى جلسة مركّبة بحسب نوعها */
+    S.forceSkill = st.skill || null;
+    S.stationKind = st.k;
+    ACTIONS.startSession();
+  },
+  reviveCourse() {
+    const c = courseActive(); if (!c) return;
+    c.revived = true; c.lastDay = S.day;
+    S.forceSkill = null; S.stationKind = 'revive';
+    haptic(9); saveState();
+    ACTIONS.startSession();
+  },
+  setGoal(v) {
+    S.goal = +v; haptic(14); saveState();
+    if (courseActive() && (S.course.at || 0) === 0) { go('copen'); return; }
+    go('home');
+  },
+  repeatCourse() {
+    const c = S.course; if (!c) return;
+    const skills = (c.skills || []).slice();
+    S.course = { part: c.part, skills, map: courseMap(skills), at: 0,
+      startDay: S.day, lastDay: S.day, revived: false, log: [],
+      finished: false, round: (c.round || 1) + 1 };
+    haptic(16); saveState(); go('copen');
+  },
+  seenReport() { if (S.course) { S.course.seen = true; saveState(); } go('home'); },
+  shareReport() {
+    const t = reportText();
+    try {
+      const url = 'https://wa.me/?text=' + encodeURIComponent(t);
+      window.open(url, '_blank');
+    } catch (e) {
+      try { navigator.clipboard.writeText(t); } catch (e2) {}
+    }
+    haptic(12);
+  },
+  copyReport() {
+    try { navigator.clipboard.writeText(reportText()); S.copied = true; } catch (e) {}
+    haptic(9); render();
+    setTimeout(() => { S.copied = false; render(); }, 2200);
+  },
   takePhase(f) { S.phaseSeen = null; ACTIONS.setFocus(f); },
   dismissPhase(n) { S.phaseSeen = n; haptic(7); saveState(); render(); },
+  playListen() {
+    const s = S.session; if (!s) return;
+    const item = s.items[s.idx], q = byQ(item.qid);
+    if (!q || !q.listen) return;
+    if ((item.played || 0) >= 2) return;
+    item.played = (item.played || 0) + 1;
+    haptic(9);
+    SPEAK.say(q.listen);
+    render();
+  },
   setFocus(f) {
     if (!['all','verbal','quant'].includes(f)) return;
     S.focus = f; S.suggestion = null; S.forceSkill = null;
@@ -3938,6 +4606,12 @@ const ACTIONS = {
     if (!id || !hasContent(id)) return;
     S.suggestion = null;
     S.forceSkill = id;
+    /* إن كان هذا مفتاح محطّة، فقراءته أنجزتها — والتدريب هو المحطّة التالية */
+    if (S.lessonIsStation) {
+      S.lessonIsStation = false;
+      courseAdvance(0, 0, []);
+      S.stationKind = 'drill';
+    }
     haptic(14);
     try { ACTIONS.startSession(); } catch (e) { go('home'); }
   },
