@@ -139,9 +139,9 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '9.3.0';
+const APP_VERSION = '9.8.0';
 const APP_DATE = '٩ سبتمبر ٢٠٢٦';
-const APP_BUILD = 118;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_BUILD = 123;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -1699,7 +1699,7 @@ function devPanel() {
 }
 
 /* ---------- render ---------- */
-const FLOW = ['name','pick','welcome','home','learn','lesson','question','explain','summary','progress','errors','settings'];
+const FLOW = ['name','pick','welcome','home','learn','lesson','question','explain','summary','progress','errors'];
 function go(screen) {
   const a = FLOW.indexOf(S.screen), b = FLOW.indexOf(screen);
   S._dir = (a < 0 || b < 0) ? 0 : (b > a ? 1 : b < a ? -1 : 0);
@@ -1799,7 +1799,7 @@ function render() {
     </div>` : '')
     + (SCREENS[S.screen] ? safeScreen(S.screen) : safeScreen('home'));
   let bb = document.getElementById('brandbar');
-  const hideOn = ['name','pick','welcome','intro','diag','diagResult','save','paywall','question','exam'];
+  const hideOn = ['name','pick','welcome','intro','diag','diagResult','save','paywall','question','exam','settings','goal','wipe'];
   if (!bb) { bb = document.createElement('div'); bb.id = 'brandbar';
     const sh = document.getElementById('shell');
     sh.insertBefore(bb, document.getElementById('app')); }
@@ -1812,9 +1812,10 @@ function render() {
   } catch (e) {}
   bb.innerHTML = bb.hidden ? '' : `<span class="bmark">${markSVG(19, true)}</span>
     <span class="bname">أفق</span>
-    <button class="gearbtn" data-go="settings" aria-label="الإعدادات">
-      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.5">
-      <circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/>
+    <button class="gearbtn" data-act="gearTap" aria-label="الإعدادات">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+        stroke-width="1.8" stroke-linecap="round">
+      <path d="M5 9h14M5 15h14"/>
       </svg></button>`;
   el.replaceChildren(frame);
   el.scrollTop = 0;
@@ -1844,7 +1845,7 @@ function render() {
   });
   void el.offsetHeight;              // إجبار إعادة تخطيط قبل تحريك التمرير
   el.scrollTop = 0;
-  tabsEl.innerHTML = ['home', 'progress', 'errors', 'settings'].includes(S.screen) ? tabbar() : '';
+  tabsEl.innerHTML = ['home', 'progress', 'errors'].includes(S.screen) ? tabbar() : '';
   let dev = document.getElementById('devlayer');
   if (!dev) { dev = document.createElement('div'); dev.id = 'devlayer';
     document.getElementById('shell').appendChild(dev); }
@@ -1909,7 +1910,7 @@ const TABICON = {
   home: '<path d="M4 10.5 12 4l8 6.5"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/>',
   progress: '<path d="M4 19h16"/><path d="M7 19v-6"/><path d="M12 19V8"/><path d="M17 19v-9"/>',
   errors: '<path d="M12 4.5 20 19H4z"/><path d="M12 10v4"/><path d="M12 16.6v.1"/>',
-  settings: '<circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.2M12 18.8V21M21 12h-2.2M5.2 12H3M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6M18.4 18.4l-1.6-1.6M7.2 7.2 5.6 5.6"/>'
+  settings: '<path d="M5 9h14M5 15h14"/>'
 };
 function haptic(ms) {
   if (S.haptics === false) return;
@@ -1917,7 +1918,7 @@ function haptic(ms) {
   if (navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) {} }
 }
 function tabbar() {
-  const t = [['home', 'اليوم'], ['progress', 'التقدّم'], ['errors', 'أخطاؤك'], ['settings', 'الإعدادات']];
+  const t = [['home', 'اليوم'], ['progress', 'التقدّم'], ['errors', 'أخطاؤك']];
   return `<div class="tabbar">${t.map(([k, n]) =>
     `<button data-go="${k}" class="${S.screen === k ? 'sel' : ''}" aria-label="${n}">
       <span class="ic ${S.screen === k ? 'pop' : ''}"><svg viewBox="0 0 24 24">${TABICON[k]}</svg></span>
@@ -2919,7 +2920,7 @@ function roundsLine() {
           ? `حان وقت «${esc(roundKind(nx.r.kind).t)}»`
           : `التالية ${esc(fmtTime(nx.r.at))}`)
     : 'أتممتَ جولات اليوم';
-  return `<div class="rline" data-go="settings">
+  return `<div class="rline">
     <span class="rdots">${dots}</span>
     <span class="rtxt">${esc(done)}‏/‏${ar(rs.length)} · ${note}</span>
   </div>`;
@@ -3006,12 +3007,12 @@ function settingsList() {
     <span class="sbd"><b>${esc(label)}</b>${sub ? `<em>${esc(sub)}</em>` : ''}</span>
     <span class="sv">${esc(val || '')}</span>
     <span class="sar">‹</span></button>`;
-  return `<div class="top backtop sview">
-    <button class="backb" data-go="home" aria-label="رجوع">
-      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>اليوم</span></button>
-    <span class="eyebrow" style="margin:0">الإعدادات</span></div>
+  return `<div class="sethead">
+    <button class="setx" data-go="home" aria-label="إغلاق">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    <h1 class="seth1">الإعدادات</h1>
+  </div>
 
   <div class="idcard">
     <span class="av" style="color:var(--glow)">${trackGlyph(S.track, 26)}</span>
@@ -3565,7 +3566,7 @@ report: () => {
   const col = r.tone === 'good' ? 'var(--grow)' : r.tone === 'mid' ? 'var(--near)' : '#C79191';
   const stuck = mySkills().filter(s => { const st = S.skills[s.id];
     return st.status === 'building' && st.stuckSince !== null && (S.day - st.stuckSince) > 10; });
-  return `<div class="top"><button class="back" data-go="settings">رجوع ›</button>
+  return `<div class="top"><button class="back" data-go="home">رجوع ›</button>
     <span class="eyebrow" style="margin:0">تقرير الأسبوع</span></div>
   <div class="glass">
     <div class="eyebrow">الحالة</div>
@@ -4347,12 +4348,12 @@ settings: () => {
   const T = { plan: 'ما يقرّره أُفق', exam: 'موعد اختبارك', remind: 'مواعيد التذكير',
     look: 'المظهر والصوت', share: 'المشاركة والتثبيت', data: 'بياناتك ونسختك',
     about: 'عن أُفق', dev: 'المطوّر' };
-  return `<div class="top backtop sview">
-    <button class="backb" data-act="closeRow" aria-label="رجوع">
-      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>الإعدادات</span></button>
-    <span class="eyebrow" style="margin:0">${esc(T[S.setRow] || '')}</span></div>`
+  return `<div class="sethead sub">
+    <button class="setx back" data-act="closeRow" aria-label="رجوع">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path d="M9 6l6 6-6 6" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <h1 class="seth1">${esc(T[S.setRow] || '')}</h1>
+  </div>`
     + settingsPanels();
 },
 
@@ -4467,6 +4468,15 @@ const ACTIONS = {
     S.name = v; haptic(14); go('pick');
   },
   skipName() { S.name = S.name || 'صديقي'; haptic(12); go('pick'); },
+  gearTap() {
+    /* الإعدادات ليست في متناول الطالب: ثلاث نقرات على العلامة خلال ثانيةٍ ونصف.
+       فمن يحتاجها يعرفها، ومن يتصفّح لا يقع فيها. */
+    const now = Date.now();
+    S._gt = (now - (S._gt0 || 0) < 1500) ? (S._gt || 0) + 1 : 1;
+    S._gt0 = now;
+    if (S._gt >= 3) { S._gt = 0; haptic(18); S.setRow = null; go('settings'); return; }
+    haptic(8);
+  },
   devTap() {
     const now = Date.now();
     S._dt = (now - (S._dt0 || 0) < 1200) ? (S._dt || 0) + 1 : 1;
