@@ -1832,10 +1832,10 @@ h1{font-size:clamp(23px,6.4vw,28px);line-height:1.45}
   transition:opacity .5s}
 .stb.on{border-color:var(--hue);color:var(--hue);background:transparent}
 /* انزلاق باتّجاه الحركة */
-[data-slide="f"] #app > *{animation:slF .42s cubic-bezier(.2,.8,.3,1) both}
-[data-slide="b"] #app > *{animation:slB .42s cubic-bezier(.2,.8,.3,1) both}
-@keyframes slF{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
-@keyframes slB{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+[data-slide="f"] #app > *{animation:slF .26s cubic-bezier(.2,.7,.2,1) both}
+[data-slide="b"] #app > *{animation:slB .26s cubic-bezier(.2,.7,.2,1) both}
+@keyframes slF{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}to{opacity:1;transform:none}}
+@keyframes slB{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion: reduce){
   [data-slide] #app > *{animation:none}
   #shell::after{transition:none}
@@ -2409,6 +2409,56 @@ h1{font-size:clamp(23px,6.4vw,28px);line-height:1.45}
   .k2card{padding:18px 18px}
 }
 @media (prefers-reduced-motion:reduce){.k2pane{animation:none}}
+
+/* ══════ الإعدادات: أربعة تبويبات بلا تشتّت ══════ */
+.stabs.four{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:16px 0 14px;overflow:visible}
+.stabs.four .stb{width:100%;padding:12px 2px;font-size:13.5px;white-space:nowrap;
+  border-radius:12px;border:1px solid var(--line);background:var(--flat);color:var(--ink-soft)}
+.stabs.four .stb.on{color:#EAECFF;border-color:rgba(132,140,203,.5);
+  background:linear-gradient(140deg,rgba(132,140,203,.24),rgba(132,140,203,.07));
+  box-shadow:0 0 18px rgba(132,140,203,.18)}
+.stabs.four .stb.dev{grid-column:1 / -1;color:#F0DFB8;border-color:rgba(192,160,103,.4)}
+.stabs.four .stb.dev.on{background:linear-gradient(140deg,rgba(192,160,103,.26),rgba(192,160,103,.08));
+  box-shadow:0 0 18px rgba(192,160,103,.2)}
+/* تهدئة البطاقات: حدودٌ أخفّ ومسافاتٌ أوسع */
+#app .group{margin-bottom:18px}
+#app .group-h{margin-bottom:8px}
+#app .note{line-height:1.8}
+@media (prefers-reduced-motion:reduce){[data-slide] #app > *{animation:none!important}}
+
+.subtabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 16px}
+.subtabs .sub{padding:10px 2px;border-radius:11px;font:inherit;font-size:12.5px;cursor:pointer;
+  color:var(--ink-faint);background:transparent;border:1px solid var(--line);white-space:nowrap}
+.subtabs .sub.on{color:var(--ink);background:var(--flat);border-color:rgba(255,255,255,.14)}
+
+details.fold{border:1px solid var(--line);border-radius:12px;background:var(--flat);
+  margin:10px 0 4px;overflow:hidden}
+details.fold summary{padding:11px 15px;cursor:pointer;font-size:13px;color:var(--ink-soft);
+  list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.fold summary::-webkit-details-marker{display:none}
+details.fold summary::after{content:"+";color:var(--glow);font-size:16px;transition:transform .25s}
+details.fold[open] summary::after{transform:rotate(45deg)}
+details.fold .note{padding:0 15px 13px!important;margin:0}
+
+/* ══════ بطاقة قرار أُفق ══════ */
+.decide{position:relative;margin:16px 0 18px;padding:18px;border-radius:17px;overflow:hidden;
+  background:linear-gradient(140deg,rgba(132,140,203,.15),rgba(132,140,203,.04));
+  border:1px solid rgba(132,140,203,.34)}
+.decide::after{content:"";position:absolute;inset:-60% -140%;
+  background:linear-gradient(115deg,transparent 44%,rgba(255,255,255,.18) 50%,transparent 56%);
+  mix-blend-mode:screen;transform:translateX(-120%);
+  animation:decSheen 9s cubic-bezier(.3,0,.2,1) infinite}
+@keyframes decSheen{0%,88%{transform:translateX(-120%)}96%,100%{transform:translateX(120%)}}
+.decide .dh{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.decide .di{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;
+  color:#EAECFF;background:rgba(132,140,203,.3);border:1px solid rgba(132,140,203,.45)}
+.decide .dh b{font-family:var(--display);font-size:16px;font-weight:500;color:#EEF0FA}
+.drow{padding:11px 0;border-top:1px solid rgba(255,255,255,.07)}
+.drow:first-of-type{border-top:0;padding-top:0}
+.dk{font-size:12px;color:var(--ink-faint)}
+.dv{font-family:var(--display);font-size:17px;color:#F2F3FB;margin:1px 0 3px}
+.dw{font-size:13px;color:var(--ink-soft);line-height:1.7}
+.decide .fold{margin-top:12px;background:transparent;border-color:rgba(255,255,255,.08)}
 </style>
 </head>
 <body>

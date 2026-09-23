@@ -139,9 +139,9 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '8.5.0';
+const APP_VERSION = '8.7.0';
 const APP_DATE = '٩ سبتمبر ٢٠٢٦';
-const APP_BUILD = 110;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_BUILD = 112;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -2762,6 +2762,95 @@ function devPanel() {
   `;
 }
 
+
+/* ══════════════ قرارات أُفق ══════════════
+   ما كان خيارًا للطالب صار قرارًا لأُفق — يُعرَض مع سببه لا كزرٍّ يحتار فيه.
+   لأن الطالب الذي يرى عشرة أزرار لا يعرف أين يضغط، ومن لا يعرف لا يبدأ. */
+
+/* الأيام حتى الاختبار إن حدّده */
+function daysToExam() {
+  try {
+    if (!S.examDate) return null;
+    const d = Math.round((new Date(S.examDate) - new Date()) / 86400000);
+    return isFinite(d) ? d : null;
+  } catch (e) { return null; }
+}
+
+/* الدقّة العامّة من نوافذ المهارات التي بدأها */
+function overallAcc() {
+  const ws = Object.keys(S.skills || {}).map(k => S.skills[k])
+    .filter(st => st && st.window && st.window.length);
+  if (!ws.length) return 0.75;
+  const hit = ws.reduce((a, st) => a + st.window.filter(Boolean).length, 0);
+  const tot = ws.reduce((a, st) => a + st.window.length, 0);
+  return tot ? hit / tot : 0.75;
+}
+
+/* القسم: لفظيّ أم كمّيّ — بحسب المرحلة وما بقي من الوقت */
+function decideFocus() {
+  if (S.track !== 'qudurat') return { v: 'both', why: 'هذا المسار قسمٌ واحد' };
+  let ph = null; try { ph = phaseNow(); } catch (e) {}
+  const left = daysToExam();
+  if (left != null && left <= 21)
+    return { v: 'both', why: 'اقترب اختبارك — فالتناوب بين القسمين أنفع الآن' };
+  if (ph && ph.part === 'quant')
+    return { v: 'quant', why: 'أنت في المرحلة الكمّية — والتركيز فيها أسرع من التنقّل' };
+  return { v: 'verbal', why: 'تبدأ باللفظيّ لأن مهاراته أقلّ عددًا فتشعر بالإنجاز أبكر' };
+}
+
+/* حجم الجلسة: يكبر مع الثبات ويصغر عند التعثّر */
+function decideSize() {
+  const acc = overallAcc();
+  const st = S.streak || 0;
+  if (acc < 0.6) return { v: 20, why: 'صغّرناها قليلًا حتى تستقرّ دقّتك' };
+  if (st >= 7 && acc >= 0.8) return { v: 35, why: 'ثباتك ودقّتك يحتملان جلسةً أطول' };
+  return { v: 30, why: 'الحجم الذي أثبت أنه أنسب للأكثر' };
+}
+
+/* الإيقاع اليوميّ: جولتان إلا عند ضيق الوقت */
+function decidePace() {
+  const left = daysToExam();
+  if (left != null && left <= 14) return { v: 3, why: 'بقي وقتٌ قصير — فثلاث جولات قصيرة' };
+  if ((S.streak || 0) === 0 && (S.sessionCount || 0) < 4)
+    return { v: 1, why: 'نبدأ بجولةٍ واحدة حتى تثبت العادة' };
+  return { v: 2, why: 'جولتان قصيرتان تُثبّتان أكثر من جلسةٍ واحدة بالمدّة نفسها' };
+}
+
+/* تُطبَّق القرارات في كل يومٍ جديد، ويبقى للطالب أن يخالفها مرّةً من «متقدّم» */
+function applyDecisions() {
+  if (S.manualOverride) return;
+  const f = decideFocus(), z = decideSize(), p = decidePace();
+  S.focus = f.v;
+  S.size = z.v;
+  S.preset = p.v >= 3 ? 'full' : (p.v === 1 ? 'light' : 'steady');
+  S._why = { focus: f.why, size: z.why, pace: p.why };
+  S._val = { focus: f.v, size: z.v, pace: p.v };
+}
+
+/* بطاقة القرار: ما قرّره أُفق ولماذا — لا زرّ فيها */
+function decisionCard() {
+  applyDecisions();
+  const w = S._why || {}, v = S._val || {};
+  const FN = { verbal: 'القسم اللفظيّ', quant: 'القسم الكمّيّ', both: 'القسمان معًا' };
+  const rows = [
+    ['قسمك اليوم', FN[v.focus] || '—', w.focus],
+    ['حجم الجلسة', ar(v.size || 30) + ' سؤالًا', w.size],
+    ['جولات اليوم', ar(v.pace || 2) + (v.pace === 1 ? ' جولة' : ' جولات'), w.pace]
+  ];
+  return `<div class="decide">
+    <div class="dh"><span class="di">✦</span><b>قرّرها أُفق لك</b></div>
+    ${rows.map(([k, val, why]) => `<div class="drow">
+      <div class="dk">${esc(k)}</div>
+      <div class="dv">${esc(val)}</div>
+      <div class="dw">${esc(why || '')}</div>
+    </div>`).join('')}
+    <details class="fold"><summary>أريد أن أختار بنفسي</summary>
+      <div class="note">أُفق يعيد النظر في هذه الثلاثة كل يوم بحسب دقّتك وثباتك وما بقي من وقتك.
+        وإن أردتَ تعطيلها وضبطها بيدك فذلك في «جهازك ← متقدّم» — ولا ننصح به.</div>
+    </details>
+  </div>`;
+}
+
 function leadCard(again) {
   const g = S.suggestion || makeSuggestion();
   const n = thread();
@@ -3997,56 +4086,23 @@ settings: () => {
       <span>${(S.courses||[]).length ? `آخر دورة ${ar((S.courses||[]).slice(-1)[0].overall)}٪` : 'اضغط لتغييره'}</span></div>
     <span class="gcarrow">›</span>
   </button>
-  <div class="stabs"><button class="stb ${S.setTab===0?'on':''}" data-act="setTab" data-arg="0">الدراسة</button><button class="stb ${S.setTab===1?'on':''}" data-act="setTab" data-arg="1">المظهر</button><button class="stb ${S.setTab===2?'on':''}" data-act="setTab" data-arg="2">حسابي</button><button class="stb ${S.setTab===3?'on':''}" data-act="setTab" data-arg="3">متقدّم</button><button class="stb ${S.setTab===5?'on':''}" data-act="setTab" data-arg="5">التذكير</button><button class="stb ${S.setTab===6?'on':''}" data-act="setTab" data-arg="6">الجهاز</button><button class="stb ${S.setTab===4?'on':''}" data-act="setTab" data-arg="4">عن أُفق</button>${S.devUnlocked ? `<button class="stb dev ${S.setTab===7?'on':''}" data-act="setTab" data-arg="7">المطوّر</button>` : ''}</div>
+  <div class="stabs four"><button class="stb ${S.setTab===0?'on':''}" data-act="setTab" data-arg="0">الدراسة</button><button class="stb ${S.setTab===5?'on':''}" data-act="setTab" data-arg="5">التذكير</button><button class="stb ${S.setTab===6?'on':''}" data-act="setTab" data-arg="6">جهازك</button><button class="stb ${S.setTab===4?'on':''}" data-act="setTab" data-arg="4">عن أُفق</button>${S.devUnlocked ? `<button class="stb dev ${S.setTab===7?'on':''}" data-act="setTab" data-arg="7">المطوّر</button>` : ''}</div>
 ${S.setTab===7 && S.devUnlocked ? devPanel() : ''}
 ${S.setTab===0 ? `
-  ${S.track === 'qudurat' ? `
-  <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">تركيز التدريب</span></div>
-    <p class="note" style="margin-bottom:12px">القدرات قسمان: لفظيّ وكمّيّ، ونمط التفكير فيهما مختلف.
-      اختر قسمًا والزَمه أسبوعين أو ثلاثة، ثمّ بدّل. والتنقّل اليوميّ بينهما يُشتّت ولا يُفيد.</p>
-    <div class="seg3">
-      ${[['all','الاثنان'],['verbal','لفظيّ'],['quant','كمّيّ']].map(([k, n]) =>
-        `<button class="sg3 ${(S.focus || 'all') === k ? 'on' : ''}"
-          data-act="setFocus" data-arg="${k}">${n}</button>`).join('')}
-    </div>
-    ${phaseNow() ? `<div class="kv" style="margin-top:12px"><span>${esc(phaseNow().name)}</span>
-      <span class="v">${phaseLeft() != null ? `يبقى ${ar(phaseLeft())} يومًا` : 'حتى الاختبار'}</span></div>` : ''}
-    <p class="note" style="padding-top:10px">${
-      (S.focus || 'all') === 'all'
-        ? `التطبيق ينتقل بين القسمين بحسب حاجتك — مناسبٌ قرب الاختبار.`
-        : `تدريبك الآن في القسم ${esc(PART_NAME[S.focus])} وحده.
-           ${ar(mySkills().filter(x => partOf(x.id) === S.focus && hasContent(x.id)).length)} مهارات فيه.`}</p>
-  </div>` : ''}
-  <div class="group"><div class="group-h"><span class="t">جولات اليوم</span></div>
-    <p class="note" style="margin-bottom:12px">جولتان قصيرتان تُثبّتان أكثر من جلسة واحدة بالمدّة نفسها.
-      وهذا ليس رأيًا — هو أثر التوزيع، وأثبتُ ما في علم التعلّم.</p>
-    <div class="thgrid" style="grid-template-columns:repeat(3,1fr)">
-      ${Object.entries(ROUND_PRESETS).map(([k, v]) => {
-        const rs = v[S.schedTab || 'week'] || v.week;
-        return `<button class="thcard ${S.preset === k ? 'sel' : ''}"
-        data-act="setPreset" data-arg="${k}" style="padding:13px 6px;text-align:center">
-        <span style="display:block;font-family:var(--display);font-size:14px;color:var(--ink)">${esc(v.name)}</span>
-        <span style="font-size:11px">${ar(rs.length)} ${rs.length === 1 ? 'جولة' : 'جولات'}
-          · ${ar(rs.reduce((a, r) => a + r.mins, 0))} د</span></button>`; }).join('')}
-    </div>
-    <div class="stabs" style="margin-top:12px">
-      <button class="stb ${(S.schedTab||'week')==='week'?'on':''}" data-act="schedTab" data-arg="week">أيام الدراسة</button>
-      <button class="stb ${(S.schedTab||'week')==='wknd'?'on':''}" data-act="schedTab" data-arg="wknd">الجمعة والسبت</button>
-    </div>
-    <div class="card" style="margin-top:10px">
-      ${myRounds(S.schedTab || 'week').map((r, i) => `<div class="kv">
-        <span>${esc(roundKind(r.kind).t)} <em class="faint" style="font-style:normal">${ar(r.mins)} د</em></span>
-        <input class="tin" type="time" value="${r.at}" data-round="${i}" data-key="${S.schedTab || 'week'}"></div>`).join('')}
-      <div class="rdadj">
-        <button class="rdb" data-act="dropRound" ${myRounds(S.schedTab || 'week').length <= 1 ? 'disabled' : ''}>− جولة</button>
-        <span class="rdn num">${ar(myRounds(S.schedTab || 'week').length)} من ${ar(MAX_ROUNDS)}</span>
-        <button class="rdb" data-act="addRound" ${myRounds(S.schedTab || 'week').length >= MAX_ROUNDS ? 'disabled' : ''}>+ جولة</button>
+  ${decisionCard()}
+  <div class="group"><div class="group-h"><span class="t">متى اختبارك؟</span></div>
+    <div class="card">
+      <p class="note" style="padding:0 0 12px">حدّده ليعرف أُفق كم بقي، فيضبط قراراته على ما تبقّى.</p>
+      <div class="seg3">
+        ${[[30,'بعد شهر'],[60,'بعد شهرين'],[90,'بعد ٣ أشهر'],[0,'لم أحدّد']].map(([d,lbl]) =>
+          `<button class="sg ${(S.examIn||0)===d?'on':''}" data-act="setExam" data-arg="${d}">${esc(lbl)}</button>`).join('')}
       </div>
-      <p class="note" style="padding-top:10px">التقديم مسموح دائمًا ولا يُحسب تأخيرًا.
-        وإن فاتت جولة، يذكّرك التطبيق مرّة واحدة بلا لوم.
-        وتجنّبتُ ما بين المغرب والعشاء في المواعيد الافتراضية.</p>
     </div>
   </div>
+
+  ${S.track === 'qudurat' ? `
+  ` : ''}
+  
 ` : ''}
 ${S.setTab===5 ? `
   <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">متى تذاكر؟</span></div>
@@ -4066,40 +4122,10 @@ ${S.setTab===5 ? `
     <div class="kv" style="border:0;padding:0"><span>إعادة التشخيص</span>
       <span class="v">متاح بعد ${ar(14)} يومًا</span></div>
   </div>
-  <div class="group"><div class="group-h"><span class="t">متى اختبارك؟</span></div>
-    <p class="note" style="margin-bottom:10px">يحدّد إيقاع خطتك — لا عدد التذكيرات.</p>
-    <div class="seg">${[42,90,180,365].map(d => `<button data-act="setExam" data-arg="${d}"
-      class="${(S.examDays - S.day) === d ? 'sel' : ''}">${
-        d === 42 ? 'بعد ٦ أسابيع' : d === 90 ? 'بعد ٣ أشهر' : d === 180 ? 'بعد ٦ أشهر' : 'بعد سنة'
-      }<b>${ar(Math.round(d/7))} أسبوعًا</b></button>`).join('')}</div>
-  </div>
-  <div class="group"><div class="group-h"><span class="t">حجم الجلسة</span></div>
-    <p class="note" style="margin-bottom:10px">يضبطه التطبيق تلقائيًّا مع تقدّمك، ويمكن تغييره من هنا.</p>
-    <div class="seg">${[15, 25, 40].map(n => `<button data-act="setSize2" data-arg="${n}"
-      class="${S.size === n ? 'sel' : ''}">${n === 15 ? 'يوم مزدحم' : n === 25 ? 'المعتاد' : 'مكثّفة'}<b>${ar(n)} سؤالًا</b></button>`).join('')}</div>
-  </div>
-  <div class="group"><div class="group-h"><span class="t">وضع الإيقاع</span></div>
-    <p class="note" style="margin-bottom:10px">شريط رفيع بلا أرقام يوضّح إن كنت تتجاوز دقيقة في السؤال.
-      يُنصح به قبل الاختبار بشهر — وقبل ذلك يشتّت أكثر مما يفيد.</p>
-    <div class="seg">
-      <button data-act="setPace" data-arg="1" class="${S.pace ? 'sel' : ''}">مفعّل</button>
-      <button data-act="setPace" data-arg="0" class="${!S.pace ? 'sel' : ''}">متوقف</button>
-    </div>
-    ${S.paceHist.length ? `<p class="note" style="margin-top:10px">متوسط إيقاعك في آخر
-      ${ar(S.paceHist.length)} جلسات: ${ar(Math.round(S.paceHist.reduce((a,b)=>a+b,0)/S.paceHist.length))} ثانية للسؤال.</p>` : ''}
-  </div>
-  <div class="group"><div class="group-h"><span class="t">المهارات المؤجَّلة</span>
-    <span class="n num">${paused.length ? ar(paused.length) : 'لا شيء'}</span></div>
-    ${paused.map(s => `<div class="srow"><span class="pip paused"></span>${esc(s.name)}
-      <span class="meta"><button class="btn ghost" style="padding:0;width:auto;font-size:13px"
-        data-act="togglePause" data-arg="${s.id}">استعادة</button></span></div>`).join('')}
-    ${S.openPause ? `<p class="note" style="margin:10px 0">اختر ما تريد إيقافه. لن يظهر في اقتراحاتك، ويمكنك استعادته متى شئت.</p>
-      ${pausable.filter(s => !S.skills[s.id].paused).map(s => `<div class="srow">${esc(s.name)}
-        <span class="meta"><button class="btn ghost" style="padding:0;width:auto;font-size:13px"
-          data-act="togglePause" data-arg="${s.id}">إيقاف</button></span></div>`).join('')}`
-      : `<button class="btn ghost" style="text-align:right;width:auto;padding-inline-start:0"
-          data-act="openPause">إيقاف مهارة ›</button>`}
-  </div>
+  
+  
+  
+  
   ${S.devUnlocked ? `<div class="dev"><h3>محاكاة (للعرض فقط)</h3>
     <div class="seg">
       <button data-act="advance" data-arg="1">+ يوم</button>
@@ -4107,12 +4133,13 @@ ${S.setTab===5 ? `
       <button data-act="advance" data-arg="9">+ ٩ أيام</button>
     </div></div>` : ''}
 ` : ''}
-${S.setTab===1 ? `
+${S.setTab===6 ? `<div class="subtabs"><button class="sub ${(S.devTab||0)===0?'on':''}" data-act="devTabSet" data-arg="0">المظهر والجهاز</button><button class="sub ${(S.devTab||0)===1?'on':''}" data-act="devTabSet" data-arg="1">المشاركة</button><button class="sub ${(S.devTab||0)===2?'on':''}" data-act="devTabSet" data-arg="2">بياناتك</button></div>` : ''}
+${(S.setTab===6 && (S.devTab||0)===0) ? `
   <div class="group"><div class="group-h"><span class="t">المظهر</span></div>
     ${themeGrid()}
   </div>
 ` : ''}
-${S.setTab===6 ? `
+${(S.setTab===6 && (S.devTab||0)===0) ? `
   <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">النسخة</span></div>
     <div class="card">
       <div class="kv" data-act="devTap" style="cursor:default;-webkit-user-select:none;user-select:none"><span>نسخة أُفق</span><span class="v num">${APP_VERSION.split('.').map(x=>ar(x)).join('٫')}${S.devHint && !S.devUnlocked ? ` <em style="color:var(--ink-faint);font-style:normal;font-size:11px">· ${ar(S.devHint)}</em>` : ''}</span></div>
@@ -4130,7 +4157,7 @@ ${S.setTab===6 ? `
     <p class="note">يقرأ التطبيق شرح مفاتيح الحلّ صوتيًّا. الأسئلة وقطع الاستيعاب تبقى قراءةً — لأن الاختبار قراءة.</p>
   </div>
 ` : ''}
-${S.setTab===2 ? `
+${(S.setTab===6 && (S.devTab||0)===1) ? `
   <div class="group"><div class="group-h"><span class="t">مشاركة التقدّم</span></div>
     <div class="card">
       <div class="kv" style="border:0;padding:0 0 10px">
@@ -4146,15 +4173,7 @@ ${S.setTab===2 ? `
         data-go="report">اعرض ما سيصله ›</button>
     </div>
   </div>
-  ${(S.flags || []).length ? `<div class="group" style="margin-top:14px">
-    <div class="group-h"><span class="t">أسئلة أشرتَ إليها</span>
-      <button class="mini" data-act="clearFlags">مسح</button></div>
-    <p class="note" style="margin-bottom:10px">هذه أسئلة وسمتَها بأنها غير واضحة. أرِها لمن يبني الأداة.</p>
-    ${S.flags.map(f => `<div class="flagrow">
-      <span class="fid">${esc(f.id)}</span>
-      <span class="fst">${esc(f.stem)}…</span>
-      <span class="fdy">اليوم ${ar(f.day + 1)}</span></div>`).join('')}
-  </div>` : ''}
+  ${(S.flags || []).length ? `` : ''}
   <div class="group"><div class="group-h"><span class="t">تواصل مع المطوّر</span></div>
     <p class="note">ملاحظاتك تُحسّن الأداة. اكتب لنا إن وجدتَ خطأً أو سؤالًا مكرّرًا أو فكرة.</p>
     <button class="btn ghost" style="margin-top:11px" data-act="contactDev">أرسل ملاحظة</button>
@@ -4209,7 +4228,7 @@ ${S.setTab===4 ? `
     <div class="crs">أداة تعليمية — غير تابعة لهيئة تقويم التعليم والتدريب ولا معتمدة منها</div>
   </div>
 ` : ''}
-${S.setTab===3 ? `
+${(S.setTab===6 && (S.devTab||0)===2) ? `
   <div class="group"><div class="group-h"><span class="t">نسخة احتياطية</span></div>
     <div class="card">
       <p class="note" style="padding:0 0 12px">تقدّمك محفوظ في متصفّح هذا الجهاز وحده.
@@ -4462,7 +4481,9 @@ const ACTIONS = {
     render();
   },
   saved() { S.suggestion = null; go('home'); },
-  setTab(n) { S.setTab = +n; haptic(9); render(); },
+  devTabSet(n) { S.devTab = +n; haptic(9); render(); },
+  setTab(n) { S.devTab = 0; const M = { 1: 6, 2: 6, 3: 6 }; n = M[+n] != null ? M[+n] : +n;
+    S.setTab = n; haptic(9); render(); },
   setSize2(n) { S.size = +n; S.sizeManual = true; render(); },
   async installApp() { haptic(16); doInstall(); },
   contactDev() {
@@ -4853,7 +4874,13 @@ const ACTIONS = {
   openTheme() { S.sheet = 'theme'; render(); },
   closeSheet() { S.sheet = null; render(); },
   sendReport() { toast('أُرسل التقرير — ويظهر لك دائمًا كما هو'); },
-  setExam(d) { S.examDays = +d + S.day; render(); },
+  setExam(d) {
+    const n = +d;
+    S.examIn = n;
+    S.examDays = n ? n + S.day : null;
+    S.examDate = n ? new Date(Date.now() + n * 86400000).toISOString() : null;
+    haptic(12); saveState(); render();
+  },
   togglePause(id) { S.skills[id].paused = !S.skills[id].paused; S.suggestion = null; render(); },
   advance(n) { S.day += +n; S.suggestion = null; render(); },
   reset() { const n = S.name; S = freshState(); S.name = n; go(n ? 'pick' : 'name'); },
