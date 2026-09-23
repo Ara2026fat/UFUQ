@@ -2481,11 +2481,17 @@ details.fold .note{padding:0 15px 13px!important;margin:0}
       '<div style="color:#E0D2B4;font-size:22px;margin-bottom:12px">تعذّر تحميل المحتوى</div>' +
       '<div style="font-size:14px">' + msg + '</div>' +
       '<div style="font-size:12px;margin-top:16px;color:#67635A">تأكّد من الاتصال ثمّ أعد الفتح.' +
-      ' وبعد أول فتح ناجح يعمل التطبيق بلا إنترنت.</div></div>';
+      ' وبعد أول فتح ناجح يعمل التطبيق بلا إنترنت.<br>إن تكرّر: انتظر دقيقتين بعد الرفع ثمّ أعد الفتح.</div></div>';
   }
-  function load(path) {
-    return fetch(path).then(function (r) {
-      if (!r.ok) throw 0; return r.arrayBuffer();
+  function load(path, retry) {
+    /* عند الفشل نعيد المحاولة مرّةً بتجاوز الذاكرة — فقد يكون النشر لم يكتمل بعد */
+    return fetch(path, retry ? { cache: 'reload' } : {}).then(function (r) {
+      if (!r.ok) throw new Error('الملفّ ' + path.replace('./', '') + ' لم يصل (رمز ' + r.status + ')');
+      return r.arrayBuffer();
+    }).then(function (buf) {
+      if (!buf || buf.byteLength < 1024)
+        throw new Error('الملفّ ' + path.replace('./', '') + ' وصل ناقصًا');
+      return buf;
     }).then(function (buf) {
       var b = new Uint8Array(buf);
       for (var i = 0; i < b.length; i++) b[i] ^= K[i % K.length];
@@ -2496,7 +2502,13 @@ details.fold .note{padding:0 15px 13px!important;margin:0}
       return new Response(st).json();
     });
   }
-  Promise.all([load('./bank.bin'), load('./keys.bin')]).then(function (a) {
+  function loadTwice(p) {
+    return load(p, false).catch(function (e1) {
+      return new Promise(function (ok) { setTimeout(ok, 1500); })
+        .then(function () { return load(p, true); });
+    });
+  }
+  Promise.all([loadTwice('./bank.bin'), loadTwice('./keys.bin')]).then(function (a) {
     window.__BANK = a[0]; window.__KEYS = a[1];
     var sc = document.createElement('script');
     sc.src = './app.js';
