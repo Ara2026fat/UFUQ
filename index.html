@@ -2474,15 +2474,6 @@ details.fold .note{padding:0 15px 13px!important;margin:0}
 .drow{padding:9px 0}
 
 /* ══════ الإعدادات: شاشة واحدة، التمرير داخل اللوحة فقط ══════ */
-body[data-screen="settings"] #app{display:flex;flex-direction:column;
-  height:calc(100dvh - 150px);overflow:hidden}
-body[data-screen="settings"] #app > .top,
-body[data-screen="settings"] #app > .idcard,
-body[data-screen="settings"] #app > .goalcard,
-body[data-screen="settings"] #app > .stabs{flex:0 0 auto}
-body[data-screen="settings"] .spane{flex:1;min-height:0;overflow-y:auto;
-  -webkit-overflow-scrolling:touch;padding-left:2px;scrollbar-width:none}
-body[data-screen="settings"] .spane::-webkit-scrollbar{display:none}
 /* البطاقات أصغر وأهدأ فيقلّ ما يحتاج تمريرًا */
 body[data-screen="settings"] .group{margin-bottom:14px}
 body[data-screen="settings"] .card{padding:14px 16px}
@@ -2511,8 +2502,6 @@ body[data-screen="settings"] .dv{font-size:16px}
 body[data-screen="settings"] .stabs.four{
   position:sticky;top:0;z-index:5;padding:10px 0;margin:0 0 10px;
   background:var(--void);border-bottom:1px solid var(--line)}
-body[data-screen="settings"] .subtabs{
-  position:sticky;top:60px;z-index:4;background:var(--void);padding-bottom:8px;margin-bottom:10px}
 /* بطاقتا الاسم والهدف: أصغر وأهدأ فلا تزاحمان */
 body[data-screen="settings"] .idcard,
 body[data-screen="settings"] .goalcard{margin:8px 0;padding:11px 14px}
@@ -2561,6 +2550,47 @@ body[data-screen="home"] .lead .ld-a{
 .sar{flex:0 0 auto;color:var(--ink-faint);font-size:17px;line-height:1}
 /* داخل اللوحة: أخفِ شريط التبويبات — الصفّ هو الذي حدّد الوجهة */
 body[data-screen="settings"] .stabs.four{display:none}
+
+/* ══════ الإعدادات: القائمة تظهر كاملةً، واللوحة تُمرَّر داخلها ══════ */
+body[data-screen="settings"] #app{overflow:visible;height:auto}
+body[data-screen="settings"] .slist{display:block}
+body[data-screen="settings"] .spane{max-height:calc(100dvh - 210px);overflow-y:auto;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;padding-left:2px}
+body[data-screen="settings"] .spane::-webkit-scrollbar{display:none}
+body[data-screen="settings"] .subtabs{position:sticky;top:0;z-index:4;
+  background:var(--void);padding:8px 0;margin-bottom:10px}
+
+/* ══════ لا شريط يخرج عن الشاشة ══════ */
+.ltabs,.prtabs,.vtabs,.chips,.seg3,.tabs{max-width:100%;box-sizing:border-box}
+.ltabs,.prtabs,.vtabs{display:grid !important;gap:6px;overflow:visible !important}
+.ltabs{grid-template-columns:repeat(3,1fr)}
+.prtabs{grid-template-columns:repeat(auto-fit,minmax(70px,1fr))}
+.vtabs{grid-template-columns:repeat(auto-fit,minmax(64px,1fr))}
+.ltabs > *,.prtabs > *,.vtabs > *{width:100%;min-width:0;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;padding:10px 4px;font-size:12.5px}
+.seg3{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px}
+.seg3 > *{width:100%;min-width:0}
+#app{overflow-x:hidden}
+
+/* ══════ هوية الإعدادات: صفوفٌ متلاصقة كبطاقةٍ واحدة ══════ */
+.slist{margin:16px 0 34px}
+.sgrp{font-size:11px;letter-spacing:.1em;color:var(--ink-faint);margin:24px 6px 9px}
+.sgrp:first-child{margin-top:4px}
+/* المجموعة تُرسَم بطاقةً واحدة والصفوف داخلها بفواصل رفيعة */
+.srow{margin:0;border-radius:0;border:1px solid var(--line);border-bottom:0;
+  background:linear-gradient(158deg,rgba(255,255,255,.045),rgba(255,255,255,.015))}
+.srow + .srow{border-top-color:rgba(255,255,255,.055)}
+.sgrp + .srow{border-radius:16px 16px 0 0}
+.srow:has(+ .sgrp),.slist .srow:last-child{border-radius:0 0 16px 16px;border-bottom:1px solid var(--line)}
+.sgrp + .srow:has(+ .sgrp){border-radius:16px}
+.srow:active{background:linear-gradient(158deg,rgba(132,140,203,.16),rgba(132,140,203,.05))}
+.sic{border-radius:10px;width:32px;height:32px;font-size:14px}
+.sbd b{font-size:15.5px}
+.sv{font-family:var(--display);font-size:13.5px;color:var(--ink-soft)}
+.sar{transform:translateY(-1px);opacity:.55}
+/* لوحة الصفّ: عنوانها ثابت وما تحتها يتنفّس */
+body[data-screen="settings"] .spane{padding-top:4px}
+body[data-screen="settings"] .spane > .group:first-child{margin-top:4px}
 </style>
 </head>
 <body>

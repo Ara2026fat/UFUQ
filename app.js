@@ -139,9 +139,9 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '9.1.0';
+const APP_VERSION = '9.3.0';
 const APP_DATE = '٩ سبتمبر ٢٠٢٦';
-const APP_BUILD = 116;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_BUILD = 118;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
