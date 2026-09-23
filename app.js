@@ -139,9 +139,9 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '8.8.0';
+const APP_VERSION = '8.9.0';
 const APP_DATE = '٩ سبتمبر ٢٠٢٦';
-const APP_BUILD = 113;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_BUILD = 114;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -1048,7 +1048,7 @@ const TRACKS = {
     tag:'رياضيات وإنجليزية', glyph:'<path d="M8 38V20l16-12 16 12v18"/><path d="M18 38V26h12v12"/>' }
 };
 function makeSuggestion() {
-  if (!S.sizeManual) S.size = decideSize();
+  if (!S.sizeManual) { const z = decideSize(); S.size = (z && typeof z === 'object') ? (z.v || 30) : (+z || 30); }
   return makeSuggestion__inner.apply(null, arguments);
 }
 // ── عرض السؤال بحسب نوعه — لا قالب واحد ──
@@ -1791,6 +1791,7 @@ function render() {
   const frame = document.createElement('div');
   const d = S._dir || 0;
   frame.className = 'fade' + (d > 0 ? ' inF' : d < 0 ? ' inB' : '');
+  try { document.body.dataset.screen = S.screen; } catch (e) {}
   frame.innerHTML = (S.storageBlocked ? `<div class="blocked">
       <b>تعذّر حفظ تقدّمك</b>
       <span>المتصفّح يمنع الحفظ — قد تكون في وضع التصفّح الخفيّ، أو الذاكرة ممتلئة.
@@ -2787,7 +2788,7 @@ function overallAcc() {
 }
 
 /* القسم: لفظيّ أم كمّيّ — بحسب المرحلة وما بقي من الوقت */
-function decideFocus() {
+function ufqFocus() {
   if (S.track !== 'qudurat') return { v: 'both', why: 'هذا المسار قسمٌ واحد' };
   let ph = null; try { ph = phaseNow(); } catch (e) {}
   const left = daysToExam();
@@ -2799,7 +2800,7 @@ function decideFocus() {
 }
 
 /* حجم الجلسة: يكبر مع الثبات ويصغر عند التعثّر */
-function decideSize() {
+function ufqSize() {
   const acc = overallAcc();
   const st = S.streak || 0;
   if (acc < 0.6) return { v: 20, why: 'صغّرناها قليلًا حتى تستقرّ دقّتك' };
@@ -2808,7 +2809,7 @@ function decideSize() {
 }
 
 /* الإيقاع اليوميّ: جولتان إلا عند ضيق الوقت */
-function decidePace() {
+function ufqPace() {
   const left = daysToExam();
   if (left != null && left <= 14) return { v: 3, why: 'بقي وقتٌ قصير — فثلاث جولات قصيرة' };
   if ((S.streak || 0) === 0 && (S.sessionCount || 0) < 4)
@@ -2819,9 +2820,9 @@ function decidePace() {
 /* تُطبَّق القرارات في كل يومٍ جديد، ويبقى للطالب أن يخالفها مرّةً من «متقدّم» */
 function applyDecisions() {
   if (S.manualOverride) return;
-  const f = decideFocus(), z = decideSize(), p = decidePace();
+  const f = ufqFocus(), z = ufqSize(), p = ufqPace();
   S.focus = f.v;
-  S.size = z.v;
+  S.size = (typeof z.v === 'number' && isFinite(z.v)) ? z.v : 30;
   S.preset = p.v >= 3 ? 'full' : (p.v === 1 ? 'light' : 'steady');
   S._why = { focus: f.why, size: z.why, pace: p.why };
   S._val = { focus: f.v, size: z.v, pace: p.v };
@@ -4069,7 +4070,7 @@ settings: () => {
   if (S.setTab == null) S.setTab = 0;
   const pausable = mySkills().filter(s => hasContent(s.id));
   const paused = pausable.filter(s => S.skills[s.id].paused);
-  return `<div class="top backtop">
+  return `<div class="top backtop sview">
     <button class="backb" data-go="home" aria-label="رجوع">
       <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -4087,6 +4088,7 @@ settings: () => {
     <span class="gcarrow">›</span>
   </button>
   <div class="stabs four"><button class="stb ${S.setTab===0?'on':''}" data-act="setTab" data-arg="0">الدراسة</button><button class="stb ${S.setTab===5?'on':''}" data-act="setTab" data-arg="5">التذكير</button><button class="stb ${S.setTab===6?'on':''}" data-act="setTab" data-arg="6">جهازك</button><button class="stb ${S.setTab===4?'on':''}" data-act="setTab" data-arg="4">عن أُفق</button>${S.devUnlocked ? `<button class="stb dev ${S.setTab===7?'on':''}" data-act="setTab" data-arg="7">المطوّر</button>` : ''}</div>
+<div class="spane">
 ${S.setTab===7 && S.devUnlocked ? devPanel() : ''}
 ${S.setTab===0 ? `
   ${decisionCard()}
@@ -4281,7 +4283,8 @@ ${(S.setTab===6 && (S.devTab||0)===2) ? `
       <button data-act="reset">تصفير</button>
     </div>
     <p class="note" style="margin-top:10px">تقديم الأيام يُظهر أثر شرط التباعد الزمني في الإتقان، وحصانة الاستئناف بعد الانقطاع.</p>
-  </div>`;
+`;
+
 },
 
 paywall: () => `<div class="center"><div class="glass">

@@ -2459,6 +2459,36 @@ details.fold .note{padding:0 15px 13px!important;margin:0}
 .dv{font-family:var(--display);font-size:17px;color:#F2F3FB;margin:1px 0 3px}
 .dw{font-size:13px;color:var(--ink-soft);line-height:1.7}
 .decide .fold{margin-top:12px;background:transparent;border-color:rgba(255,255,255,.08)}
+
+/* ══════ الإعدادات: شاشة واحدة، التمرير داخل اللوحة وحدها ══════ */
+#app .sview{display:flex;flex-direction:column;height:calc(100dvh - 190px)}
+#app .sview .stabs.four,#app .sview .subtabs{flex:0 0 auto}
+#app .spane{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;padding-left:2px}
+#app .spane::-webkit-scrollbar{width:3px}
+#app .spane::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:9px}
+#app .spane > .group:last-child{margin-bottom:0}
+/* بطاقة القرار أصغر قليلًا لتتّسع */
+.decide{padding:15px}
+.decide .dv{font-size:16px}
+.drow{padding:9px 0}
+
+/* ══════ الإعدادات: شاشة واحدة، التمرير داخل اللوحة فقط ══════ */
+body[data-screen="settings"] #app{display:flex;flex-direction:column;
+  height:calc(100dvh - 150px);overflow:hidden}
+body[data-screen="settings"] #app > .top,
+body[data-screen="settings"] #app > .idcard,
+body[data-screen="settings"] #app > .goalcard,
+body[data-screen="settings"] #app > .stabs{flex:0 0 auto}
+body[data-screen="settings"] .spane{flex:1;min-height:0;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;padding-left:2px;scrollbar-width:none}
+body[data-screen="settings"] .spane::-webkit-scrollbar{display:none}
+/* البطاقات أصغر وأهدأ فيقلّ ما يحتاج تمريرًا */
+body[data-screen="settings"] .group{margin-bottom:14px}
+body[data-screen="settings"] .card{padding:14px 16px}
+body[data-screen="settings"] .note{font-size:13px;line-height:1.75}
+body[data-screen="settings"] .decide{padding:15px 16px;margin:12px 0}
+body[data-screen="settings"] .dv{font-size:16px}
 </style>
 </head>
 <body>
