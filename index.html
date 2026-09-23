@@ -2489,6 +2489,78 @@ body[data-screen="settings"] .card{padding:14px 16px}
 body[data-screen="settings"] .note{font-size:13px;line-height:1.75}
 body[data-screen="settings"] .decide{padding:15px 16px;margin:12px 0}
 body[data-screen="settings"] .dv{font-size:16px}
+
+/* ══════ التبويب المختار: واضحٌ قطعًا ══════ */
+.stabs .stb.on,
+.stabs.four .stb.on{
+  color:#fff !important;
+  background:linear-gradient(140deg,var(--glow),color-mix(in oklab,var(--glow) 72%,#000)) !important;
+  border-color:transparent !important;
+  box-shadow:0 4px 16px color-mix(in oklab,var(--glow) 45%,transparent) !important;
+  font-weight:600}
+.stabs .stb{color:var(--ink-soft) !important;background:var(--flat);border:1px solid var(--line)}
+.subtabs .sub.on{
+  color:#fff !important;
+  background:color-mix(in oklab,var(--glow) 62%,#000) !important;
+  border-color:transparent !important;font-weight:600}
+.stabs.four .stb.dev.on{
+  background:linear-gradient(140deg,var(--near),color-mix(in oklab,var(--near) 70%,#000)) !important;
+  box-shadow:0 4px 16px color-mix(in oklab,var(--near) 45%,transparent) !important}
+
+/* ══════ شريط سفليّ واحد: تبويبات الإعدادات تلتصق بأعلى المحتوى ══════ */
+body[data-screen="settings"] .stabs.four{
+  position:sticky;top:0;z-index:5;padding:10px 0;margin:0 0 10px;
+  background:var(--void);border-bottom:1px solid var(--line)}
+body[data-screen="settings"] .subtabs{
+  position:sticky;top:60px;z-index:4;background:var(--void);padding-bottom:8px;margin-bottom:10px}
+/* بطاقتا الاسم والهدف: أصغر وأهدأ فلا تزاحمان */
+body[data-screen="settings"] .idcard,
+body[data-screen="settings"] .goalcard{margin:8px 0;padding:11px 14px}
+body[data-screen="settings"] .goalcard .gcnum{width:40px;height:40px;font-size:17px}
+
+/* ══════ البطاقة الكبرى: لا يخفى أين يضغط ══════ */
+body[data-screen="home"] .lead{
+  position:relative;
+  box-shadow:0 10px 40px color-mix(in oklab,var(--glow) 28%,transparent),
+             0 0 0 1px color-mix(in oklab,var(--glow) 34%,transparent);
+  animation:leadPulse 3.4s ease-in-out infinite}
+@keyframes leadPulse{
+  0%,100%{box-shadow:0 10px 40px color-mix(in oklab,var(--glow) 24%,transparent),
+                     0 0 0 1px color-mix(in oklab,var(--glow) 30%,transparent)}
+  50%{box-shadow:0 14px 52px color-mix(in oklab,var(--glow) 40%,transparent),
+                 0 0 0 2px color-mix(in oklab,var(--glow) 48%,transparent)}}
+body[data-screen="home"] .lead .ld-f{
+  margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
+body[data-screen="home"] .lead .ld-a{
+  display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;
+  background:var(--glow);color:#0E1017;font-weight:700;
+  animation:ldNudge 2.2s ease-in-out infinite}
+@keyframes ldNudge{0%,100%{transform:translateX(0)}50%{transform:translateX(-5px)}}
+@media (prefers-reduced-motion:reduce){
+  body[data-screen="home"] .lead,body[data-screen="home"] .lead .ld-a{animation:none}}
+
+/* ══════ قائمة الإعدادات ══════ */
+.slist{margin:14px 0 30px}
+.sgrp{font-size:11.5px;letter-spacing:.08em;color:var(--ink-faint);
+  margin:22px 4px 8px;text-transform:none}
+.sgrp:first-child{margin-top:6px}
+.srow{display:flex;align-items:center;gap:13px;width:100%;padding:15px 16px;
+  border-radius:14px;margin-bottom:8px;font:inherit;text-align:right;cursor:pointer;
+  color:var(--ink);background:var(--flat);border:1px solid var(--line);
+  transition:background .18s,border-color .18s,transform .12s}
+.srow:active{transform:scale(.99);background:rgba(255,255,255,.055);
+  border-color:rgba(132,140,203,.35)}
+.sic{flex:0 0 auto;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+  font-size:15px;color:var(--glow);background:color-mix(in oklab,var(--glow) 14%,transparent);
+  border:1px solid color-mix(in oklab,var(--glow) 26%,transparent)}
+.sbd{flex:1;min-width:0}
+.sbd b{display:block;font-size:15px;font-weight:500;color:#E6E8F5}
+.sbd em{display:block;font-style:normal;font-size:12px;color:var(--ink-faint);margin-top:1px}
+.sv{flex:0 0 auto;font-size:13px;color:var(--ink-soft);max-width:40%;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sar{flex:0 0 auto;color:var(--ink-faint);font-size:17px;line-height:1}
+/* داخل اللوحة: أخفِ شريط التبويبات — الصفّ هو الذي حدّد الوجهة */
+body[data-screen="settings"] .stabs.four{display:none}
 </style>
 </head>
 <body>

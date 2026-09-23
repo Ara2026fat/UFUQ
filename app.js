@@ -139,9 +139,9 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '8.9.0';
+const APP_VERSION = '9.1.0';
 const APP_DATE = '٩ سبتمبر ٢٠٢٦';
-const APP_BUILD = 114;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_BUILD = 116;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -2985,6 +2985,282 @@ function deltaPanel() {
   </div>`;
 }
 
+
+/* ══════════════ قائمة الإعدادات ══════════════
+   صفوفٌ بقيمها الحالية — يرى الطالب كل شيء في شاشةٍ واحدة،
+   وكل صفٍّ يفتح شاشته وحده فلا يزاحمه غيره. */
+function settingsList() {
+  let rounds = 0; try { rounds = (myRounds(S.schedTab || 'week') || []).length; } catch (e) {}
+  const FN = { verbal: 'لفظيّ', quant: 'كمّيّ', both: 'القسمان' };
+  const V = {
+    name: S.name || '—',
+    goal: ar(myGoal()),
+    exam: S.examIn ? ('بعد ' + ar(S.examIn) + ' يومًا') : 'لم يُحدَّد',
+    plan: (FN[S.focus] || '—') + ' · ' + ar(S.size || 30) + ' سؤالًا',
+    remind: rounds ? (ar(rounds) + (rounds === 1 ? ' جولة' : ' جولات')) : 'بلا تذكير',
+    look: (S.audio ? 'صوت مفعَّل' : 'صوت مطفأ'),
+    ver: APP_VERSION.split('.').map(x => ar(x)).join('٫')
+  };
+  const row = (id, ic, label, val, sub) => `<button class="srow" data-act="openRow" data-arg="${id}">
+    <span class="sic">${ic}</span>
+    <span class="sbd"><b>${esc(label)}</b>${sub ? `<em>${esc(sub)}</em>` : ''}</span>
+    <span class="sv">${esc(val || '')}</span>
+    <span class="sar">‹</span></button>`;
+  return `<div class="top backtop sview">
+    <button class="backb" data-go="home" aria-label="رجوع">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>اليوم</span></button>
+    <span class="eyebrow" style="margin:0">الإعدادات</span></div>
+
+  <div class="idcard">
+    <span class="av" style="color:var(--glow)">${trackGlyph(S.track, 26)}</span>
+    <div class="who"><b>${esc(S.name || '—')}</b><span>${esc(TRACKS[S.track].name)}</span></div>
+    <button class="mini" data-act="editName">غيّر</button>
+  </div>
+
+  <div class="slist">
+    <div class="sgrp">حسابك</div>
+    ${row('goal', '◎', 'هدفك في الاختبار', V.goal)}
+    ${row('exam', '⏱', 'موعد اختبارك', V.exam)}
+
+    <div class="sgrp">تدريبك</div>
+    ${row('plan', '✦', 'ما يقرّره أُفق', V.plan, 'القسم والحجم والجولات')}
+    ${row('remind', '◔', 'مواعيد التذكير', V.remind)}
+
+    <div class="sgrp">جهازك</div>
+    ${row('look', '◐', 'المظهر والصوت', V.look)}
+    ${row('share', '⤴', 'المشاركة والتثبيت', '')}
+    ${row('data', '⛁', 'بياناتك ونسختك', '')}
+
+    <div class="sgrp">عن أُفق</div>
+    ${row('about', 'ⓘ', 'عن أُفق وشروطه', V.ver)}
+    ${S.devUnlocked ? row('dev', '✦', 'المطوّر', 'مفتوح') : ''}
+  </div>`;
+}
+
+function settingsPanels() {
+  if (S.setTab == null) S.setTab = 0;
+  if (S.screen !== 'settings') S.setRow = null;
+  const pausable = mySkills().filter(s => hasContent(s.id));
+  const paused = pausable.filter(s => S.skills[s.id].paused);
+  return `<div class="hidden-top" style="display:none">
+    <button class="backb" data-go="home" aria-label="رجوع">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>اليوم</span></button>
+    <span class="eyebrow" style="margin:0">الإعدادات</span></div>
+  <div class="idcard">
+    <span class="av" style="color:var(--glow)">${trackGlyph(S.track, 26)}</span>
+    <div class="who"><b>${esc(S.name || '—')}</b><span>${esc(TRACKS[S.track].name)} · ${esc(TRACKS[S.track].tag)}</span></div>
+    <button class="mini" data-act="editName">الاسم</button>
+  </div>
+  <button class="goalcard" data-go="goal">
+    <div class="gcnum">${ar(myGoal())}</div>
+    <div class="gcbody"><b>هدفك في الاختبار</b>
+      <span>${(S.courses||[]).length ? `آخر دورة ${ar((S.courses||[]).slice(-1)[0].overall)}٪` : 'اضغط لتغييره'}</span></div>
+    <span class="gcarrow">›</span>
+  </button>
+  <div class="stabs four"><button class="stb ${S.setTab===0?'on':''}" data-act="setTab" data-arg="0">الدراسة</button><button class="stb ${S.setTab===5?'on':''}" data-act="setTab" data-arg="5">التذكير</button><button class="stb ${S.setTab===6?'on':''}" data-act="setTab" data-arg="6">جهازك</button><button class="stb ${S.setTab===4?'on':''}" data-act="setTab" data-arg="4">عن أُفق</button>${S.devUnlocked ? `<button class="stb dev ${S.setTab===7?'on':''}" data-act="setTab" data-arg="7">المطوّر</button>` : ''}</div>
+<div class="spane">
+${S.setTab===7 && S.devUnlocked ? devPanel() : ''}
+${S.setTab===0 ? `
+  ${decisionCard()}
+  <div class="group"><div class="group-h"><span class="t">متى اختبارك؟</span></div>
+    <div class="card">
+      <p class="note" style="padding:0 0 12px">حدّده ليعرف أُفق كم بقي، فيضبط قراراته على ما تبقّى.</p>
+      <div class="seg3">
+        ${[[30,'بعد شهر'],[60,'بعد شهرين'],[90,'بعد ٣ أشهر'],[0,'لم أحدّد']].map(([d,lbl]) =>
+          `<button class="sg ${(S.examIn||0)===d?'on':''}" data-act="setExam" data-arg="${d}">${esc(lbl)}</button>`).join('')}
+      </div>
+    </div>
+  </div>
+
+  ${S.track === 'qudurat' ? `
+  ` : ''}
+  
+` : ''}
+${S.setTab===5 ? `
+  <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">متى تذاكر؟</span></div>
+    <p class="note" style="margin-bottom:10px">اربط جلستك بشيء تفعله أصلًا كل يوم.
+      الموعد المرتبط بحدث يثبت أسرع من ساعة تُنسى.</p>
+    <div class="thgrid">
+      ${ANCHORS.map(a => `<button class="thcard ${S.anchor === a.id ? 'sel' : ''}"
+        data-act="setAnchor" data-arg="${a.id}" style="padding:13px 8px;text-align:center">
+        <span style="display:block;font-family:var(--display);font-size:14px;color:var(--ink);margin-bottom:3px">${esc(a.t)}</span>
+        <span style="font-size:11.5px">${esc(a.b)}</span></button>`).join('')}
+    </div>
+    ${S.anchor === 'clock' ? `<div class="card" style="margin-top:10px">
+      <div class="kv" style="border:0;padding:0"><span>الساعة</span><span class="v">${S.reminder}</span></div>
+    </div>` : ''}
+  </div>
+  <div class="card">
+    <div class="kv" style="border:0;padding:0"><span>إعادة التشخيص</span>
+      <span class="v">متاح بعد ${ar(14)} يومًا</span></div>
+  </div>
+  
+  
+  
+  
+  ${S.devUnlocked ? `<div class="dev"><h3>محاكاة (للعرض فقط)</h3>
+    <div class="seg">
+      <button data-act="advance" data-arg="1">+ يوم</button>
+      <button data-act="advance" data-arg="3">+ ٣ أيام</button>
+      <button data-act="advance" data-arg="9">+ ٩ أيام</button>
+    </div></div>` : ''}
+` : ''}
+${S.setTab===6 ? `<div class="subtabs"><button class="sub ${(S.devTab||0)===0?'on':''}" data-act="devTabSet" data-arg="0">المظهر والجهاز</button><button class="sub ${(S.devTab||0)===1?'on':''}" data-act="devTabSet" data-arg="1">المشاركة</button><button class="sub ${(S.devTab||0)===2?'on':''}" data-act="devTabSet" data-arg="2">بياناتك</button></div>` : ''}
+${(S.setTab===6 && (S.devTab||0)===0) ? `
+  <div class="group"><div class="group-h"><span class="t">المظهر</span></div>
+    ${themeGrid()}
+  </div>
+` : ''}
+${(S.setTab===6 && (S.devTab||0)===0) ? `
+  <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">النسخة</span></div>
+    <div class="card">
+      <div class="kv" data-act="devTap" style="cursor:default;-webkit-user-select:none;user-select:none"><span>نسخة أُفق</span><span class="v num">${APP_VERSION.split('.').map(x=>ar(x)).join('٫')}${S.devHint && !S.devUnlocked ? ` <em style="color:var(--ink-faint);font-style:normal;font-size:11px">· ${ar(S.devHint)}</em>` : ''}</span></div>
+      <div class="kv"><span>تمّ التحديث بتاريخ</span><span class="v">${esc(APP_DATE)}</span></div>
+      <div class="kv" style="border:0"><span>الحالة</span><span class="v">محدَّث</span></div>
+      <button class="btn ghost" style="margin-top:10px" data-act="checkUpdate">ابحث عن تحديث</button>
+    </div>
+  </div>
+  <div class="group"><div class="group-h"><span class="t">التطبيق على جهازك</span></div>
+    ${installCard()}
+    ${installDiag()}
+  </div>
+  <div class="group"><div class="group-h"><span class="t">الاستماع</span>
+    <button class="sw ${S.audio ? 'on' : ''}" data-act="toggleAudio"><i></i></button></div>
+    <p class="note">يقرأ التطبيق شرح مفاتيح الحلّ صوتيًّا. الأسئلة وقطع الاستيعاب تبقى قراءةً — لأن الاختبار قراءة.</p>
+  </div>
+` : ''}
+${(S.setTab===6 && (S.devTab||0)===1) ? `
+  <div class="group"><div class="group-h"><span class="t">مشاركة التقدّم</span></div>
+    <div class="card">
+      <div class="kv" style="border:0;padding:0 0 10px">
+        <span>تقرير أسبوعي إلى ولي الأمر</span>
+        <span class="v">${S.shareReport ? 'مفعّل' : 'متوقف'}</span></div>
+      <p class="note">يتضمن: أيام نشاطك، وما أكملته، وما يحتاج وقتًا أطول — مع اقتراحات لكيفية دعمك.<br>
+        لا يتضمن: درجاتك، ولا أخطاءك، ولا أسئلتك.</p>
+      <div class="seg" style="margin-top:12px">
+        <button data-act="toggleShare" data-arg="1" class="${S.shareReport ? 'sel' : ''}">مفعّل</button>
+        <button data-act="toggleShare" data-arg="0" class="${!S.shareReport ? 'sel' : ''}">متوقف</button>
+      </div>
+      <button class="btn ghost" style="text-align:right;width:auto;padding-inline-start:0;margin-top:6px"
+        data-go="report">اعرض ما سيصله ›</button>
+    </div>
+  </div>
+  ${(S.flags || []).length ? `` : ''}
+  <div class="group"><div class="group-h"><span class="t">تواصل مع المطوّر</span></div>
+    <p class="note">ملاحظاتك تُحسّن الأداة. اكتب لنا إن وجدتَ خطأً أو سؤالًا مكرّرًا أو فكرة.</p>
+    <button class="btn ghost" style="margin-top:11px" data-act="contactDev">أرسل ملاحظة</button>
+    ${(S.flags && S.flags.length) ? `<p class="note" style="margin-top:10px">
+      سجّلتَ ${ar(S.flags.length)} ملاحظة على أسئلة — تُرفَق تلقائيًّا.</p>` : ''}
+  </div>
+  ${!isStandalone() ? `<div class="group"><div class="group-h"><span class="t">تثبيت على الجهاز</span></div>
+    <p class="note">${isIOS()
+      ? 'من متصفّح سفاري: اضغط زرّ المشاركة ⇧ ثم «إضافة إلى الشاشة الرئيسية».'
+      : 'يعمل كتطبيق كامل بلا متصفّح، ويشتغل بلا إنترنت.'}</p>
+    ${(!isIOS() && deferredPrompt) ? `<button class="btn" style="margin-top:11px" data-act="installApp">ثبّت الآن</button>` : ''}
+  </div>` : ''}
+` : ''}
+${S.setTab===4 ? `
+  <div class="abt">
+    <div class="abmark">${markSVG(48)}</div>
+    <h2 class="abn">أُفق</h2>
+    <p class="abv">النسخة ${APP_VERSION.split('.').map(x=>ar(x)).join('٫')} · ${ar(mySkills().length)} مهارة في مسارك</p>
+    <p class="abv" style="margin-top:5px">آخر تحديث ${esc(APP_DATE)}</p>
+    <p class="abd">تدريبٌ يوميّ قصير على اختبارات القدرات والتحصيلي وستيب.
+      بُني على فكرة واحدة: <b>الاستمرار قبل الكمّية</b> — عشر دقائق كلّ يوم
+      تفعل ما لا تفعله عشر ساعات في يوم واحد.</p>
+  </div>
+  
+  
+  
+  <div class="group"><div class="group-h"><span class="t">ما يميّزه</span></div>
+    <div class="card">
+      <div class="kv"><span>السلسلة تُجمَّد ولا تُصفَّر</span><span class="v">انقطاعك لا يمحو ما بنيت</span></div>
+      <div class="kv"><span>الجلسة تعرف متى تتوقّف</span><span class="v">ثلاثة أخطاء = يكفي اليوم</span></div>
+      <div class="kv"><span>لا مقارنة بغيرك</span><span class="v">لا لوحات صدارة ولا ترتيب</span></div>
+      <div class="kv" style="border:0"><span>لا وعود بالاختصار</span><span class="v">لا طريق قصيرًا يُباع لك</span></div>
+    </div>
+  </div><div class="group"><div class="group-h"><span class="t">خصوصيّتك</span></div>
+    <div class="card"><p class="note" style="padding:0">كلّ تقدّمك محفوظ <b>على جهازك وحده</b>.
+      لا خادم، ولا حساب، ولا بيانات تُرسل إلى أيّ جهة — ولا إلينا.
+      مسحُ بيانات المتصفّح يمسح تقدّمك، فثبّت التطبيق لتحفظه.</p></div>
+  </div><div class="group"><div class="group-h"><span class="t">المصادر</span></div>
+    <div class="card"><p class="note" style="padding:0">الأسئلة مؤلَّفة أصلًا على المواصفات المعلَنة
+      لاختبارات هيئة تقويم التعليم والتدريب. وما استُعين به من مراجع فللمعايرة
+      — للأسلوب والصعوبة والتوزيع — لا للنقل.</p></div>
+  </div><div class="group"><div class="group-h"><span class="t">شروط الاستعمال</span></div>
+    <div class="card"><p class="note" style="padding:0">
+      أُفق للاستعمال الشخصيّ للطالب وحده. لا يجوز نسخ أسئلته ولا مفاتيح الحلّ
+      ولا إعادة نشرها ولا استعمالها في منتج آخر — كلًّا أو جزءًا — بلا إذن خطّيّ مسبق.
+      وأيّ تدريس جماعيّ أو تجاريّ يحتاج ترخيصًا.
+    </p></div>
+  </div>
+  <div class="credit">
+    <div class="crm">© ${ar(new Date().getFullYear())}${hijriYear() ? ` · ${ar(hijriYear())}هـ` : ''} عرفات الراجحي</div>
+    <div class="crs">Arafat AlRajhi · جميع الحقوق محفوظة</div>
+    <div class="crs">أداة تعليمية — غير تابعة لهيئة تقويم التعليم والتدريب ولا معتمدة منها</div>
+  </div>
+` : ''}
+${(S.setTab===6 && (S.devTab||0)===2) ? `
+  <div class="group"><div class="group-h"><span class="t">نسخة احتياطية</span></div>
+    <div class="card">
+      <p class="note" style="padding:0 0 12px">تقدّمك محفوظ في متصفّح هذا الجهاز وحده.
+        مسحُ بيانات المتصفّح يمحوه. احفظ نسخة كل أسبوع، أو قبل تغيير الجهاز.</p>
+      <div class="kv"><span>ما لديك الآن</span>
+        <span class="v">${ar(S.sessionCount || 0)} جلسة · ${ar((S.review || []).length)} خطأ · ${ar((S.seenLessons || []).length)} مفتاحًا</span></div>
+      <div class="kv"><span>آخر نسخة حفظتَها</span>
+        <span class="v">${S.lastBackup ? esc(S.lastBackup) : 'لم تحفظ بعد'}</span></div>
+      <button class="btn" style="margin-top:12px" data-act="exportState">احفظ نسخة الآن</button>
+      <button class="btn ghost" data-act="importState">استعد من نسخة</button>
+    </div>
+  </div>
+  <div class="group"><div class="group-h"><span class="t">رحلة التفكير</span></div>
+    <div class="card">
+      <div class="kv" style="border:0;padding:0 0 10px">
+        <span>مفاتيح قرأتَها</span>
+        <span class="v num">${ar((S.seenLessons || []).length)} من ${ar(Object.keys(LESSONS.lessons).length)}</span>
+      </div>
+      <button class="btn ghost" data-act="resetJourney">صفّر الرحلة وابدأ من أوّلها</button>
+      <p class="note" style="padding-top:8px">يمحو ما قُرئ من المفاتيح فقط.
+        لا يمسّ أسئلتك ولا أخطاءك ولا تقدّمك في المهارات.</p>
+    </div>
+  </div>
+
+  <div class="group danger"><div class="group-h"><span class="t">مسح كل شيء</span></div>
+    <div class="card">
+      <p class="note" style="padding:0 0 12px">يمحو تقدّمك كلَّه من هذا الجهاز:
+        أيّامك وسلسلتك وأخطاءك وإتقانك ودوراتك. ويعود أُفق كأنك تفتحه لأول مرّة.</p>
+      <p class="note" style="padding:0 0 14px;color:var(--near)">احفظ نسخةً أولًا إن أردتَ العودة إليها يومًا.</p>
+      <button class="btn danger" data-act="wipeAsk">امسح كل بياناتي</button>
+    </div>
+  </div>
+
+  <div class="group"><div class="group-h"><span class="t">أفق ليس كل استعدادك</span></div>
+    <p class="note" style="margin-bottom:10px">أفق يضمن ألّا يمرّ يوم بلا تدريب، ويتتبّع أخطاءك.
+      لكن التأسيس والشرح المطوّل مكانهما خارجه:</p>
+    <div class="card">
+      <div class="kv"><span>تأسيس الكمي</span><span class="v">كتاب المعاصر</span></div>
+      <div class="kv"><span>تدريب وتجميعات</span><span class="v">دورات متخصصة</span></div>
+      <div class="kv"><span>اللفظي</span><span class="v">تدريب مباشر بلا تأسيس</span></div>
+      <div class="kv"><span>التجميعات</span><span class="v">أسئلة السنوات الماضية</span></div>
+    </div>
+  </div>
+  <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">الخروج من المسار</span></div>
+    <p class="note" style="margin-bottom:12px">أنت الآن في منصّة ${esc(TRACKS[S.track].name)} وحدها.
+      تقدّمك فيها محفوظ، وسيبقى كما هو إن خرجتَ وعدتَ.</p>
+    <button class="btn ghost" data-act="leaveTrack">الخروج إلى اختيار الاختبار</button>
+  </div>
+` : ''}
+      <button data-act="reset">تصفير</button>
+    </div>
+    <p class="note" style="margin-top:10px">تقديم الأيام يُظهر أثر شرط التباعد الزمني في الإتقان، وحصانة الاستئناف بعد الانقطاع.</p>
+`;
+
+}
+
 const SCREENS = {
 
 
@@ -4067,224 +4343,17 @@ errors: () => {
 },
 
 settings: () => {
-  if (S.setTab == null) S.setTab = 0;
-  const pausable = mySkills().filter(s => hasContent(s.id));
-  const paused = pausable.filter(s => S.skills[s.id].paused);
+  if (!S.setRow) return settingsList();
+  const T = { plan: 'ما يقرّره أُفق', exam: 'موعد اختبارك', remind: 'مواعيد التذكير',
+    look: 'المظهر والصوت', share: 'المشاركة والتثبيت', data: 'بياناتك ونسختك',
+    about: 'عن أُفق', dev: 'المطوّر' };
   return `<div class="top backtop sview">
-    <button class="backb" data-go="home" aria-label="رجوع">
+    <button class="backb" data-act="closeRow" aria-label="رجوع">
       <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none"
         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>اليوم</span></button>
-    <span class="eyebrow" style="margin:0">الإعدادات</span></div>
-  <div class="idcard">
-    <span class="av" style="color:var(--glow)">${trackGlyph(S.track, 26)}</span>
-    <div class="who"><b>${esc(S.name || '—')}</b><span>${esc(TRACKS[S.track].name)} · ${esc(TRACKS[S.track].tag)}</span></div>
-    <button class="mini" data-act="editName">الاسم</button>
-  </div>
-  <button class="goalcard" data-go="goal">
-    <div class="gcnum">${ar(myGoal())}</div>
-    <div class="gcbody"><b>هدفك في الاختبار</b>
-      <span>${(S.courses||[]).length ? `آخر دورة ${ar((S.courses||[]).slice(-1)[0].overall)}٪` : 'اضغط لتغييره'}</span></div>
-    <span class="gcarrow">›</span>
-  </button>
-  <div class="stabs four"><button class="stb ${S.setTab===0?'on':''}" data-act="setTab" data-arg="0">الدراسة</button><button class="stb ${S.setTab===5?'on':''}" data-act="setTab" data-arg="5">التذكير</button><button class="stb ${S.setTab===6?'on':''}" data-act="setTab" data-arg="6">جهازك</button><button class="stb ${S.setTab===4?'on':''}" data-act="setTab" data-arg="4">عن أُفق</button>${S.devUnlocked ? `<button class="stb dev ${S.setTab===7?'on':''}" data-act="setTab" data-arg="7">المطوّر</button>` : ''}</div>
-<div class="spane">
-${S.setTab===7 && S.devUnlocked ? devPanel() : ''}
-${S.setTab===0 ? `
-  ${decisionCard()}
-  <div class="group"><div class="group-h"><span class="t">متى اختبارك؟</span></div>
-    <div class="card">
-      <p class="note" style="padding:0 0 12px">حدّده ليعرف أُفق كم بقي، فيضبط قراراته على ما تبقّى.</p>
-      <div class="seg3">
-        ${[[30,'بعد شهر'],[60,'بعد شهرين'],[90,'بعد ٣ أشهر'],[0,'لم أحدّد']].map(([d,lbl]) =>
-          `<button class="sg ${(S.examIn||0)===d?'on':''}" data-act="setExam" data-arg="${d}">${esc(lbl)}</button>`).join('')}
-      </div>
-    </div>
-  </div>
-
-  ${S.track === 'qudurat' ? `
-  ` : ''}
-  
-` : ''}
-${S.setTab===5 ? `
-  <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">متى تذاكر؟</span></div>
-    <p class="note" style="margin-bottom:10px">اربط جلستك بشيء تفعله أصلًا كل يوم.
-      الموعد المرتبط بحدث يثبت أسرع من ساعة تُنسى.</p>
-    <div class="thgrid">
-      ${ANCHORS.map(a => `<button class="thcard ${S.anchor === a.id ? 'sel' : ''}"
-        data-act="setAnchor" data-arg="${a.id}" style="padding:13px 8px;text-align:center">
-        <span style="display:block;font-family:var(--display);font-size:14px;color:var(--ink);margin-bottom:3px">${esc(a.t)}</span>
-        <span style="font-size:11.5px">${esc(a.b)}</span></button>`).join('')}
-    </div>
-    ${S.anchor === 'clock' ? `<div class="card" style="margin-top:10px">
-      <div class="kv" style="border:0;padding:0"><span>الساعة</span><span class="v">${S.reminder}</span></div>
-    </div>` : ''}
-  </div>
-  <div class="card">
-    <div class="kv" style="border:0;padding:0"><span>إعادة التشخيص</span>
-      <span class="v">متاح بعد ${ar(14)} يومًا</span></div>
-  </div>
-  
-  
-  
-  
-  ${S.devUnlocked ? `<div class="dev"><h3>محاكاة (للعرض فقط)</h3>
-    <div class="seg">
-      <button data-act="advance" data-arg="1">+ يوم</button>
-      <button data-act="advance" data-arg="3">+ ٣ أيام</button>
-      <button data-act="advance" data-arg="9">+ ٩ أيام</button>
-    </div></div>` : ''}
-` : ''}
-${S.setTab===6 ? `<div class="subtabs"><button class="sub ${(S.devTab||0)===0?'on':''}" data-act="devTabSet" data-arg="0">المظهر والجهاز</button><button class="sub ${(S.devTab||0)===1?'on':''}" data-act="devTabSet" data-arg="1">المشاركة</button><button class="sub ${(S.devTab||0)===2?'on':''}" data-act="devTabSet" data-arg="2">بياناتك</button></div>` : ''}
-${(S.setTab===6 && (S.devTab||0)===0) ? `
-  <div class="group"><div class="group-h"><span class="t">المظهر</span></div>
-    ${themeGrid()}
-  </div>
-` : ''}
-${(S.setTab===6 && (S.devTab||0)===0) ? `
-  <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">النسخة</span></div>
-    <div class="card">
-      <div class="kv" data-act="devTap" style="cursor:default;-webkit-user-select:none;user-select:none"><span>نسخة أُفق</span><span class="v num">${APP_VERSION.split('.').map(x=>ar(x)).join('٫')}${S.devHint && !S.devUnlocked ? ` <em style="color:var(--ink-faint);font-style:normal;font-size:11px">· ${ar(S.devHint)}</em>` : ''}</span></div>
-      <div class="kv"><span>تمّ التحديث بتاريخ</span><span class="v">${esc(APP_DATE)}</span></div>
-      <div class="kv" style="border:0"><span>الحالة</span><span class="v">محدَّث</span></div>
-      <button class="btn ghost" style="margin-top:10px" data-act="checkUpdate">ابحث عن تحديث</button>
-    </div>
-  </div>
-  <div class="group"><div class="group-h"><span class="t">التطبيق على جهازك</span></div>
-    ${installCard()}
-    ${installDiag()}
-  </div>
-  <div class="group"><div class="group-h"><span class="t">الاستماع</span>
-    <button class="sw ${S.audio ? 'on' : ''}" data-act="toggleAudio"><i></i></button></div>
-    <p class="note">يقرأ التطبيق شرح مفاتيح الحلّ صوتيًّا. الأسئلة وقطع الاستيعاب تبقى قراءةً — لأن الاختبار قراءة.</p>
-  </div>
-` : ''}
-${(S.setTab===6 && (S.devTab||0)===1) ? `
-  <div class="group"><div class="group-h"><span class="t">مشاركة التقدّم</span></div>
-    <div class="card">
-      <div class="kv" style="border:0;padding:0 0 10px">
-        <span>تقرير أسبوعي إلى ولي الأمر</span>
-        <span class="v">${S.shareReport ? 'مفعّل' : 'متوقف'}</span></div>
-      <p class="note">يتضمن: أيام نشاطك، وما أكملته، وما يحتاج وقتًا أطول — مع اقتراحات لكيفية دعمك.<br>
-        لا يتضمن: درجاتك، ولا أخطاءك، ولا أسئلتك.</p>
-      <div class="seg" style="margin-top:12px">
-        <button data-act="toggleShare" data-arg="1" class="${S.shareReport ? 'sel' : ''}">مفعّل</button>
-        <button data-act="toggleShare" data-arg="0" class="${!S.shareReport ? 'sel' : ''}">متوقف</button>
-      </div>
-      <button class="btn ghost" style="text-align:right;width:auto;padding-inline-start:0;margin-top:6px"
-        data-go="report">اعرض ما سيصله ›</button>
-    </div>
-  </div>
-  ${(S.flags || []).length ? `` : ''}
-  <div class="group"><div class="group-h"><span class="t">تواصل مع المطوّر</span></div>
-    <p class="note">ملاحظاتك تُحسّن الأداة. اكتب لنا إن وجدتَ خطأً أو سؤالًا مكرّرًا أو فكرة.</p>
-    <button class="btn ghost" style="margin-top:11px" data-act="contactDev">أرسل ملاحظة</button>
-    ${(S.flags && S.flags.length) ? `<p class="note" style="margin-top:10px">
-      سجّلتَ ${ar(S.flags.length)} ملاحظة على أسئلة — تُرفَق تلقائيًّا.</p>` : ''}
-  </div>
-  ${!isStandalone() ? `<div class="group"><div class="group-h"><span class="t">تثبيت على الجهاز</span></div>
-    <p class="note">${isIOS()
-      ? 'من متصفّح سفاري: اضغط زرّ المشاركة ⇧ ثم «إضافة إلى الشاشة الرئيسية».'
-      : 'يعمل كتطبيق كامل بلا متصفّح، ويشتغل بلا إنترنت.'}</p>
-    ${(!isIOS() && deferredPrompt) ? `<button class="btn" style="margin-top:11px" data-act="installApp">ثبّت الآن</button>` : ''}
-  </div>` : ''}
-` : ''}
-${S.setTab===4 ? `
-  <div class="abt">
-    <div class="abmark">${markSVG(48)}</div>
-    <h2 class="abn">أُفق</h2>
-    <p class="abv">النسخة ${APP_VERSION.split('.').map(x=>ar(x)).join('٫')} · ${ar(mySkills().length)} مهارة في مسارك</p>
-    <p class="abv" style="margin-top:5px">آخر تحديث ${esc(APP_DATE)}</p>
-    <p class="abd">تدريبٌ يوميّ قصير على اختبارات القدرات والتحصيلي وستيب.
-      بُني على فكرة واحدة: <b>الاستمرار قبل الكمّية</b> — عشر دقائق كلّ يوم
-      تفعل ما لا تفعله عشر ساعات في يوم واحد.</p>
-  </div>
-  <div class="group"><div class="group-h"><span class="t">ما يميّزه</span></div>
-    <div class="card">
-      <div class="kv"><span>السلسلة تُجمَّد ولا تُصفَّر</span><span class="v">انقطاعك لا يمحو ما بنيت</span></div>
-      <div class="kv"><span>الجلسة تعرف متى تتوقّف</span><span class="v">ثلاثة أخطاء = يكفي اليوم</span></div>
-      <div class="kv"><span>لا مقارنة بغيرك</span><span class="v">لا لوحات صدارة ولا ترتيب</span></div>
-      <div class="kv" style="border:0"><span>لا وعود بالاختصار</span><span class="v">لا طريق قصيرًا يُباع لك</span></div>
-    </div>
-  </div>
-  <div class="group"><div class="group-h"><span class="t">خصوصيّتك</span></div>
-    <div class="card"><p class="note" style="padding:0">كلّ تقدّمك محفوظ <b>على جهازك وحده</b>.
-      لا خادم، ولا حساب، ولا بيانات تُرسل إلى أيّ جهة — ولا إلينا.
-      مسحُ بيانات المتصفّح يمسح تقدّمك، فثبّت التطبيق لتحفظه.</p></div>
-  </div>
-  <div class="group"><div class="group-h"><span class="t">المصادر</span></div>
-    <div class="card"><p class="note" style="padding:0">الأسئلة مؤلَّفة أصلًا على المواصفات المعلَنة
-      لاختبارات هيئة تقويم التعليم والتدريب. وما استُعين به من مراجع فللمعايرة
-      — للأسلوب والصعوبة والتوزيع — لا للنقل.</p></div>
-  </div>
-  <div class="group"><div class="group-h"><span class="t">شروط الاستعمال</span></div>
-    <div class="card"><p class="note" style="padding:0">
-      أُفق للاستعمال الشخصيّ للطالب وحده. لا يجوز نسخ أسئلته ولا مفاتيح الحلّ
-      ولا إعادة نشرها ولا استعمالها في منتج آخر — كلًّا أو جزءًا — بلا إذن خطّيّ مسبق.
-      وأيّ تدريس جماعيّ أو تجاريّ يحتاج ترخيصًا.
-    </p></div>
-  </div>
-  <div class="credit">
-    <div class="crm">© ${ar(new Date().getFullYear())}${hijriYear() ? ` · ${ar(hijriYear())}هـ` : ''} عرفات الراجحي</div>
-    <div class="crs">Arafat AlRajhi · جميع الحقوق محفوظة</div>
-    <div class="crs">أداة تعليمية — غير تابعة لهيئة تقويم التعليم والتدريب ولا معتمدة منها</div>
-  </div>
-` : ''}
-${(S.setTab===6 && (S.devTab||0)===2) ? `
-  <div class="group"><div class="group-h"><span class="t">نسخة احتياطية</span></div>
-    <div class="card">
-      <p class="note" style="padding:0 0 12px">تقدّمك محفوظ في متصفّح هذا الجهاز وحده.
-        مسحُ بيانات المتصفّح يمحوه. احفظ نسخة كل أسبوع، أو قبل تغيير الجهاز.</p>
-      <div class="kv"><span>ما لديك الآن</span>
-        <span class="v">${ar(S.sessionCount || 0)} جلسة · ${ar((S.review || []).length)} خطأ · ${ar((S.seenLessons || []).length)} مفتاحًا</span></div>
-      <div class="kv"><span>آخر نسخة حفظتَها</span>
-        <span class="v">${S.lastBackup ? esc(S.lastBackup) : 'لم تحفظ بعد'}</span></div>
-      <button class="btn" style="margin-top:12px" data-act="exportState">احفظ نسخة الآن</button>
-      <button class="btn ghost" data-act="importState">استعد من نسخة</button>
-    </div>
-  </div>
-  <div class="group"><div class="group-h"><span class="t">رحلة التفكير</span></div>
-    <div class="card">
-      <div class="kv" style="border:0;padding:0 0 10px">
-        <span>مفاتيح قرأتَها</span>
-        <span class="v num">${ar((S.seenLessons || []).length)} من ${ar(Object.keys(LESSONS.lessons).length)}</span>
-      </div>
-      <button class="btn ghost" data-act="resetJourney">صفّر الرحلة وابدأ من أوّلها</button>
-      <p class="note" style="padding-top:8px">يمحو ما قُرئ من المفاتيح فقط.
-        لا يمسّ أسئلتك ولا أخطاءك ولا تقدّمك في المهارات.</p>
-    </div>
-  </div>
-
-  <div class="group danger"><div class="group-h"><span class="t">مسح كل شيء</span></div>
-    <div class="card">
-      <p class="note" style="padding:0 0 12px">يمحو تقدّمك كلَّه من هذا الجهاز:
-        أيّامك وسلسلتك وأخطاءك وإتقانك ودوراتك. ويعود أُفق كأنك تفتحه لأول مرّة.</p>
-      <p class="note" style="padding:0 0 14px;color:var(--near)">احفظ نسخةً أولًا إن أردتَ العودة إليها يومًا.</p>
-      <button class="btn danger" data-act="wipeAsk">امسح كل بياناتي</button>
-    </div>
-  </div>
-
-  <div class="group"><div class="group-h"><span class="t">أفق ليس كل استعدادك</span></div>
-    <p class="note" style="margin-bottom:10px">أفق يضمن ألّا يمرّ يوم بلا تدريب، ويتتبّع أخطاءك.
-      لكن التأسيس والشرح المطوّل مكانهما خارجه:</p>
-    <div class="card">
-      <div class="kv"><span>تأسيس الكمي</span><span class="v">كتاب المعاصر</span></div>
-      <div class="kv"><span>تدريب وتجميعات</span><span class="v">دورات متخصصة</span></div>
-      <div class="kv"><span>اللفظي</span><span class="v">تدريب مباشر بلا تأسيس</span></div>
-      <div class="kv"><span>التجميعات</span><span class="v">أسئلة السنوات الماضية</span></div>
-    </div>
-  </div>
-  <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">الخروج من المسار</span></div>
-    <p class="note" style="margin-bottom:12px">أنت الآن في منصّة ${esc(TRACKS[S.track].name)} وحدها.
-      تقدّمك فيها محفوظ، وسيبقى كما هو إن خرجتَ وعدتَ.</p>
-    <button class="btn ghost" data-act="leaveTrack">الخروج إلى اختيار الاختبار</button>
-  </div>
-` : ''}
-      <button data-act="reset">تصفير</button>
-    </div>
-    <p class="note" style="margin-top:10px">تقديم الأيام يُظهر أثر شرط التباعد الزمني في الإتقان، وحصانة الاستئناف بعد الانقطاع.</p>
-`;
-
+      <span>الإعدادات</span></button>
+    <span class="eyebrow" style="margin:0">${esc(T[S.setRow] || '')}</span></div>`
+    + settingsPanels();
 },
 
 paywall: () => `<div class="center"><div class="glass">
@@ -4485,6 +4554,15 @@ const ACTIONS = {
   },
   saved() { S.suggestion = null; go('home'); },
   devTabSet(n) { S.devTab = +n; haptic(9); render(); },
+  openRow(id) {
+    const M = { goal: [0, 0], exam: [0, 0], plan: [0, 0], remind: [5, 0],
+      look: [6, 0], share: [6, 1], data: [6, 2], about: [4, 0], dev: [7, 0] };
+    const m = M[id]; if (!m) return;
+    if (id === 'goal') { go('goal'); return; }
+    S.setRow = id; S.setTab = m[0]; S.devTab = m[1];
+    haptic(10); render();
+  },
+  closeRow() { S.setRow = null; haptic(9); render(); },
   setTab(n) { S.devTab = 0; const M = { 1: 6, 2: 6, 3: 6 }; n = M[+n] != null ? M[+n] : +n;
     S.setTab = n; haptic(9); render(); },
   setSize2(n) { S.size = +n; S.sizeManual = true; render(); },
