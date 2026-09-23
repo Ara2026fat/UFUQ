@@ -139,9 +139,9 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '7.2.0';
+const APP_VERSION = '8.5.0';
 const APP_DATE = '٩ سبتمبر ٢٠٢٦';
-const APP_BUILD = 97;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_BUILD = 110;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -1791,7 +1791,12 @@ function render() {
   const frame = document.createElement('div');
   const d = S._dir || 0;
   frame.className = 'fade' + (d > 0 ? ' inF' : d < 0 ? ' inB' : '');
-  frame.innerHTML = SCREENS[S.screen] ? safeScreen(S.screen) : safeScreen('home');
+  frame.innerHTML = (S.storageBlocked ? `<div class="blocked">
+      <b>تعذّر حفظ تقدّمك</b>
+      <span>المتصفّح يمنع الحفظ — قد تكون في وضع التصفّح الخفيّ، أو الذاكرة ممتلئة.
+        يعمل أُفق الآن، لكنّ ما تنجزه لن يبقى بعد إغلاق الصفحة.</span>
+    </div>` : '')
+    + (SCREENS[S.screen] ? safeScreen(S.screen) : safeScreen('home'));
   let bb = document.getElementById('brandbar');
   const hideOn = ['name','pick','welcome','intro','diag','diagResult','save','paywall','question','exam'];
   if (!bb) { bb = document.createElement('div'); bb.id = 'brandbar';
@@ -1873,7 +1878,7 @@ function render() {
       n = (now - t0 < 900) ? n + 1 : 1; t0 = now;
       if (n >= 5) { n = 0; S.admin = true; S.audit = true; S.devUnlocked = true;
         S.name = S.name || 'المشرف';
-        haptic(30); go('pick'); }
+        haptic(30); S.setTab = 7; go('settings'); }
     };
   }
   const ni = document.getElementById('nameIn');
@@ -2630,6 +2635,133 @@ function listenPane(q, item) {
   </div>`;
 }
 
+
+/* السنة الهجرية بجوار الميلادية في حقوق النشر — فالطالب سعوديّ ويقرأ بالتاريخين */
+function hijriYear() {
+  try {
+    const p = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', { year: 'numeric' })
+      .formatToParts(new Date()).find(x => x.type === 'year');
+    if (!p) return null;
+    const n = parseInt(String(p.value).replace(/[^0-9٠-٩]/g, '')
+      .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)), 10);
+    return (n > 1300 && n < 1600) ? n : null;
+  } catch (e) { return null; }
+}
+
+
+/* ══════════════ لوحة المطوّر ══════════════
+   لا تظهر للطالب. تُفتَح بسبع نقرات على رقم النسخة، وتبقى مفتوحة حتى تُقفَل بيد صاحبها.
+   فيها ما يحتاجه المالك لاختبار التطبيق: السفر في الزمن، وإحصاء البنك،
+   ووضع المراجعة، والتحكّم في الدورات، والمسارات المؤجّلة. */
+function devPanel() {
+  const T = {};
+  (Q || []).forEach(q => {
+    const sk = SKILLS[q.skill]; if (!sk) return;
+    const tr = sk.track || '?';
+    const t = T[tr] || (T[tr] = { n: 0, orig: 0, skills: {} });
+    t.n++; if (q.origin === 'original') t.orig++;
+    t.skills[q.skill] = (t.skills[q.skill] || 0) + 1;
+  });
+  const NAMES = { qudurat: 'القدرات', tahsili: 'التحصيلي', step: 'ستيب', kfupm: 'البترول', aramco: 'أرامكو' };
+  const trackRows = Object.keys(NAMES).filter(k => T[k]).map(k => {
+    const t = T[k];
+    const thin = Object.values(t.skills).filter(v => v < 180).length;
+    const all = Object.keys(t.skills).length;
+    return `<div class="dvrow">
+      <span class="dvn">${esc(NAMES[k])}${OPEN_TRACKS.includes(k) ? '' : ' <em>مؤجَّل</em>'}</span>
+      <span class="dvv">${ar(t.n)}</span>
+      <span class="dvs ${thin ? 'warn' : 'ok'}">${thin ? ar(thin) + ' دون العتبة' : '✓ مكتمل'}</span>
+    </div>`;
+  }).join('');
+  const tot = (Q || []).length;
+  const orig = (Q || []).filter(q => q.origin === 'original').length;
+  const c = S.course;
+  const found = S.devFound && S.devFound !== '__none__' ? byQ(S.devFound) : null;
+
+  return `
+  <div class="devhead">
+    <div class="dvbadge">وضع المطوّر</div>
+    <p class="note" style="padding:6px 0 0">لا يراه الطالب. يبقى مفتوحًا حتى تُقفله من أسفل هذه الصفحة.</p>
+  </div>
+
+  <div class="group"><div class="group-h"><span class="t">البنك</span></div>
+    <div class="card">
+      <div class="dvstats">
+        <div><b>${ar(tot)}</b><span>سؤالًا</span></div>
+        <div><b>${ar(Math.round(100 * orig / Math.max(1, tot)))}٪</b><span>أصليّ</span></div>
+        <div><b>${ar((PASSAGES || []).length)}</b><span>قطعة</span></div>
+        <div><b>${ar((Q || []).filter(q => q.listen).length)}</b><span>استماع</span></div>
+      </div>
+      ${trackRows}
+    </div>
+  </div>
+
+  <div class="group"><div class="group-h"><span class="t">السفر في الزمن</span></div>
+    <div class="card">
+      <div class="kv"><span>اليوم الحاليّ</span><span class="v num">${ar(S.day || 1)}</span></div>
+      <div class="dvbtns">
+        <button class="mini" data-act="devDay" data-arg="-7">− أسبوع</button>
+        <button class="mini" data-act="devDay" data-arg="-1">− يوم</button>
+        <button class="mini" data-act="devDay" data-arg="1">+ يوم</button>
+        <button class="mini" data-act="devDay" data-arg="7">+ أسبوع</button>
+      </div>
+      <p class="note" style="padding:10px 0 0">يُظهر أثر المراجعة المتباعدة، ومحطّة العودة بعد الغياب، وتجميد السلسلة.</p>
+    </div>
+  </div>
+
+  <div class="group"><div class="group-h"><span class="t">الدورة</span></div>
+    <div class="card">
+      <div class="kv"><span>الحالة</span><span class="v">${c
+        ? (c.finished ? 'منتهية' : `المحطّة ${ar(c.at + 1)} من ${ar((c.map || []).length)}`)
+        : 'لا دورة'}</span></div>
+      <div class="kv"><span>الدورات المنجزة</span><span class="v num">${ar((S.courses || []).length)}</span></div>
+      <div class="dvbtns">
+        <button class="mini" data-act="devFinishStation" ${courseActive() ? '' : 'disabled'}>أنجز محطّة</button>
+        <button class="mini" data-act="devFinishCourse" ${courseActive() ? '' : 'disabled'}>أنهِ الدورة</button>
+        <button class="mini" data-act="devClearCourses">صفّر الدورات</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="group"><div class="group-h"><span class="t">وضع المراجعة</span>
+    <button class="sw ${S.audit ? 'on' : ''}" data-act="toggleAudit"><i></i></button></div>
+    <p class="note">يُظهر تحت كل سؤال: رقمه، ومهارته، وصعوبته، ووسم كل مموّه. لمراجعة البنك أثناء الحلّ.</p>
+  </div>
+
+  <div class="group"><div class="group-h"><span class="t">الأصليّ فقط</span>
+    <button class="sw ${S.cleanOnly ? 'on' : ''}" data-act="toggleClean"><i></i></button></div>
+    <p class="note">يحصر الجلسات في الأسئلة المؤلَّفة، ويستبعد ما سواها.</p>
+  </div>
+
+  <div class="group"><div class="group-h"><span class="t">المسارات المؤجَّلة</span>
+    <button class="sw ${S.showParked ? 'on' : ''}" data-act="devParked"><i></i></button></div>
+    <p class="note">يُظهر البترول وأرامكو في شاشة الاختيار لتجربتهما. لا يراهما الطالب.</p>
+  </div>
+
+  <div class="group"><div class="group-h"><span class="t">ابحث عن سؤال</span></div>
+    <div class="card">
+      <div class="dvfind">
+        <input id="devq" class="tin" placeholder="رقم السؤال — مثل jv014" dir="ltr" value="${esc(S.devFound && S.devFound !== '__none__' ? S.devFound : '')}">
+        <button class="mini" data-act="devFind">ابحث</button>
+      </div>
+      ${S.devFound === '__none__' ? '<p class="note" style="color:var(--near)">لا سؤال بهذا الرقم.</p>' : ''}
+      ${found ? `<div class="dvq">
+        <div class="dvqh">${esc(SKILLS[found.skill] ? SKILLS[found.skill].name : found.skill)} · صعوبة ${ar(found.d || 0)}${found.passage ? ' · قطعة ' + esc(found.passage) : ''}</div>
+        <div class="dvqs">${esc(found.stem)}</div>
+        ${found.choices.map(ch => `<div class="dvqc ${ch.c ? 'ok' : ''}">${ch.c ? '✓' : '·'} ${esc(ch.t)}${ch.tag ? ` <em>${esc(ch.tag)}</em>` : ''}</div>`).join('')}
+      </div>` : ''}
+    </div>
+  </div>
+
+  <div class="group"><div class="group-h"><span class="t">الحالة الكاملة</span></div>
+    <button class="btn ghost" data-act="devExport">نزّل حالة التطبيق ملفًّا</button>
+    <p class="note" style="padding-top:8px">كل ما في ذاكرة التطبيق بصيغة JSON — لفحص خللٍ أو إرساله للمراجعة.</p>
+  </div>
+
+  <button class="btn danger" data-act="devLock" style="margin-top:22px">أقفل وضع المطوّر</button>
+  `;
+}
+
 function leadCard(again) {
   const g = S.suggestion || makeSuggestion();
   const n = thread();
@@ -2765,6 +2897,28 @@ function deltaPanel() {
 
 const SCREENS = {
 
+
+
+/* ══════════ تأكيد المسح ══════════ */
+wipe: () => {
+  const two = S.wipeStep === 2;
+  return `<div class="lwrap wipe">
+    <div class="wicon">${two ? '⚠' : '🗑'}</div>
+    <h2 class="wt">${two ? 'تأكيد أخير' : 'مسح كل بياناتك'}</h2>
+    <p class="ws">${two
+      ? 'لا رجعة بعد هذه الخطوة. سيبدأ أُفق فارغًا كأنك تفتحه لأول مرّة.'
+      : 'سيُمحى تقدّمك كلّه من هذا الجهاز ولا يمكن استرجاعه إلا من نسخةٍ حفظتَها.'}</p>
+    <div class="wlist">
+      ${[['يومك', ar(S.day || 1)], ['جلساتك', ar(S.sessionCount || 0)],
+         ['سلسلتك', ar(S.streak || 0) + ' يومًا'],
+         ['أخطاؤك المحفوظة', ar((S.review || []).length)]]
+        .map(([k, v]) => `<div class="wrow"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('')}
+    </div>
+    ${!two ? '<p class="wnote">احفظ نسخةً من الإعدادات قبل المسح إن أردتَ العودة إليها.</p>' : ''}
+    <button class="btn danger" data-act="wipeConfirm">${two ? 'نعم، امسح كل شيء' : 'متابعة'}</button>
+    <button class="skipl" data-act="wipeCancel">رجوع — لا تمسح شيئًا</button>
+  </div>`;
+},
 
 /* ══════════ الهدف ══════════ */
 goal: () => {
@@ -3110,143 +3264,78 @@ lesson: () => {
   const id = S.lessonFor, L = LESSONS.lessons[id];
   if (!L) { return SCREENS.home(); }
   const bold = t => String(t == null ? '' : t).replace(/\*\*(.+?)\*\*/g, (m, x) => '<b>' + esc(x) + '</b>');
-  const T = [];
-
-  // ⓪ الافتتاح — الفكرة تملأ الصفحة
-  // ① المفتاح — لوحة عنوان
   const DISP = L.disp || L.name;
+  const picked = (S.exPickFor === id && S.exPick != null);
+  const right = L.exAns;
+  const hasEx = !!(L.ex && L.exOpts && L.exOpts.length);
 
-  T.push(['الفكرة', 'o', `
-    <div class="sc sc-open">
-      <div class="so-e">فكرة</div>
-      <div class="so-t">${esc(DISP)}</div>
-      ${L.gloss ? `<div class="so-g">${esc(L.gloss)}</div>` : ''}
-      <div class="so-w">${esc(L.what)}</div>
-      <div class="so-r"></div>
-    </div>`]);
+  /* ══ المشهد الأول: جرّب — لا شرح قبل المحاولة ══ */
+  if (!picked && hasEx) {
+    return `<div class="lwrap key2">
+      <div class="k2top">
+        <button class="back" data-go="${S.lessonFrom === 'home' ? 'home' : 'learn'}">‹ رجوع</button>
+        <div class="k2e">مفتاح</div>
+        <div class="k2t">${esc(DISP)}</div>
+      </div>
+      <div class="k2q">${esc(L.ex)}</div>
+      <div class="k2ops">
+        ${L.exOpts.map((o, k) => `<button class="k2o" data-act="exPick" data-arg="${k}"
+          style="--d:${60 + k * 70}ms">${esc(o)}</button>`).join('')}
+      </div>
+      <div class="k2hint">جرّب أولًا — ثمّ ينكشف المفتاح</div>
+    </div>`;
+  }
 
-  T.push(['المفتاح', 'k', (S.exPickFor === id && S.exPick != null) ? `
-    <div class="sc sc-key">
-      <div class="sk-q">”</div>
-      <div class="sk-t">${bold(L.key || L.what || L.name)}</div>
-      ${L.card ? `<div class="sk-c">${esc(L.card)}</div>` : ''}
+  /* ══ المشهد الثاني: الانكشاف — شاشةٌ واحدة بتبويبات، بلا تمرير ══ */
+  const ok = picked && S.exPick === right;
+  const chosen = picked ? (L.exOpts || [])[S.exPick] : null;
+  const steps = (L.steps || []).map(x => `<li>${bold(x)}</li>`).join('');
+  const drill = (L.drill || []).map(x => `<li>${bold(x)}</li>`).join('');
+  const con = L.contrast || [];
+
+  const TABS = [];
+  TABS.push(['المفتاح', `
+    <div class="k2card">
+      <div class="k2cl">احفظ هذه</div>
+      <div class="k2ct">${bold(L.key || L.what || L.name)}</div>
+      ${L.card ? `<div class="k2cc">${esc(L.card)}</div>` : ''}
       ${listenBtn((L.card || '') + '. ' + (L.key || ''), 'card')}
-    </div>` : `
-    <div class="sc sc-key locked">
-      <div class="sk-q">✦</div>
-      <div class="sk-t">المفتاح يُفتح بعد محاولتك</div>
-      <div class="sk-c">ارجع إلى «جرّب» واختر إجابةً — ثم عُد. ما تحاوله أولًا يبقى معك أطول ممّا تقرؤه جاهزًا.</div>
     </div>`]);
+  if (steps) TABS.push(['لماذا', `<ol class="k2l big">${steps}</ol>`]);
+  if (L.trap || con.length >= 2) TABS.push(['الفخّ', `
+    ${L.trap ? `<div class="k2b trap"><p>${bold(L.trap)}</p></div>` : ''}
+    ${con.length >= 2 ? `<div class="k2face">
+      <div class="k2f bad"><div class="k2fl">يسقط</div><p>${bold(con[0])}</p></div>
+      <div class="k2f good"><div class="k2fl">يثبت</div><p>${bold(con[1])}</p></div>
+    </div>` : ''}`]);
+  if (drill) TABS.push(['الطريقة', `<ol class="k2l big">${drill}</ol>`]);
 
-  // ② التعرّف — إشارات تُلتقط
-  if (L.spot) T.push(['التعرّف', 's', `
-    <div class="sc sc-spot">
-      <p class="sc-q">كيف تعرف أنه هذا النوع؟</p>
-      <div class="sig">${L.spot.map((x, n) =>
-        `<div class="sg" style="--d:${n * 130}ms"><span class="rad"></span>
-          <span class="sgt">${bold(x)}</span></div>`).join('')}</div>
-      ${listenBtn(L.spot.join('. '), 'spot')}
-    </div>`]);
+  const kt = Math.min(S.k2tab || 0, TABS.length - 1);
 
-  // ③ الخطوات — درج نازل موصول
-  if (L.drill) T.push(['الخطوات', 'd', `
-    <div class="sc sc-steps">
-      <p class="sc-q">ماذا تفعل — بالترتيب</p>
-      <div class="stair">${L.drill.map((x, n) =>
-        `<div class="stp" style="--d:${n * 120}ms;--i:${n}">
-          <span class="stn">${ar(n + 1)}</span>
-          <span class="stt">${bold(x)}</span></div>`).join('')}</div>
-    </div>`]);
+  return `<div class="lwrap key2 rev">
+    <div class="k2top slim">
+      <button class="back" data-go="${S.lessonFrom === 'home' ? 'home' : 'learn'}">‹ رجوع</button>
+      <div class="k2e">مفتاح</div>
+      <div class="k2t">${esc(DISP)}</div>
+    </div>
 
-  // ④ المصيدة — مشهد تحذير ثم مواجهة
-  if (L.trap || L.contrast) T.push(['المصيدة', 't', `
-    <div class="sc sc-trap">
-      ${L.trap ? `<div class="tw"><span class="twi">!</span>
-        <div class="twt">${bold(L.trap)}</div></div>` : ''}
-      ${L.contrast ? `<div class="face">
-        <div class="fc bad" style="--d:120ms"><div class="fl">هكذا يسقط</div>
-          <div class="ft">${bold(L.contrast[0])}</div></div>
-        <div class="fvs">مقابل</div>
-        <div class="fc good" style="--d:280ms"><div class="fl">هكذا يثبت</div>
-          <div class="ft">${bold(L.contrast[1])}</div></div>
-      </div>` : ''}
-    </div>`]);
-
-  // ⑤ التكرار — خريطة نسب
-  if (L.map) T.push(['التكرار', 'm', `
-    <div class="sc sc-map">
-      <p class="sc-q">${esc(L.mapTitle || 'ما يتكرّر فعلًا')}</p>
-      <div class="lmap">${L.map.map((r, n) => `<div class="r ${r.p < 6 ? 'dim' : ''}" style="--d:${n * 60}ms">
-        <span class="nm">${esc(r.n)}</span>
-        <span class="track"><i style="--w:${Math.min(100, r.p * 4)}%"></i></span>
-        <span class="pc">${esc(r.p)}٪</span></div>`).join('')}</div>
-    </div>`]);
-
-  /* ⑥ «جرّب» — المحاولة قبل الشرح.
-     أثر التوليد: ما يحاوله الطالب قبل أن يُخبَر به يرسخ أضعاف ما يُقرأ جاهزًا.
-     ولذلك لا يُكشف المفتاح إلا بعد أن يختار. */
-  const picked = (S.exPick != null && S.exPickFor === id) ? S.exPick : null;
-  T.push(['جرّب', 'y', `
-    <div class="sc sc-try">
-      <p class="sc-q">قبل أن تقرأ شيئًا — جرّبها</p>
-      <div class="wex">
-        <div class="q">${L.ex}</div>
-        ${L.exOpts.map((o, n) => {
-          const state = picked == null ? '' : (n === L.exAns ? ' right' : (n === picked ? ' wrong' : ' dim'));
-          return `<button class="o try${state}" style="--d:${n * 90}ms"
-            ${picked == null ? `data-act="exPick" data-arg="${n}"` : ''}>
-            <span class="m">${picked == null ? '○' : (n === L.exAns ? '✓' : (n === picked ? '✕' : '○'))}</span>${esc(o)}</button>`;
-        }).join('')}
+    ${hasEx ? `<div class="k2res ${ok ? 'ok' : 'no'}">
+      <span class="k2m">${ok ? '✓' : '✕'}</span>
+      <div>
+        <b>${ok ? 'أصبتَ' : 'اخترتَ ' + esc(chosen || '')}</b>
+        <span>${esc((L.exOpts || [])[right] || '')} هو الصواب</span>
       </div>
-      ${picked == null
-        ? `<p class="faint" style="margin-top:14px">اختر ما تراه صوابًا. لا حساب ولا وقت — المحاولة وحدها هي المقصودة.</p>`
-        : (picked === L.exAns
-          ? `<div class="tryres ok"><b>أصبتَ.</b> والآن اعرف <em>لماذا</em> — فالإصابة بلا سبب لا تتكرّر.</div>`
-          : `<div class="tryres no"><b>هذا ما يقع فيه أكثر الطلاب.</b> وهو فخٌّ مقصود، لا غفلة منك. المفتاح في الصفحة التالية.</div>`)}
-    </div>`]);
+    </div>` : ''}
 
-  // ⑦ الخطوات — حلّ السؤال نفسه بعد أن صار المفتاح معلومًا
-  T.push(['الخطوات', 'x', `
-    <div class="sc sc-ex">
-      <p class="sc-q">السؤال نفسه — بالمفتاح</p>
-      <div class="wex">
-        <div class="q">${L.ex}</div>
-        <button class="o on"><span class="m">✓</span>${esc(L.exOpts[L.exAns])}</button>
-      </div>
-      <ol class="steps num">${L.steps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>
-    </div>`]);
+    <div class="k2tabs">
+      ${TABS.map(([n], k) => `<button class="k2tb ${k === kt ? 'on' : ''}"
+        data-act="k2tab" data-arg="${k}">${esc(n)}</button>`).join('')}
+    </div>
 
-  /* ترتيب الاكتشاف: يجرّب ثمّ يفهم ثمّ يطبّق */
-  const ORDER = ['الفكرة', 'جرّب', 'المفتاح', 'الخطوات', 'التعرّف', 'الخريطة', 'الفخّ', 'التطبيق'];
-  T.sort((a, b) => {
-    const x = ORDER.indexOf(a[0]), y = ORDER.indexOf(b[0]);
-    return (x < 0 ? 99 : x) - (y < 0 ? 99 : y);
-  });
-  const cur = Math.min(S.lessonTab || 0, T.length - 1);
-  const last = cur === T.length - 1;
-  /* مشهد «جرّب» لا يُتجاوز قبل المحاولة — لأن ترتيب التعلّم هو الفائدة */
-  const blocked = T[cur][0] === 'جرّب' && !(S.exPickFor === id && S.exPick != null);
-  return `<div class="lwrap ideas sc-${T[cur][1]}">
-    <div class="lbar2">
-      <div class="lb-l"><span class="lg">${ideaGlyph(17)}</span>
-        <span class="lb-tx"><span class="lb-n">${esc(ideaName(id))}</span>
-        <span class="lb-w">أفكار ${esc(TRACKS[S.track].name)}</span></span></div>
-      <div class="rail">${T.map((x, k) =>
-        `<span class="rl ${k === cur ? 'on' : ''} ${k < cur ? 'past' : ''}"><i></i></span>`).join('')}</div>
-    </div>
-    <div class="lscene" key="${cur}">
-      <div class="sc-h">${esc(T[cur][0])} <em class="scn">${ar(cur + 1)}/${ar(T.length)}</em></div>
-      ${T[cur][2]}
-    </div>
-    <div class="lfoot">
-      ${blocked
-        ? `<button class="btn" disabled style="opacity:.45">اختر إجابةً أولًا</button>`
-        : (!last
-          ? `<button class="btn" data-act="lessonNext">${esc(T[cur + 1][0])} ›</button>`
-          : `<button class="btn" data-act="drillSkill" data-arg="${esc(id)}">جرّبها على ${esc(SKILLS[id] ? SKILLS[id].name : 'أسئلة')}</button>`)}
-      ${cur ? `<button class="skipl" data-act="lessonPrev">‹ السابق</button>` : ''}
-    </div>
-  </div>`;
+    <div class="k2pane" key="${kt}">${TABS[kt][1]}</div>
+
+    <button class="btn k2go" data-act="drillSkill" data-arg="${esc(id)}">جرّبها على أسئلة ›</button>
+  </div>`
 },
 
 
@@ -3908,7 +3997,8 @@ settings: () => {
       <span>${(S.courses||[]).length ? `آخر دورة ${ar((S.courses||[]).slice(-1)[0].overall)}٪` : 'اضغط لتغييره'}</span></div>
     <span class="gcarrow">›</span>
   </button>
-  <div class="stabs"><button class="stb ${S.setTab===0?'on':''}" data-act="setTab" data-arg="0">الدراسة</button><button class="stb ${S.setTab===1?'on':''}" data-act="setTab" data-arg="1">المظهر</button><button class="stb ${S.setTab===2?'on':''}" data-act="setTab" data-arg="2">حسابي</button><button class="stb ${S.setTab===3?'on':''}" data-act="setTab" data-arg="3">متقدّم</button><button class="stb ${S.setTab===5?'on':''}" data-act="setTab" data-arg="5">التذكير</button><button class="stb ${S.setTab===6?'on':''}" data-act="setTab" data-arg="6">الجهاز</button><button class="stb ${S.setTab===4?'on':''}" data-act="setTab" data-arg="4">عن أُفق</button></div>
+  <div class="stabs"><button class="stb ${S.setTab===0?'on':''}" data-act="setTab" data-arg="0">الدراسة</button><button class="stb ${S.setTab===1?'on':''}" data-act="setTab" data-arg="1">المظهر</button><button class="stb ${S.setTab===2?'on':''}" data-act="setTab" data-arg="2">حسابي</button><button class="stb ${S.setTab===3?'on':''}" data-act="setTab" data-arg="3">متقدّم</button><button class="stb ${S.setTab===5?'on':''}" data-act="setTab" data-arg="5">التذكير</button><button class="stb ${S.setTab===6?'on':''}" data-act="setTab" data-arg="6">الجهاز</button><button class="stb ${S.setTab===4?'on':''}" data-act="setTab" data-arg="4">عن أُفق</button>${S.devUnlocked ? `<button class="stb dev ${S.setTab===7?'on':''}" data-act="setTab" data-arg="7">المطوّر</button>` : ''}</div>
+${S.setTab===7 && S.devUnlocked ? devPanel() : ''}
 ${S.setTab===0 ? `
   ${S.track === 'qudurat' ? `
   <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">تركيز التدريب</span></div>
@@ -4025,7 +4115,7 @@ ${S.setTab===1 ? `
 ${S.setTab===6 ? `
   <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">النسخة</span></div>
     <div class="card">
-      <div class="kv"><span>نسخة أُفق</span><span class="v num">${APP_VERSION.split('.').map(x=>ar(x)).join('٫')}</span></div>
+      <div class="kv" data-act="devTap" style="cursor:default;-webkit-user-select:none;user-select:none"><span>نسخة أُفق</span><span class="v num">${APP_VERSION.split('.').map(x=>ar(x)).join('٫')}${S.devHint && !S.devUnlocked ? ` <em style="color:var(--ink-faint);font-style:normal;font-size:11px">· ${ar(S.devHint)}</em>` : ''}</span></div>
       <div class="kv"><span>تمّ التحديث بتاريخ</span><span class="v">${esc(APP_DATE)}</span></div>
       <div class="kv" style="border:0"><span>الحالة</span><span class="v">محدَّث</span></div>
       <button class="btn ghost" style="margin-top:10px" data-act="checkUpdate">ابحث عن تحديث</button>
@@ -4114,7 +4204,7 @@ ${S.setTab===4 ? `
     </p></div>
   </div>
   <div class="credit">
-    <div class="crm">© ٢٠٢٦ عرفات الراجحي</div>
+    <div class="crm">© ${ar(new Date().getFullYear())}${hijriYear() ? ` · ${ar(hijriYear())}هـ` : ''} عرفات الراجحي</div>
     <div class="crs">Arafat AlRajhi · جميع الحقوق محفوظة</div>
     <div class="crs">أداة تعليمية — غير تابعة لهيئة تقويم التعليم والتدريب ولا معتمدة منها</div>
   </div>
@@ -4141,6 +4231,15 @@ ${S.setTab===3 ? `
       <button class="btn ghost" data-act="resetJourney">صفّر الرحلة وابدأ من أوّلها</button>
       <p class="note" style="padding-top:8px">يمحو ما قُرئ من المفاتيح فقط.
         لا يمسّ أسئلتك ولا أخطاءك ولا تقدّمك في المهارات.</p>
+    </div>
+  </div>
+
+  <div class="group danger"><div class="group-h"><span class="t">مسح كل شيء</span></div>
+    <div class="card">
+      <p class="note" style="padding:0 0 12px">يمحو تقدّمك كلَّه من هذا الجهاز:
+        أيّامك وسلسلتك وأخطاءك وإتقانك ودوراتك. ويعود أُفق كأنك تفتحه لأول مرّة.</p>
+      <p class="note" style="padding:0 0 14px;color:var(--near)">احفظ نسخةً أولًا إن أردتَ العودة إليها يومًا.</p>
+      <button class="btn danger" data-act="wipeAsk">امسح كل بياناتي</button>
     </div>
   </div>
 
@@ -4207,7 +4306,7 @@ const ACTIONS = {
   clearFlags() { S.flags = []; haptic(10); render(); },
   openLesson(id) {
     if (!LESSONS.lessons[id]) return;
-    S.lessonFor = id; S.lessonTab = 0; S.lessonFrom = 'learn';
+    S.lessonFor = id; S.lessonTab = 0; S.k2tab = 0; S.exPick = null; S.exPickFor = null; S.lessonFrom = 'learn';
     if (!S.seenLessons.includes(id)) S.seenLessons.push(id);
     /* محطّة المفتاح تُنجَز بقراءته — فتُفتَح التي بعدها عند الخروج */
     const c = courseActive(), st = c && courseStation();
@@ -4277,6 +4376,58 @@ const ACTIONS = {
     S.name = v; haptic(14); go('pick');
   },
   skipName() { S.name = S.name || 'صديقي'; haptic(12); go('pick'); },
+  devTap() {
+    const now = Date.now();
+    S._dt = (now - (S._dt0 || 0) < 1200) ? (S._dt || 0) + 1 : 1;
+    S._dt0 = now;
+    if (S._dt >= 7) {
+      S._dt = 0; S.devUnlocked = true; S.admin = true;
+      haptic(30); S.setTab = 7; saveState(); render(); return;
+    }
+    if (S._dt >= 4) { S.devHint = 7 - S._dt; render(); }
+  },
+  devLock() {
+    S.devUnlocked = false; S.admin = false; S.audit = false; S.cleanOnly = false;
+    S.showParked = false; S.setTab = 4; haptic(16); saveState(); render();
+  },
+  devDay(n) {
+    const d = +n || 0;
+    S.day = Math.max(1, (S.day || 1) + d);
+    S.suggestion = null; haptic(9); saveState(); render();
+  },
+  devFinishStation() {
+    const c = courseActive(); if (!c) return;
+    courseAdvance(22, 28, []); haptic(12); render();
+  },
+  devFinishCourse() {
+    const c = courseActive(); if (!c) return;
+    let g = 0;
+    while (courseActive() && g++ < 20) courseAdvance(18 + (g % 9), 28, []);
+    haptic(18); go('creport');
+  },
+  devClearCourses() { S.course = null; S.courses = []; haptic(14); saveState(); render(); },
+  devParked() {
+    S.showParked = !S.showParked; haptic(12);
+    try { OPEN_TRACKS.length = 0;
+      ['qudurat','tahsili','step'].concat(S.showParked ? ['kfupm','aramco'] : [])
+        .forEach(t => OPEN_TRACKS.push(t)); } catch (e) {}
+    saveState(); render();
+  },
+  devFind() {
+    const el = document.getElementById('devq');
+    const v = el ? String(el.value || '').trim() : '';
+    S.devFound = v ? (byQ(v) ? v : '__none__') : null; render();
+  },
+  devExport() {
+    try {
+      const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'ufuq-state-day' + (S.day || 1) + '.json';
+      a.click();
+    } catch (e) {}
+    haptic(12);
+  },
   toggleAudit() { S.audit = !S.audit; haptic(S.audit ? 18 : 9); render(); },
   toggleClean() { S.cleanOnly = !S.cleanOnly; S.suggestion = null; haptic(16); render(); },
   chooseTrack(t) {
@@ -4493,6 +4644,23 @@ const ACTIONS = {
       finished: false, round: (c.round || 1) + 1 };
     haptic(16); saveState(); go('copen');
   },
+  wipeAsk() { S.wipeStep = 1; haptic(12); go('wipe'); },
+  wipeCancel() { S.wipeStep = 0; haptic(9); go('settings'); },
+  /* تأكيدان لا واحد: الأول ينبّه، والثاني يطلب كتابة كلمة — فلا يقع المسح سهوًا */
+  wipeConfirm() {
+    if (S.wipeStep !== 2) { S.wipeStep = 2; haptic(14); render(); return; }
+    /* نمسح كل ما يخصّ أُفق في هذا المتصفّح ولا نمسّ غيره */
+    try {
+      const drop = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k === SAVE_KEY || k.indexOf(SAVE_KEY) === 0)) drop.push(k);
+      }
+      drop.forEach(k => localStorage.removeItem(k));
+    } catch (e) {}
+    haptic(20);
+    try { location.reload(); } catch (e) { S = freshState(); go('name'); }
+  },
   seenReport() { if (S.course) { S.course.seen = true; saveState(); } go('home'); },
   shareReport() {
     const t = reportText();
@@ -4618,8 +4786,9 @@ const ACTIONS = {
   setViz(m) { S.vizMode = m; haptic(9); saveState(); render(); },
   lessonNext() { S.lessonTab = (S.lessonTab || 0) + 1; haptic(9); render(); },
   lessonPrev() { S.lessonTab = Math.max(0, (S.lessonTab || 0) - 1); haptic(7); render(); },
+  k2tab(n) { S.k2tab = +n; haptic(9); render(); },
   exPick(n) {
-    S.exPick = +n; S.exPickFor = S.lessonFor;
+    S.exPick = +n; S.exPickFor = S.lessonFor; S.k2tab = 0;
     const L = LESSONS.lessons[S.lessonFor];
     haptic(L && +n === L.exAns ? 16 : 9); render();
   },
@@ -4733,6 +4902,8 @@ function buildSessionFor(skillId) {
 /* ══════════ الحفظ: بدونه يبدأ الطالب من الصفر كلّ مرّة ══════════ */
 const SAVE_KEY = 'ufuq.v1';
 const NOSAVE = ['session','exam','sheet','devOpen','pendingRecord','breatheTimer','stopOffer','_dir','tip','suggestion','restored','nudgeSeen'];
+/* حجب التخزين: المتصفّح في وضع التصفّح الخفيّ أو ممتلئ.
+   من StudyMate: يُنبَّه الطالب بدل أن يعمل ويفقد تقدّمه صامتًا. */
 function saveState() {
   try {
     const o = {};
@@ -4740,7 +4911,10 @@ function saveState() {
     o._at = new Date().toISOString().slice(0, 10);
     o._v = 1;
     localStorage.setItem(SAVE_KEY, JSON.stringify(o));
-  } catch (e) {}
+    S.storageBlocked = false;
+  } catch (e) {
+    if (!S.storageBlocked) { S.storageBlocked = true; try { render(); } catch (e2) {} }
+  }
 }
 function daysBetween(a, b) {
   const d = (new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000;
@@ -4762,7 +4936,8 @@ function healState(b) {
       b.seenLessons = [];
       b._healed = true;
     }
-    if (b.admin || b.audit) { b.admin = false; b.audit = false; }
+    /* وضع المطوّر يبقى ما دام مفتوحًا — ويُقفَل من تبويبه بيد صاحبه */
+    if (!b.devUnlocked) { b.admin = false; b.audit = false; }
   } catch (e) {}
   return b;
 }
