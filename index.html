@@ -2688,6 +2688,89 @@ body[data-screen="settings"] #app{padding-bottom:30px}
 .gearbtn{opacity:.38;transition:opacity .2s,transform .12s}
 .gearbtn:active{opacity:.95;transform:scale(.92)}
 .gearbtn svg path{transition:d .2s}
+
+/* ══════ شريط التحديث والتثبيت ══════ */
+#updbar{position:fixed;inset-inline:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));
+  z-index:940;display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:17px;
+  background:color-mix(in oklab,var(--void) 86%,var(--glow) 14%);
+  border:1px solid color-mix(in oklab,var(--glow) 46%,transparent);
+  box-shadow:0 16px 40px rgba(0,0,0,.42),0 0 0 1px rgba(255,255,255,.04) inset;
+  backdrop-filter:blur(16px);animation:ubIn .5s cubic-bezier(.2,.8,.3,1) both}
+@keyframes ubIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.ub-i{flex:0 0 auto;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+  font-size:16px;color:var(--glow);background:color-mix(in oklab,var(--glow) 18%,transparent);
+  border:1px solid color-mix(in oklab,var(--glow) 34%,transparent)}
+.ub-t{flex:1;min-width:0}
+.ub-t b{display:block;font-size:14px;font-weight:500;color:var(--ink-strong)}
+.ub-t em{display:block;font-style:normal;font-size:11.5px;color:var(--ink-soft);margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ub-b{flex:0 0 auto;padding:9px 18px;border-radius:12px;cursor:pointer;font:inherit;font-size:13.5px;
+  color:#fff;background:linear-gradient(140deg,var(--glow),color-mix(in oklab,var(--glow) 70%,#000));
+  border:0;box-shadow:0 4px 14px color-mix(in oklab,var(--glow) 40%,transparent)}
+.ub-b:active{transform:scale(.96)}
+.ub-x{flex:0 0 auto;width:28px;height:28px;border-radius:50%;cursor:pointer;font:inherit;font-size:13px;
+  color:var(--ink-faint);background:transparent;border:0}
+.ub-x:active{color:var(--ink)}
+@media (max-width:360px){.ub-t em{display:none}.ub-b{padding:9px 13px}}
+
+/* ══════ بطاقة التناظر: لا تفيض ولا تُقصّ ══════ */
+.sv-an{max-width:100%;overflow:visible}
+.an-p{display:inline-flex;flex-wrap:wrap;justify-content:center;
+  max-width:100%;box-sizing:border-box;gap:10px 12px}
+.an-w{max-width:100%;overflow-wrap:anywhere;word-break:normal;line-height:1.45;text-align:center}
+@media (max-width:420px){
+  .an-w{font-size:19px}
+  .an-p{padding:13px 15px;gap:8px 10px}
+}
+@media (max-width:340px){ .an-w{font-size:17px} }
+/* الحماية العامّة: لا نصّ يخرج عن بطاقته في أيّ سؤال */
+.sv,.sv-ask,.sv-od,.sv-ce,.sv-cmp,.sv-cp,.stem,.qtext{
+  max-width:100%;overflow-wrap:anywhere;box-sizing:border-box}
+#app{overflow-x:hidden}
+
+/* ══════ بطاقة الخطّة ══════ */
+.plan{position:relative;margin:18px 0;padding:22px 20px;border-radius:19px;overflow:hidden;text-align:center;
+  background:linear-gradient(140deg,color-mix(in oklab,var(--glow) 17%,transparent),
+    color-mix(in oklab,var(--glow) 4%,transparent));
+  border:1px solid color-mix(in oklab,var(--glow) 36%,transparent)}
+.plan::after{content:"";position:absolute;inset:-60% -140%;
+  background:linear-gradient(115deg,transparent 44%,rgba(255,255,255,.2) 50%,transparent 56%);
+  mix-blend-mode:screen;transform:translateX(-120%);
+  animation:plSheen 9s cubic-bezier(.3,0,.2,1) infinite}
+@keyframes plSheen{0%,88%{transform:translateX(-120%)}96%,100%{transform:translateX(120%)}}
+.pl-h{font-size:11.5px;letter-spacing:.14em;color:var(--glow);margin-bottom:8px}
+.pl-big{font-family:var(--display);font-size:38px;font-weight:500;line-height:1.1;color:var(--ink-strong);
+  text-shadow:0 0 30px color-mix(in oklab,var(--glow) 50%,transparent)}
+.pl-sub{font-size:13.5px;color:var(--ink-soft);margin-top:5px}
+.pl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0 0}
+.pl-grid div{padding:11px 4px;border-radius:12px;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.07)}
+.pl-grid b{display:block;font-family:var(--display);font-size:19px;font-weight:500;color:var(--ink-strong)}
+.pl-grid span{font-size:11px;color:var(--ink-dim)}
+.pl-sk{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px}
+.pl-sk span{font-size:12px;padding:5px 12px;border-radius:999px;color:var(--ink);
+  background:rgba(255,255,255,.055);border:1px solid var(--line)}
+.pl-note{font-size:13px;color:var(--ink-soft);line-height:1.8;margin:16px 0 0;text-align:start}
+.plan.mini{padding:15px 16px;margin:10px 0}
+.plan.mini .pl-big{font-size:26px}
+.plan.mini .pl-grid{margin-top:12px}
+/* خطوات ما ستمرّ به */
+.pl-steps{margin:20px 0 22px}
+.pl-h2{font-size:11.5px;letter-spacing:.1em;color:var(--ink-dim);margin:0 4px 10px}
+.pl-st{display:flex;align-items:center;gap:13px;padding:12px 14px;border-radius:13px;margin-bottom:7px;
+  background:var(--flat);border:1px solid var(--line)}
+.pl-n{flex:0 0 auto;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--display);font-size:12.5px;color:var(--glow);
+  background:color-mix(in oklab,var(--glow) 15%,transparent);
+  border:1px solid color-mix(in oklab,var(--glow) 30%,transparent)}
+.pl-t b{display:block;font-size:14.5px;font-weight:500;color:var(--ink-strong)}
+.pl-t em{display:block;font-style:normal;font-size:12.5px;color:var(--ink-soft);margin-top:1px}
+@media (prefers-reduced-motion:reduce){.plan::after{animation:none}}
+
+.freshline{font-size:13px;color:var(--grow);margin:6px 0 0;
+  display:inline-block;padding:5px 14px;border-radius:999px;
+  background:color-mix(in oklab,var(--grow) 12%,transparent);
+  border:1px solid color-mix(in oklab,var(--grow) 28%,transparent)}
 </style>
 </head>
 <body>

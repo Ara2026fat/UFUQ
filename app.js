@@ -139,9 +139,9 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '9.8.0';
+const APP_VERSION = '10.6.0';
 const APP_DATE = '٩ سبتمبر ٢٠٢٦';
-const APP_BUILD = 123;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_BUILD = 132;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -542,13 +542,40 @@ function stationSession(kind) {
     returning: null, resume: false, station: kind, size: items.length };
 }
 
+
+/* ══════════════ حدّ الجلسة الأدنى ══════════════
+   أول جلستين ١٢ سؤالًا ليستوعب الفكرة بلا إرهاق.
+   وبعدها لا تقلّ جلسة التدريب عن ٢٥ — فما دونها لا يُثبِّت.
+   أمّا المراجعة فبقدر أخطائه: حشوها بأسئلة لا يحتاجها يُفسد معناها. */
+const SESSION_MIN = { intro: 12, drill: 25, review: 0, notes: 0 };
+
+function sessionFloor(kind) {
+  if ((S.sessionCount || 0) < 2) return 12;
+  if (kind === 'notes' || kind === 'review') return 0;
+  return 25;
+}
+
+/* يمدّ الجلسة إلى حدّها الأدنى من المهارة نفسها */
+function padTo(items, used, floor, skillId, diff) {
+  let guard = 0;
+  while (items.length < floor && guard++ < 60) {
+    const q = pool(skillId, diff || 3, used);
+    if (!q || used.has(q.id)) break;
+    used.add(q.id);
+    items.push({ qid: q.id, role: 'active', done: false });
+  }
+  return items;
+}
+
 function buildSession() {
   /* محطّة دورةٍ؟ فلها شكلها الخاصّ */
   if (S.stationKind) {
     const ss = stationSession(S.stationKind);
     if (ss) { S.forceSkill = null; return ss; }
   }
-  const size = S.size;
+  /* أول جلستين مقصورتان على ١٢ ليستوعب الفكرة، وما بعدها لا يقلّ عن ٢٥ */
+  const floor = sessionFloor('drill');
+  const size = ((S.sessionCount || 0) < 2) ? 12 : Math.max(S.size, floor);
   const gap = S.lastActive === null ? 0 : S.day - S.lastActive;
   const resume = gap > 7;
   const used = new Set(), items = [];
@@ -707,9 +734,18 @@ function examBuild(secIdx) {
     allow = mine.filter(id => want === 'verbal' ? VERBAL_SK.includes(id) : !VERBAL_SK.includes(id));
     if (!allow.length) allow = mine;
   }
+  /* طزاجة: نفضّل ما لم يره في آخر ثلاثين يومًا، ولا نحجز أسئلةً عن التدريب */
   const bag = Q.filter(q => allow.includes(q.skill) && !used.has(q.id));
   for (let i = bag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bag[i], bag[j]] = [bag[j], bag[i]]; }
-  ids = bag.slice(0, sp.per).map(q => q.id);
+  const fresh = bag.filter(q => !seenRecently(q.id));
+  let take = fresh.slice(0, sp.per);
+  if (take.length < sp.per) {
+    /* نفد الجديد في هذا القسم: نكمل بالأقدم رؤيةً لا بالأحدث */
+    const rest = bag.filter(q => seenRecently(q.id))
+      .sort((a, b) => ((S.asked || {})[a.id] || 0) - ((S.asked || {})[b.id] || 0));
+    take = take.concat(rest.slice(0, sp.per - take.length));
+  }
+  ids = take.map(q => q.id);
   return ids;
 }
 function examStart(mode) {
@@ -725,7 +761,8 @@ function examNextSection() {
   const e = S.exam, sp = e.spec;
   const right = e.items.filter(id => e.answers[id] && e.answers[id].ok).length;
   const blank = e.items.filter(id => !e.answers[id]).length;
-  e.secs.push({ n: e.sec + 1, right, total: e.items.length, blank,
+  const freshN = e.items.filter(id => !(S.asked || {})[id]).length;
+  e.secs.push({ n: e.sec + 1, right, total: e.items.length, blank, fresh: freshN,
     used: Math.max(0, sp.mins * 60000 - (e.endsAt - Date.now())) });
   e.seen = e.seen.concat(e.items);
   if (e.sec + 1 >= sp.sections) {
@@ -1792,6 +1829,7 @@ function render() {
   const d = S._dir || 0;
   frame.className = 'fade' + (d > 0 ? ' inF' : d < 0 ? ' inB' : '');
   try { document.body.dataset.screen = S.screen; } catch (e) {}
+  try { bottomBar(); } catch (e) {}
   frame.innerHTML = (S.storageBlocked ? `<div class="blocked">
       <b>تعذّر حفظ تقدّمك</b>
       <span>المتصفّح يمنع الحفظ — قد تكون في وضع التصفّح الخفيّ، أو الذاكرة ممتلئة.
@@ -2853,6 +2891,179 @@ function decisionCard() {
   </div>`;
 }
 
+
+/* ══════════════ شريط سفليّ للتحديث والتثبيت ══════════════
+   يظهر من تلقاء نفسه: إن وصلت نسخة جديدة، أو إن لم يُثبَّت التطبيق بعد. */
+let _swWaiting = null, _installEvt = null;
+
+function bottomBar() {
+  let bar = document.getElementById('updbar');
+  const need = _swWaiting ? 'update' : (_installEvt && !isInstalled() && !S.installDismissed ? 'install' : null);
+  if (!need) { if (bar) bar.remove(); return; }
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'updbar';
+    document.getElementById('shell').appendChild(bar);
+  }
+  if (bar.dataset.kind === need) return;
+  bar.dataset.kind = need;
+  bar.innerHTML = need === 'update'
+    ? `<span class="ub-i">↻</span>
+       <span class="ub-t"><b>نسخة جديدة جاهزة</b><em>حدّث لتصلك آخر الأسئلة والتحسينات</em></span>
+       <button class="ub-b" id="ubGo">حدّث</button>
+       <button class="ub-x" id="ubNo" aria-label="لاحقًا">✕</button>`
+    : `<span class="ub-i">⤓</span>
+       <span class="ub-t"><b>ثبّت أُفق على جهازك</b><em>يفتح بملء الشاشة ويعمل بلا إنترنت</em></span>
+       <button class="ub-b" id="ubGo">ثبّت</button>
+       <button class="ub-x" id="ubNo" aria-label="لاحقًا">✕</button>`;
+  const go1 = bar.querySelector('#ubGo'), no = bar.querySelector('#ubNo');
+  if (go1) go1.onclick = () => {
+    haptic(16);
+    if (need === 'update') {
+      try { _swWaiting.postMessage({ type: 'SKIP_WAITING' }); } catch (e) {}
+      setTimeout(() => { try { location.reload(); } catch (e) {} }, 400);
+    } else {
+      try { _installEvt.prompt(); } catch (e) {}
+      _installEvt = null; bar.remove();
+    }
+  };
+  if (no) no.onclick = () => {
+    haptic(9);
+    if (need === 'install') { S.installDismissed = true; saveState(); }
+    _swWaiting = null; bar.remove();
+  };
+}
+
+function isInstalled() {
+  try {
+    return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+      || window.navigator.standalone === true;
+  } catch (e) { return false; }
+}
+
+/* التقاط حدث التثبيت وحالة عامل الخدمة */
+try {
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); _installEvt = e; bottomBar();
+  });
+  window.addEventListener('appinstalled', () => { _installEvt = null; bottomBar(); });
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (!reg) return;
+      if (reg.waiting) { _swWaiting = reg.waiting; bottomBar(); }
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing; if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            _swWaiting = nw; bottomBar();
+          }
+        });
+      });
+    }).catch(() => {});
+    /* فحصٌ دوريّ كل عشر دقائق */
+    setInterval(() => {
+      navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {});
+    }, 600000);
+  }
+} catch (e) {}
+
+
+/* ══════════════ توقّع الخطّة ══════════════
+   الدورة أربع عشرة محطّة — عددٌ ثابت لا يتغيّر.
+   أمّا الأيام فتتبع إيقاعه: من يجلس ثلاثًا في اليوم يُنهيها في خمسة،
+   ومن يجلس واحدة يُنهيها في أربعة عشر. فالجدول يُعاد حسابه كل يوم. */
+
+/* كم جلسةً في اليوم فعلًا؟ من جولاته المضبوطة، وإن لم تكن فمن عادته */
+function sessionsPerDay() {
+  let r = 0;
+  try { r = (myRounds(S.schedTab || 'week') || []).length; } catch (e) {}
+  if (!r) {
+    const days = Math.max(1, S.day || 1);
+    r = Math.round(((S.sessionCount || 0) / days) * 10) / 10;
+  }
+  return Math.max(0.5, Math.min(4, r || 1));
+}
+
+/* متوسّط أسئلة المحطّة بحسب نوعها */
+const STATION_N = { intro: 18, key: 0, drill: 30, firm: 24, link: 24, review: 30, notes: 20, test: 24 };
+
+function courseForecast(map) {
+  const c = S.course;
+  const plan = map || (c && c.map) || [];
+  const left = plan.filter((x, i) => !c || i >= (c.at || 0));
+  const rate = sessionsPerDay();
+  const sessions = left.filter(x => (x.k || x) !== 'key').length;
+  const keys = left.filter(x => (x.k || x) === 'key').length;
+  const qs = left.reduce((a, x) => a + (STATION_N[(x.k || x)] || 24), 0);
+  const size = S.size || 30;
+  const mins = Math.round(sessions * (size * 0.72) + keys * 4);
+  const days = Math.max(1, Math.ceil(left.length / rate));
+  return {
+    stations: left.length, sessions, keys, questions: qs,
+    rate, days, weeks: Math.round(days / 7 * 10) / 10,
+    minsPerDay: Math.round(mins / days)
+  };
+}
+
+function weekWord(d) {
+  if (d <= 9) return ar(d) + ' أيام';
+  const w = Math.round(d / 7);
+  return w === 2 ? 'أسبوعان' : (w === 1 ? 'أسبوع' : ar(w) + ' أسابيع');
+}
+
+/* بطاقة الخطّة: تُعرَض قبل بدء الدورة وداخلها */
+function planCard(map, compact) {
+  const f = courseForecast(map);
+  const sk = (S.course && S.course.skills) || (map && map.skills) || [];
+  const names = sk.map(id => (SKILLS[id] && SKILLS[id].name) || id);
+  return `<div class="plan${compact ? ' mini' : ''}">
+    <div class="pl-h">خطّتك</div>
+    <div class="pl-big">${esc(weekWord(f.days))}</div>
+    <div class="pl-sub">${ar(f.stations)} محطّة · ${ar(f.rate)} جلسة في اليوم</div>
+    <div class="pl-grid">
+      <div><b>${ar(f.sessions)}</b><span>جلسة</span></div>
+      <div><b>${ar(f.questions)}</b><span>سؤالًا</span></div>
+      <div><b>${ar(f.minsPerDay)}</b><span>دقيقة يوميًّا</span></div>
+    </div>
+    ${names.length ? `<div class="pl-sk">${names.map(n => `<span>${esc(n)}</span>`).join('')}</div>` : ''}
+    ${compact ? '' : `<p class="pl-note">الأيام تتبع جلساتك: لو جلستَ مرّتين في اليوم
+      انتهت في ${esc(weekWord(Math.ceil(f.stations / 2)))}، ولو ثلاثًا ففي
+      ${esc(weekWord(Math.ceil(f.stations / 3)))}. ويُعاد الحساب كل يوم.</p>`}
+  </div>`;
+}
+
+
+/* ══════════════ طزاجة أسئلة النموذج ══════════════
+   السؤال الذي رآه حديثًا لا يقيس شيئًا. فنمنع ما رآه في آخر ثلاثين يومًا،
+   ولا نحجز أسئلةً عن التدريب — فالبنك يتّسع، والحجز يقضم أضعف المهارات. */
+const EXAM_FRESH_DAYS = 30;
+
+function seenRecently(qid) {
+  const d = S.asked && S.asked[qid];
+  return d != null && (S.day - d) < EXAM_FRESH_DAYS;
+}
+
+/* يختار من مهارةٍ ما لم يُرَ حديثًا، فإن نفد رجع إلى الأقدم رؤيةً */
+function examPick(skillId, diff, used) {
+  let q = null, guard = 0;
+  while (guard++ < 40) {
+    q = pool(skillId, diff, used);
+    if (!q) break;
+    if (!seenRecently(q.id)) return q;
+    used.add(q.id);              // نتخطّاه مؤقّتًا ونجرّب غيره
+  }
+  /* نفد الجديد: نأخذ الأقدم رؤيةً بدل أن نترك القسم ناقصًا */
+  const all = (Q || []).filter(x => x.skill === skillId && !used.has(x.id));
+  if (!all.length) return q;
+  all.sort((a, b) => ((S.asked || {})[a.id] || 0) - ((S.asked || {})[b.id] || 0));
+  return all[0];
+}
+
+/* كم سؤالًا في النموذج لم يره من قبل — يُعرَض في التقرير */
+function examFreshCount(items) {
+  return (items || []).filter(it => !(S.asked || {})[it.qid]).length;
+}
+
 function leadCard(again) {
   const g = S.suggestion || makeSuggestion();
   const n = thread();
@@ -3284,6 +3495,45 @@ wipe: () => {
     ${!two ? '<p class="wnote">احفظ نسخةً من الإعدادات قبل المسح إن أردتَ العودة إليها.</p>' : ''}
     <button class="btn danger" data-act="wipeConfirm">${two ? 'نعم، امسح كل شيء' : 'متابعة'}</button>
     <button class="skipl" data-act="wipeCancel">رجوع — لا تمسح شيئًا</button>
+  </div>`;
+},
+
+
+/* ══════════ خطّة الدورة ══════════ */
+
+planCourse: () => {
+  const part = S.planPart || 'verbal';
+  const PN = { verbal: 'القسم اللفظيّ', quant: 'القسم الكمّيّ', other: 'المسار' };
+  const map = S.planMap || null;
+  const f = courseForecast(map);
+  const steps = [
+    ['التعارف', 'يعرف أُفق من أين تبدأ'],
+    ['المفتاح', 'فكرة المهارة ومزالقها'],
+    ['التدريب', 'أسئلة متدرّجة الصعوبة'],
+    ['التثبيت', 'الأصعب وأخطاؤك أنت'],
+    ['الوصل', 'مهارتان معًا كما في الاختبار'],
+    ['المراجعة', 'المهارات كلّها مشتبكة'],
+    ['القياس', 'نموذجٌ بمؤقّت يقول أين صرت']
+  ];
+  return `<div class="lwrap">
+    <div class="top backtop sview">
+      <button class="backb" data-go="home" aria-label="رجوع">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>اليوم</span></button>
+      <span class="eyebrow" style="margin:0">${esc(PN[part] || '')}</span></div>
+
+    ${planCard(map)}
+
+    <div class="pl-steps">
+      <div class="pl-h2">ما ستمرّ به</div>
+      ${steps.map(([n, d], i) => `<div class="pl-st">
+        <span class="pl-n">${ar(i + 1)}</span>
+        <span class="pl-t"><b>${esc(n)}</b><em>${esc(d)}</em></span>
+      </div>`).join('')}
+    </div>
+
+    <button class="btn" data-act="startPlan" data-arg="${esc(part)}">ابدأ المحطّة الأولى ›</button>
   </div>`;
 },
 
@@ -3792,6 +4042,7 @@ plan: () => {
   return `<div class="top"></div>
   <div class="eyebrow">خطتك حتى الاختبار</div>
   <h1>${esc(pl.span)}<span class="soft" style="font-size:18px"> — إيقاع ${esc(pl.mode)}</span></h1>
+  ${courseActive() ? planCard(null, true) : ''}
   <div class="glass" style="margin-top:20px">
     <div style="display:flex;gap:22px;align-items:baseline">
       <div><div class="big num" style="font-size:34px">${ar(pl.rhythm)}</div>
@@ -4184,6 +4435,8 @@ examDone: () => {
     <div class="eyebrow">انتهت المحاكاة</div>
     <h1 style="margin-top:10px">${ar(R)} من ${ar(T)}</h1>
     <p class="soft" style="margin-top:10px">${esc(e.spec.name)} — ${ar(e.spec.sections)} أقسام كاملة.</p>
+    ${(() => { const F = e.secs.reduce((a, x) => a + (x.fresh || 0), 0);
+      return F ? `<p class="freshline">${ar(F)} من ${ar(T)} لم ترها من قبل</p>` : ''; })()}
     <div class="glass" style="margin-top:20px">
       ${e.secs.map(s => `<div class="exrow">
         <span>القسم ${ar(s.n)}</span>
@@ -4469,13 +4722,9 @@ const ACTIONS = {
   },
   skipName() { S.name = S.name || 'صديقي'; haptic(12); go('pick'); },
   gearTap() {
-    /* الإعدادات ليست في متناول الطالب: ثلاث نقرات على العلامة خلال ثانيةٍ ونصف.
-       فمن يحتاجها يعرفها، ومن يتصفّح لا يقع فيها. */
-    const now = Date.now();
-    S._gt = (now - (S._gt0 || 0) < 1500) ? (S._gt || 0) + 1 : 1;
-    S._gt0 = now;
-    if (S._gt >= 3) { S._gt = 0; haptic(18); S.setRow = null; go('settings'); return; }
-    haptic(8);
+    /* نقرةٌ واحدة: الزرّ خافتٌ في الزاوية فلا يجذب الطالب،
+       لكنه يعمل من أول لمسة — فالزرّ الذي لا يستجيب يبدو معطّلًا. */
+    haptic(12); S.setRow = null; go('settings');
   },
   devTap() {
     const now = Date.now();
@@ -4723,8 +4972,21 @@ const ACTIONS = {
   prTab(i) { S.prTab = +i; haptic(7); render(); },
   clearRestored() { S.restored = null; haptic(9); saveState(); render(); },
   dismissNudge() { S.nudgeSeen = S.day; haptic(7); saveState(); render(); },
-  beginCourse() {
-    if (startCourse()) { haptic(16); go(S.goal ? 'copen' : 'goal'); } else { haptic(7); render(); }
+  beginCourse(part) {
+    /* الخطّة تُعرَض قبل البدء: يرى ما سيمرّ به وكم يستغرق بإيقاعه هو */
+    if (!S.goal) { haptic(9); go('goal'); return; }
+    if (startCourse(part)) {
+      S.planPart = part || (S.track === 'qudurat'
+        ? (S.focus === 'quant' ? 'quant' : 'verbal') : 'other');
+      S.planMap = null;
+      haptic(16); go('planCourse');
+    } else { haptic(7); render(); }
+  },
+  startPlan() { haptic(16); go('copen'); },
+  showPlan() {
+    const c = courseActive(); if (!c) return;
+    S.planPart = c.part || 'verbal'; S.planMap = null;
+    haptic(10); go('planCourse');
   },
   runStation() {
     const c = courseActive(); if (!c) return;

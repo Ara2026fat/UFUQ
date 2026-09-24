@@ -1,5 +1,5 @@
 /* أُفق — عامل الخدمة: يجعل التطبيق يعمل بلا إنترنت ويحدّث نفسه بهدوء. */
-const V = 'ufuq-v123';
+const V = 'ufuq-v132';
 const SHELL = ['./', './index.html', './app.js', './bank.bin', './keys.bin',
   './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
@@ -50,4 +50,7 @@ self.addEventListener('fetch', e => {
   }).catch(() => hit)));
 });
 
-self.addEventListener('message', e => { if (e.data === 'skipWaiting') self.skipWaiting(); });
+self.addEventListener('message', e => {
+  const d = e.data;
+  if (d === 'skipWaiting' || (d && d.type === 'SKIP_WAITING')) self.skipWaiting();
+});
