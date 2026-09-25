@@ -1,22 +1,14 @@
 {
-  "name": "أُفق — تدريب القدرات والتحصيلي",
+  "name": "أُفق — تدريب القدرات والتحصيلي وستيب",
   "short_name": "أُفق",
-  "description": "تدريب يوميّ قصير على اختبارات القدرات والتحصيلي وستيب. الاستمرار قبل الكمّية.",
-  "lang": "ar",
-  "dir": "rtl",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "display_override": [
-    "standalone",
-    "minimal-ui"
-  ],
   "orientation": "portrait",
-  "background_color": "#011766",
-  "theme_color": "#011766",
-  "categories": [
-    "education"
-  ],
+  "background_color": "#0E1017",
+  "theme_color": "#0E1017",
+  "lang": "ar",
+  "dir": "rtl",
   "icons": [
     {
       "src": "./icon-192.png",

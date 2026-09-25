@@ -1,8 +1,7 @@
 /* أُفق — عامل الخدمة: يجعل التطبيق يعمل بلا إنترنت ويحدّث نفسه بهدوء. */
-const V = 'ufuq-v142';
-const SHELL = ['./', './index.html', './app.js', './bank.bin', './keys.bin',
-  './manifest.webmanifest',
-  './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
+const V = 'ufuq-v144';
+const SHELL = ['./','./index.html','./app.js','./bank.bin','./keys.bin','./manifest.webmanifest',
+  './icon-192.png','./icon-512.png','./icon-maskable.png','./apple-touch-icon.png','./favicon.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
