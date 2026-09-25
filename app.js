@@ -139,9 +139,10 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '10.6.0';
-const APP_DATE = '٩ سبتمبر ٢٠٢٦';
-const APP_BUILD = 132;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_VERSION = '11.3.1';
+const APP_DATE = 'الجمعة ٢٥ سبتمبر ٢٠٢٦';
+const APP_STAMP = 'الجمعة ٢٥ سبتمبر ٢٠٢٦ · ١:١٦ م';
+const APP_BUILD = 141;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -2898,25 +2899,43 @@ let _swWaiting = null, _installEvt = null;
 
 function bottomBar() {
   let bar = document.getElementById('updbar');
-  const need = _swWaiting ? 'update' : (_installEvt && !isInstalled() && !S.installDismissed ? 'install' : null);
+  /* التثبيت لازم: من لم يثبّت يفقد العمل بلا إنترنت والتذكير وملء الشاشة.
+     فالدعوة تبقى حتى يثبّت — ولا تُغلَق بزرّ. أمّا التحديث فيُؤجَّل. */
+  const need = _swWaiting ? 'update' : (!isInstalled() ? 'install' : null);
   if (!need) { if (bar) bar.remove(); return; }
   if (!bar) {
     bar = document.createElement('div');
     bar.id = 'updbar';
     document.getElementById('shell').appendChild(bar);
   }
-  if (bar.dataset.kind === need) return;
-  bar.dataset.kind = need;
-  bar.innerHTML = need === 'update'
-    ? `<span class="ub-i">↻</span>
-       <span class="ub-t"><b>نسخة جديدة جاهزة</b><em>حدّث لتصلك آخر الأسئلة والتحسينات</em></span>
-       <button class="ub-b" id="ubGo">حدّث</button>
-       <button class="ub-x" id="ubNo" aria-label="لاحقًا">✕</button>`
-    : `<span class="ub-i">⤓</span>
-       <span class="ub-t"><b>ثبّت أُفق على جهازك</b><em>يفتح بملء الشاشة ويعمل بلا إنترنت</em></span>
-       <button class="ub-b" id="ubGo">ثبّت</button>
-       <button class="ub-x" id="ubNo" aria-label="لاحقًا">✕</button>`;
-  const go1 = bar.querySelector('#ubGo'), no = bar.querySelector('#ubNo');
+  const kind = need + (need === 'install' && !_installEvt ? ':manual' : '');
+  if (bar.dataset.kind === kind) return;
+  bar.dataset.kind = kind;
+  bar.className = need === 'install' ? 'must' : '';
+
+  if (need === 'update') {
+    bar.innerHTML = `<span class="ub-i">↻</span>
+      <span class="ub-t"><b>نسخة جديدة جاهزة</b><em>حدّث لتصلك آخر الأسئلة والتحسينات</em></span>
+      <button class="ub-b" id="ubGo">حدّث</button>
+      <button class="ub-x" id="ubNo" aria-label="لاحقًا">✕</button>`;
+  } else if (_installEvt) {
+    bar.innerHTML = `<span class="ub-i">⤓</span>
+      <span class="ub-t"><b>ثبّت أُفق على جهازك</b><em>يعمل بلا إنترنت ويذكّرك بجلستك</em></span>
+      <button class="ub-b" id="ubGo">ثبّت الآن</button>`;
+  } else {
+    /* لم يصل حدث المتصفّح: نُرشده يدويًّا بحسب جهازه */
+    const ua = (navigator.userAgent || '').toLowerCase();
+    const ios = /iphone|ipad|ipod/.test(ua);
+    const how = ios
+      ? 'اضغط زرّ المشاركة ⬆ ثمّ «إضافة إلى الشاشة الرئيسية»'
+      : 'من قائمة المتصفّح ⋮ اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية»';
+    bar.innerHTML = `<span class="ub-i">⤓</span>
+      <span class="ub-t"><b>ثبّت أُفق على جهازك</b><em>${esc(how)}</em></span>
+      <button class="ub-b" id="ubHow">كيف؟</button>`;
+  }
+
+  const go1 = bar.querySelector('#ubGo'), no = bar.querySelector('#ubNo'),
+        how = bar.querySelector('#ubHow');
   if (go1) go1.onclick = () => {
     haptic(16);
     if (need === 'update') {
@@ -2924,16 +2943,12 @@ function bottomBar() {
       setTimeout(() => { try { location.reload(); } catch (e) {} }, 400);
     } else {
       try { _installEvt.prompt(); } catch (e) {}
-      _installEvt = null; bar.remove();
+      _installEvt = null;
     }
   };
-  if (no) no.onclick = () => {
-    haptic(9);
-    if (need === 'install') { S.installDismissed = true; saveState(); }
-    _swWaiting = null; bar.remove();
-  };
+  if (how) how.onclick = () => { haptic(12); S.setRow = 'share'; S.setTab = 6; S.devTab = 1; go('settings'); };
+  if (no) no.onclick = () => { haptic(9); _swWaiting = null; bar.remove(); };
 }
-
 function isInstalled() {
   try {
     return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
@@ -3331,7 +3346,7 @@ ${(S.setTab===6 && (S.devTab||0)===0) ? `
   <div class="group" style="margin-top:14px"><div class="group-h"><span class="t">النسخة</span></div>
     <div class="card">
       <div class="kv" data-act="devTap" style="cursor:default;-webkit-user-select:none;user-select:none"><span>نسخة أُفق</span><span class="v num">${APP_VERSION.split('.').map(x=>ar(x)).join('٫')}${S.devHint && !S.devUnlocked ? ` <em style="color:var(--ink-faint);font-style:normal;font-size:11px">· ${ar(S.devHint)}</em>` : ''}</span></div>
-      <div class="kv"><span>تمّ التحديث بتاريخ</span><span class="v">${esc(APP_DATE)}</span></div>
+      <div class="kv"><span>تمّ التحديث</span><span class="v" style="font-size:12.5px;text-align:left">${esc(APP_STAMP)}</span></div>
       <div class="kv" style="border:0"><span>الحالة</span><span class="v">محدَّث</span></div>
       <button class="btn ghost" style="margin-top:10px" data-act="checkUpdate">ابحث عن تحديث</button>
     </div>
@@ -3388,6 +3403,12 @@ ${S.setTab===4 ? `
   
   
   
+  <div class="aboutcard">
+    <div class="ab-mark">${markSVG(26, true)}</div>
+    <div class="ab-t">أُفق</div>
+    <p class="ab-d">تدريبٌ يوميّ قصير على القدرات والتحصيلي وستيب — يقودك أُفق فيه
+      خطوةً خطوة، ويعيد إليك أخطاءك في وقتها. وتقدّمك محفوظ على جهازك وحده.</p>
+  </div>
   <div class="group"><div class="group-h"><span class="t">ما يميّزه</span></div>
     <div class="card">
       <div class="kv"><span>السلسلة تُجمَّد ولا تُصفَّر</span><span class="v">انقطاعك لا يمحو ما بنيت</span></div>
@@ -3411,9 +3432,14 @@ ${S.setTab===4 ? `
     </p></div>
   </div>
   <div class="credit">
-    <div class="crm">© ${ar(new Date().getFullYear())}${hijriYear() ? ` · ${ar(hijriYear())}هـ` : ''} عرفات الراجحي</div>
-    <div class="crs">Arafat AlRajhi · جميع الحقوق محفوظة</div>
-    <div class="crs">أداة تعليمية — غير تابعة لهيئة تقويم التعليم والتدريب ولا معتمدة منها</div>
+    <div class="cr-mark">${markSVG(30, true)}</div>
+    <div class="crm">أُفق</div>
+    <div class="cr-line"></div>
+    <div class="cr-own">عرفات الراجحي</div>
+    <div class="crs">Arafat AlRajhi</div>
+    <div class="cr-cc">© ${ar(new Date().getFullYear())}${hijriYear() ? ` · ${ar(hijriYear())}هـ` : ''} — جميع الحقوق محفوظة</div>
+    <div class="cr-dis">أداة تعليمية مستقلّة — غير تابعة لهيئة تقويم التعليم والتدريب ولا معتمدة منها</div>
+    <div class="cr-stamp">${esc(APP_VERSION)} · ${esc(APP_STAMP)}</div>
   </div>
 ` : ''}
 ${(S.setTab===6 && (S.devTab||0)===2) ? `
@@ -3566,6 +3592,11 @@ copen: () => {
   const carried = prev ? (c.skills || []).filter(id =>
     (prev.skills || []).some(x => x.id === id && x.acc < 65)) : [];
   return `<div class="lwrap copen">
+    <button class="backb floatb" data-go="home" aria-label="رجوع">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>اليوم</span></button>
+    
     <div class="cohead">
       <div class="coring">
         <svg viewBox="0 0 120 120">
@@ -3635,6 +3666,11 @@ creport: () => {
   const band = a => a >= 80 ? 'hi' : a >= 65 ? 'mid' : 'lo';
   const word = a => a >= 80 ? 'متينة' : a >= 65 ? 'تحتاج تثبيتًا' : 'تحتاج عملًا';
   return `<div class="lwrap rep">
+    <button class="backb floatb" data-go="home" aria-label="رجوع">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>اليوم</span></button>
+    
     <div class="rhead">
       <div class="rring ${band(R.overall)}">
         <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="rbg"/>
@@ -4039,7 +4075,12 @@ cardsDone: () => `<div class="center">
 
 plan: () => {
   const pl = buildPlan();
-  return `<div class="top"></div>
+  return `<div class="top">
+    <button class="backb floatb" data-go="home" aria-label="رجوع">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6-6 6" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>اليوم</span></button>
+    </div>
   <div class="eyebrow">خطتك حتى الاختبار</div>
   <h1>${esc(pl.span)}<span class="soft" style="font-size:18px"> — إيقاع ${esc(pl.mode)}</span></h1>
   ${courseActive() ? planCard(null, true) : ''}

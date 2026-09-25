@@ -2374,7 +2374,6 @@ h1{font-size:clamp(23px,6.4vw,28px);line-height:1.45}
 }
 
 /* ══════════ شاشة واحدة بلا تمرير ══════════ */
-.key2{display:flex;flex-direction:column;min-height:calc(100dvh - 90px);padding-bottom:16px}
 .key2 .k2q{margin-top:auto}
 .key2 .k2hint{margin-bottom:auto}
 .rev .k2top.slim{padding:8px 0 12px}
@@ -2461,7 +2460,6 @@ details.fold .note{padding:0 15px 13px!important;margin:0}
 .decide .fold{margin-top:12px;background:transparent;border-color:rgba(255,255,255,.08)}
 
 /* ══════ الإعدادات: شاشة واحدة، التمرير داخل اللوحة وحدها ══════ */
-#app .sview{display:flex;flex-direction:column;height:calc(100dvh - 190px)}
 #app .sview .stabs.four,#app .sview .subtabs{flex:0 0 auto}
 #app .spane{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;padding-left:2px}
@@ -2552,10 +2550,7 @@ body[data-screen="home"] .lead .ld-a{
 body[data-screen="settings"] .stabs.four{display:none}
 
 /* ══════ الإعدادات: القائمة تظهر كاملةً، واللوحة تُمرَّر داخلها ══════ */
-body[data-screen="settings"] #app{overflow:visible;height:auto}
 body[data-screen="settings"] .slist{display:block}
-body[data-screen="settings"] .spane{max-height:calc(100dvh - 210px);overflow-y:auto;
-  -webkit-overflow-scrolling:touch;scrollbar-width:none;padding-left:2px}
 body[data-screen="settings"] .spane::-webkit-scrollbar{display:none}
 body[data-screen="settings"] .subtabs{position:sticky;top:0;z-index:4;
   background:var(--void);padding:8px 0;margin-bottom:10px}
@@ -2771,6 +2766,75 @@ body[data-screen="settings"] #app{padding-bottom:30px}
   display:inline-block;padding:5px 14px;border-radius:999px;
   background:color-mix(in oklab,var(--grow) 12%,transparent);
   border:1px solid color-mix(in oklab,var(--grow) 28%,transparent)}
+
+/* ══════ دعوة التثبيت اللازمة ══════ */
+#updbar.must{border-color:color-mix(in oklab,var(--near) 52%,transparent);
+  background:color-mix(in oklab,var(--void) 84%,var(--near) 16%);
+  animation:ubIn .5s cubic-bezier(.2,.8,.3,1) both, ubPulse 3.2s ease-in-out 1s infinite}
+@keyframes ubPulse{
+  0%,100%{box-shadow:0 16px 40px rgba(0,0,0,.42)}
+  50%{box-shadow:0 16px 46px rgba(0,0,0,.42),0 0 0 2px color-mix(in oklab,var(--near) 40%,transparent)}}
+#updbar.must .ub-i{color:var(--near);background:color-mix(in oklab,var(--near) 18%,transparent);
+  border-color:color-mix(in oklab,var(--near) 36%,transparent)}
+#updbar.must .ub-b{background:linear-gradient(140deg,var(--near),color-mix(in oklab,var(--near) 68%,#000));
+  box-shadow:0 4px 14px color-mix(in oklab,var(--near) 42%,transparent);color:#1A1508}
+#updbar.must .ub-t em{white-space:normal;line-height:1.5}
+@media (prefers-reduced-motion:reduce){#updbar.must{animation:none}}
+
+/* ══════ بطاقة الحقوق ══════ */
+.credit{position:relative;margin:26px 0 10px;padding:28px 22px;border-radius:20px;text-align:center;overflow:hidden;
+  background:linear-gradient(158deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+  border:1px solid var(--line)}
+.credit::after{content:"";position:absolute;inset:-60% -140%;
+  background:linear-gradient(115deg,transparent 45%,rgba(255,255,255,.14) 50%,transparent 55%);
+  mix-blend-mode:screen;transform:translateX(-120%);
+  animation:crSheen 12s cubic-bezier(.3,0,.2,1) infinite}
+@keyframes crSheen{0%,90%{transform:translateX(-120%)}97%,100%{transform:translateX(120%)}}
+.cr-mark{display:flex;justify-content:center;color:var(--glow);margin-bottom:10px;
+  filter:drop-shadow(0 0 16px color-mix(in oklab,var(--glow) 45%,transparent))}
+.credit .crm{font-family:var(--display);font-size:22px;font-weight:500;color:var(--ink-strong);
+  letter-spacing:.02em}
+.cr-line{width:46px;height:1px;margin:14px auto;
+  background:linear-gradient(90deg,transparent,color-mix(in oklab,var(--glow) 60%,transparent),transparent)}
+.cr-own{font-family:var(--display);font-size:16px;color:var(--ink);margin-bottom:2px}
+.credit .crs{font-size:12.5px;color:var(--ink-dim);letter-spacing:.06em}
+.cr-cc{font-size:12.5px;color:var(--ink-soft);margin-top:12px}
+.cr-dis{font-size:11.5px;color:var(--ink-dim);margin-top:10px;line-height:1.75;
+  max-width:280px;margin-inline:auto}
+.cr-stamp{font-size:11px;color:var(--ink-dim);margin-top:14px;padding-top:12px;
+  border-top:1px solid var(--line);font-family:var(--display);opacity:.75}
+
+/* ══════ بطاقة «ما هو أُفق» ودعاء الحقوق ══════ */
+.aboutcard{text-align:center;padding:22px 20px;border-radius:18px;margin:14px 0 20px;
+  background:linear-gradient(140deg,color-mix(in oklab,var(--glow) 13%,transparent),
+    color-mix(in oklab,var(--glow) 3%,transparent));
+  border:1px solid color-mix(in oklab,var(--glow) 30%,transparent)}
+.ab-mark{display:flex;justify-content:center;color:var(--glow);margin-bottom:8px;
+  filter:drop-shadow(0 0 14px color-mix(in oklab,var(--glow) 45%,transparent))}
+.ab-t{font-family:var(--display);font-size:20px;font-weight:500;color:var(--ink-strong);margin-bottom:8px}
+.ab-d{font-size:14px;color:var(--ink-soft);line-height:1.85;margin:0;max-width:330px;
+  margin-inline:auto}
+
+/* ══════ التمرير: #app وحده يمرّر، ولا ارتفاع ثابت على أيّ شاشة ══════
+   العيب الذي عُولج: قواعد dvh على .sview و.key2 و.spane كانت تفرض
+   ارتفاعًا داخل الحاوية المُمرِّرة، فيُقصّ المحتوى ولا يستجيب اللمس. */
+#app{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#app .sview,#app .lwrap,#app .key2,#app .slist,#app .spane{
+  display:block;height:auto;min-height:0;max-height:none;overflow:visible}
+.key2{padding-bottom:20px}
+.spane{padding-bottom:10px}
+/* شريط سفليّ ثابت لا يغطّي آخر المحتوى */
+#app{padding-bottom:calc(30px + env(safe-area-inset-bottom,0px))}
+body[data-screen="home"] #app,
+body[data-screen="progress"] #app,
+body[data-screen="errors"] #app{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+
+/* زرّ رجوع عائم للشاشات التي لا ترويسة لها */
+.backb.floatb{display:inline-flex;align-items:center;gap:6px;margin:6px 0 14px;
+  padding:9px 15px;border-radius:999px;font:inherit;font-size:13.5px;cursor:pointer;
+  color:var(--ink-soft);background:var(--flat);border:1px solid var(--line)}
+.backb.floatb:active{background:rgba(255,255,255,.08);color:var(--ink)}
 </style>
 </head>
 <body>
