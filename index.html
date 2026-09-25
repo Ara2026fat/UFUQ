@@ -2835,6 +2835,46 @@ body[data-screen="errors"] #app{padding-bottom:calc(96px + env(safe-area-inset-b
   padding:9px 15px;border-radius:999px;font:inherit;font-size:13.5px;cursor:pointer;
   color:var(--ink-soft);background:var(--flat);border:1px solid var(--line)}
 .backb.floatb:active{background:rgba(255,255,255,.08);color:var(--ink)}
+
+/* ══════════════ إصلاح منفذ العرض على آيفون ══════════════
+   العيب: body بـ position:fixed; inset:0 يقيس المنفذ الكبير على iOS،
+   فيقع أسفل التطبيق تحت شريط المتصفّح: لا تمرير، ولا لمس، وشريطٌ أبيض.
+   العلاج: الارتفاع بـ 100dvh (يتبع الشريط)، وخلفية على html فلا بياض. */
+html{background:var(--void) !important;height:100%}
+body{position:fixed !important;inset:0 !important;
+  height:100% !important;overflow:hidden !important;
+  background:var(--void) !important}
+@supports (height:100dvh){
+  body{height:100dvh !important;max-height:100dvh !important}
+}
+#shell{height:100% !important;max-height:100% !important;
+  display:flex !important;flex-direction:column !important;overflow:hidden !important}
+#app{flex:1 1 auto !important;min-height:0 !important;
+  overflow-y:auto !important;overflow-x:hidden !important;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#tabs,#brandbar{flex:0 0 auto}
+/* هامشٌ سفليّ يضمن ظهور آخر سطر فوق الشريط */
+#app{padding-bottom:calc(34px + env(safe-area-inset-bottom,0px)) !important}
+body[data-screen="home"] #app,
+body[data-screen="progress"] #app,
+body[data-screen="errors"] #app{
+  padding-bottom:calc(30px + env(safe-area-inset-bottom,0px)) !important}
+/* على الشاشات الواسعة يعود الإطار المحاكي */
+@media(min-width:520px){
+  body{position:relative !important;inset:auto !important;
+    height:auto !important;max-height:none !important;min-height:100vh;
+    display:flex !important;align-items:center;justify-content:center;padding:28px 0}
+  #shell{height:860px !important;max-height:92vh !important}
+}
+
+/* لا نصّ يُقصّ: الكلمات تلتفّ ولا تخرج */
+#app h1,#app h2,#app .ld-t,#app .k2t,#app .k2q,#app .an-w,
+#app .seth1,#app .pl-big,#app .sbd b{
+  overflow-wrap:anywhere;word-break:normal;hyphens:none;max-width:100%}
+#app p,#app .note,#app .soft,#app .ld-w{overflow-wrap:anywhere}
+/* البطاقات لا تقصّ محتواها */
+.lead,.card,.glass,.plan,.decide,.k2card{overflow:visible}
+.lead{overflow:hidden}   /* تبقى اللمعة داخلها */
 </style>
 </head>
 <body>
