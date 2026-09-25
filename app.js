@@ -139,10 +139,10 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '11.4.0';
+const APP_VERSION = '11.6.0';
 const APP_DATE = 'الجمعة ٢٥ سبتمبر ٢٠٢٦';
-const APP_STAMP = 'الجمعة ٢٥ سبتمبر ٢٠٢٦ · ١:٣٣ م';
-const APP_BUILD = 142;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_STAMP = 'الجمعة ٢٥ سبتمبر ٢٠٢٦ · ٢:٠٠ م';
+const APP_BUILD = 144;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -3391,6 +3391,34 @@ ${(S.setTab===6 && (S.devTab||0)===1) ? `
   </div>` : ''}
 ` : ''}
 ${S.setTab===4 ? `
+  <div class="subtabs"><button class="sub ${(S.devTab||0)===0?'on':''}" data-act="devTabSet" data-arg="0">ما يميّزه</button><button class="sub ${(S.devTab||0)===1?'on':''}" data-act="devTabSet" data-arg="1">خصوصيّتك</button><button class="sub ${(S.devTab||0)===2?'on':''}" data-act="devTabSet" data-arg="2">الشروط</button></div>
+  ${(S.devTab||0)===0 ? `<div class="group"><div class="group-h"><span class="t">ما يميّزه</span></div>
+    <div class="card">
+      <div class="kv"><span>السلسلة تُجمَّد ولا تُصفَّر</span><span class="v">انقطاعك لا يمحو ما بنيت</span></div>
+      <div class="kv"><span>الجلسة تعرف متى تتوقّف</span><span class="v">ثلاثة أخطاء = يكفي اليوم</span></div>
+      <div class="kv"><span>لا مقارنة بغيرك</span><span class="v">لا لوحات صدارة ولا ترتيب</span></div>
+      <div class="kv" style="border:0"><span>لا وعود بالاختصار</span><span class="v">لا طريق قصيرًا يُباع لك</span></div>
+    </div>
+  </div>` : ''}
+  ${(S.devTab||0)===1 ? `<div class="group"><div class="group-h"><span class="t">خصوصيّتك</span></div>
+    <div class="card"><p class="note" style="padding:0">كلّ تقدّمك محفوظ <b>على جهازك وحده</b>.
+      لا خادم، ولا حساب، ولا بيانات تُرسل إلى أيّ جهة — ولا إلينا.
+      مسحُ بيانات المتصفّح يمسح تقدّمك، فثبّت التطبيق لتحفظه.</p></div>
+  </div>` : ''}
+  ${(S.devTab||0)===2 ? `<div class="group"><div class="group-h"><span class="t">المصادر</span></div>
+    <div class="card"><p class="note" style="padding:0">الأسئلة مؤلَّفة أصلًا على المواصفات المعلَنة
+      لاختبارات هيئة تقويم التعليم والتدريب. وما استُعين به من مراجع فللمعايرة
+      — للأسلوب والصعوبة والتوزيع — لا للنقل.</p></div>
+  </div>
+  <div class="group"><div class="group-h"><span class="t">شروط الاستعمال</span></div>
+    <div class="card"><p class="note" style="padding:0">
+      أُفق للاستعمال الشخصيّ للطالب وحده. لا يجوز نسخ أسئلته ولا مفاتيح الحلّ
+      ولا إعادة نشرها ولا استعمالها في منتج آخر — كلًّا أو جزءًا — بلا إذن خطّيّ مسبق.
+      وأيّ تدريس جماعيّ أو تجاريّ يحتاج ترخيصًا.
+    </p></div>
+  </div>` : ''}
+  
+  
   <div class="abt">
     <div class="abmark">${markSVG(48)}</div>
     <h2 class="abn">أُفق</h2>
@@ -3409,28 +3437,7 @@ ${S.setTab===4 ? `
     <p class="ab-d">تدريبٌ يوميّ قصير على القدرات والتحصيلي وستيب — يقودك أُفق فيه
       خطوةً خطوة، ويعيد إليك أخطاءك في وقتها. وتقدّمك محفوظ على جهازك وحده.</p>
   </div>
-  <div class="group"><div class="group-h"><span class="t">ما يميّزه</span></div>
-    <div class="card">
-      <div class="kv"><span>السلسلة تُجمَّد ولا تُصفَّر</span><span class="v">انقطاعك لا يمحو ما بنيت</span></div>
-      <div class="kv"><span>الجلسة تعرف متى تتوقّف</span><span class="v">ثلاثة أخطاء = يكفي اليوم</span></div>
-      <div class="kv"><span>لا مقارنة بغيرك</span><span class="v">لا لوحات صدارة ولا ترتيب</span></div>
-      <div class="kv" style="border:0"><span>لا وعود بالاختصار</span><span class="v">لا طريق قصيرًا يُباع لك</span></div>
-    </div>
-  </div><div class="group"><div class="group-h"><span class="t">خصوصيّتك</span></div>
-    <div class="card"><p class="note" style="padding:0">كلّ تقدّمك محفوظ <b>على جهازك وحده</b>.
-      لا خادم، ولا حساب، ولا بيانات تُرسل إلى أيّ جهة — ولا إلينا.
-      مسحُ بيانات المتصفّح يمسح تقدّمك، فثبّت التطبيق لتحفظه.</p></div>
-  </div><div class="group"><div class="group-h"><span class="t">المصادر</span></div>
-    <div class="card"><p class="note" style="padding:0">الأسئلة مؤلَّفة أصلًا على المواصفات المعلَنة
-      لاختبارات هيئة تقويم التعليم والتدريب. وما استُعين به من مراجع فللمعايرة
-      — للأسلوب والصعوبة والتوزيع — لا للنقل.</p></div>
-  </div><div class="group"><div class="group-h"><span class="t">شروط الاستعمال</span></div>
-    <div class="card"><p class="note" style="padding:0">
-      أُفق للاستعمال الشخصيّ للطالب وحده. لا يجوز نسخ أسئلته ولا مفاتيح الحلّ
-      ولا إعادة نشرها ولا استعمالها في منتج آخر — كلًّا أو جزءًا — بلا إذن خطّيّ مسبق.
-      وأيّ تدريس جماعيّ أو تجاريّ يحتاج ترخيصًا.
-    </p></div>
-  </div>
+  
   <div class="credit">
     <div class="cr-mark">${markSVG(30, true)}</div>
     <div class="crm">أُفق</div>
