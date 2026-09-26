@@ -139,10 +139,10 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '11.6.0';
-const APP_DATE = 'الجمعة ٢٥ سبتمبر ٢٠٢٦';
-const APP_STAMP = 'الجمعة ٢٥ سبتمبر ٢٠٢٦ · ٢:٠٠ م';
-const APP_BUILD = 144;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_VERSION = '12.0.0';
+const APP_DATE = 'السبت ٢٦ سبتمبر ٢٠٢٦';
+const APP_STAMP = 'السبت ٢٦ سبتمبر ٢٠٢٦ · ٢:٥١ م';
+const APP_BUILD = 148;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -314,6 +314,15 @@ function overallMastery() {
   const ms = mySkills().filter(x => hasContent(x.id));
   if (!ms.length) return 0;
   return Math.round(ms.reduce((a, x) => a + mastery(x.id), 0) / ms.length);
+}
+
+/* ما بناه بجلساته: الفرق بين إتقانه اليوم ونقطة بدايته.
+   التشخيص يقدّر موضعه ولا يُحسَب إنجازًا — فالرقم الذي يفخر به
+   يجب أن يكون ثمرة عمله هو، لا تقديرًا وُهب له في أول دقيقتين. */
+function masteryGain() {
+  const now = overallMastery();
+  const base = (S.startMastery != null) ? S.startMastery : now;
+  return Math.max(0, now - base);
 }
 /* حلقة مئوية صغيرة تُرسم بالـSVG فتتبع سمة الطالب */
 function ring(p, size) {
@@ -1019,7 +1028,12 @@ function finishSession(sess) {
   const pct = sess.items.length ? sess.right / sess.items.length : 0;
   if (pct > 0.85) S.targetDiff = Math.min(5, S.targetDiff + 1);
   else if (pct < 0.6) S.targetDiff = Math.max(1, S.targetDiff - 1);
-  if (S.lastActive === null || S.day - S.lastActive <= 3) S.streak += 1; else S.streak = Math.max(S.streak, 1);
+  /* العودة بعد انقطاعٍ طويل تُسجَّل، والتتابع يستأنف من واحد */
+  const gap = (S.lastActive === null) ? 0 : (S.day - S.lastActive);
+  if (gap > 3) { S.comebacks = (S.comebacks || 0) + 1; S.showBack = true; }
+  if (S.lastActive === null || gap <= 3) S.streak += 1; else S.streak = 1;
+  /* أطول تتابع لا يُصفَّر أبدًا — فهو وحده الذي يصلح شاهدًا على ما صنع */
+  if ((S.streak || 0) > (S.bestStreak || 0)) S.bestStreak = S.streak;
   S.todayCount = (S.lastActive === S.day ? (S.todayCount || 0) : 0) + 1;
   S.lastActive = S.day;
   S.sessionCount += 1;
@@ -3079,6 +3093,27 @@ function examFreshCount(items) {
   return (items || []).filter(it => !(S.asked || {})[it.qid]).length;
 }
 
+
+/* ══════════════ استقبال العائد بعد الانقطاع ══════════════
+   لا لوم ولا «افتقدناك»: الطالب قبل اختباره يحتاج طمأنينةً وخطوةً،
+   لا عتابًا. فنقول له ما يملكه، ثمّ نضعه حيث وقف. */
+function comebackCard() {
+  if (!S.showBack) return '';
+  const days = S.lastActive != null ? (S.day - S.lastActive) : 0;
+  const due  = (S.review || []).filter(r => r.due <= S.day).length;
+  return `<div class="back-card">
+    <div class="bk-h">عُدتَ</div>
+    <div class="bk-t">أُفق حفظ لك كل شيء</div>
+    <div class="bk-g">
+      <div><b>${ar(S.bestStreak || 0)}</b><span>أطول تتابع لك</span></div>
+      <div><b>${ar(overallMastery())}٪</b><span>إتقانك محفوظ</span></div>
+      ${due ? `<div><b>${ar(due)}</b><span>خطأً ينتظرك</span></div>` : ''}
+    </div>
+    <p class="bk-n">${days > 0 ? ar(days) + ' أيام لا تُحسَب عليك. ' : ''}نبدأ من حيث وقفت.</p>
+    <button class="btn" data-act="dismissBack">أكمل من هنا ›</button>
+  </div>`;
+}
+
 function leadCard(again) {
   const g = S.suggestion || makeSuggestion();
   const n = thread();
@@ -3504,6 +3539,36 @@ ${(S.setTab===6 && (S.devTab||0)===2) ? `
     <p class="note" style="margin-top:10px">تقديم الأيام يُظهر أثر شرط التباعد الزمني في الإتقان، وحصانة الاستئناف بعد الانقطاع.</p>
 `;
 
+}
+
+
+/* ══════════════ معاينة السؤال في دفتر الأخطاء ══════════════
+   العيب: أسئلة «المفردة الشاذة» متنُها الصيغة وحدها والكلمات في الخيارات،
+   فكانت معايناتها كلّها متطابقة. فنعرض ما يميّز السؤال لا ما يشترك فيه. */
+function rowPreview(q) {
+  if (!q) return '';
+  let t = String(q.stem || '').replace(/\n/g, ' · ').replace(/\*\*/g, '').trim();
+  const opts = (q.choices || []).map(c => c.t);
+
+  /* الشاذّة والارتباط: الكلمات هي المميّز */
+  if ((q.skill === 'odd_one' || q.skill === 'association') && opts.length) {
+    const body = t.replace(/^[^؟]*؟\s*/, '').trim();
+    t = body || opts.join(' · ');
+  }
+  /* الإكمال: احذف الصيغة وأبقِ الجملة */
+  else if (q.skill === 'completion') {
+    t = t.replace(/^اختر[^:]*:\s*/, '').replace(/^أكمل[^:]*:\s*/, '').trim();
+  }
+  /* الاستيعاب: متنُه سؤالٌ قصير، فنضمّ عنوان القطعة */
+  else if (q.skill === 'reading' && q.passage) {
+    const p = PASSAGES[q.passage];
+    if (p && p.title) t = p.title + ' — ' + t;
+  }
+  /* الخطأ السياقيّ: أبقِ الجملة لا الصيغة */
+  else if (q.skill === 'context_error') {
+    t = t.replace(/^[^؟]*؟\s*/, '').trim() || t;
+  }
+  return t.length > 64 ? t.slice(0, 64) + '…' : t;
 }
 
 const SCREENS = {
@@ -4205,7 +4270,8 @@ learn: () => {
       <span class="ar">›</span></button>`;
   }).join('');
   const pct = pd.total ? Math.round(100 * pd.done / pd.total) : 0;
-  return `<div class="top"><button class="back" data-go="home">رجوع ›</button>
+  return `${comebackCard()}
+  <div class="top"><button class="back" data-go="home">رجوع ›</button>
     <span class="eyebrow" style="margin:0">${esc(TRACKS[S.track].name)}</span></div>
   <h1 style="margin-top:6px">${esc(TRACKS[S.track].journey)}</h1>
   <p class="soft" style="margin-top:9px;line-height:1.9">مفاتيح الحلّ مرتّبة كما تُبنى:
@@ -4633,7 +4699,7 @@ errors: () => {
         const soon = r.due - S.day <= 0;
         return `<div class="erow ${soon ? 'soon' : ''}">
           <span class="ed">${esc(when(r.due))}</span>
-          <span class="et">${esc(q.stem.replace(/\n/g, ' · ').slice(0, 62))}…</span>
+          <span class="et">${esc(rowPreview(q))}</span>
         </div>`; }).join('')}
     </div>`; }).join('')
     : `<div class="eempty"><div class="ee-m">${markSVG(34)}</div>
@@ -4750,6 +4816,8 @@ const ACTIONS = {
     if (d.idx >= d.plan.length) {
       Object.keys(d.scores).forEach(id => { S.skills[id].status = 'new'; S.skills[id].window = []; S.skills[id].days = []; S.skills[id].first = null; });
       S.targetDiff = d.correct / d.plan.length >= 0.7 ? 3 : d.correct / d.plan.length >= 0.4 ? 2 : 1;
+      /* نقطة البداية: ما بعدها نموٌّ من عمله هو */
+      S.startMastery = overallMastery();
       go('diagResult');
     } else render();
   },
@@ -4769,6 +4837,7 @@ const ACTIONS = {
     S.name = v; haptic(14); go('pick');
   },
   skipName() { S.name = S.name || 'صديقي'; haptic(12); go('pick'); },
+  dismissBack() { S.showBack = false; haptic(12); saveState(); render(); },
   gearTap() {
     /* نقرةٌ واحدة: الزرّ خافتٌ في الزاوية فلا يجذب الطالب،
        لكنه يعمل من أول لمسة — فالزرّ الذي لا يستجيب يبدو معطّلًا. */
