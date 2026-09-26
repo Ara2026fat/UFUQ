@@ -139,10 +139,10 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '12.0.0';
+const APP_VERSION = '12.4.0';
 const APP_DATE = 'السبت ٢٦ سبتمبر ٢٠٢٦';
-const APP_STAMP = 'السبت ٢٦ سبتمبر ٢٠٢٦ · ٢:٥١ م';
-const APP_BUILD = 148;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_STAMP = 'السبت ٢٦ سبتمبر ٢٠٢٦ · ٥:٣٣ م';
+const APP_BUILD = 152;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -852,12 +852,20 @@ function examInvite() {
       ? `درّبتَ ${ar(S.sessionCount)} جلسة. الآن نقيس أين أنت فعلًا — نموذج كامل بمواصفة الاختبار الحقيقي.`
       : `مضى ${ar(S.day - S.lastExamDay)} يومًا على آخر اختبار. الفرق بينهما هو تقدّمك الحقيقيّ.`}
       ${ar(sp.sections)} أقسام × ${ar(sp.per)} سؤالًا × ${ar(sp.mins)} دقيقة.</p>
-    <div class="exsel">
-      <button data-act="examOpen" data-arg="mini">
-        <b>قسم واحد</b><span>${ar(sp.per)} سؤالًا · ${ar(sp.mins)} دقيقة</span></button>
-      <button class="pri" data-act="examOpen" data-arg="full">
-        <b>النموذج الكامل</b><span>${ar(sp.sections)} أقسام · ${ar(sp.sections * sp.mins)} دقيقة</span></button>
-    </div>
+    ${(() => {
+      /* توصيةٌ لا قيد: نرشّح ما يناسب تدريبه، ونُبقي الخيار له.
+         من تدرّب على قسمٍ واحد فالنموذج الكامل يقيس ما لم يدرسه،
+         فيخرج برقمٍ يُحبطه ولا يدلّه على شيء. */
+      const rec = examRecommend();
+      return `<p class="exrec">${esc(rec.why)}</p>
+      <div class="exsel">
+        <button class="${rec.pick === 'mini' ? 'pri' : ''}" data-act="examOpen" data-arg="mini">
+          <b>قسم واحد${rec.pick === 'mini' ? ' · المقترح' : ''}</b>
+          <span>${ar(sp.per)} سؤالًا · ${ar(sp.mins)} دقيقة</span></button>
+        <button class="${rec.pick === 'full' ? 'pri' : ''}" data-act="examOpen" data-arg="full">
+          <b>النموذج الكامل${rec.pick === 'full' ? ' · المقترح' : ''}</b>
+          <span>${ar(sp.sections)} أقسام · ${ar(sp.sections * sp.mins)} دقيقة</span></button>
+      </div>`; })()}
   </div>`;
   if (!r.ok) {
     if (S.sessionCount < 2) return '';
@@ -2873,6 +2881,8 @@ function ufqPace() {
 
 /* تُطبَّق القرارات في كل يومٍ جديد، ويبقى للطالب أن يخالفها مرّةً من «متقدّم» */
 function applyDecisions() {
+  /* إن ضبط الطالب الثلاثة بيده فاختياره أولى — ولا يُغيَّر إلا بإذنه */
+  if (S.manual) { applyManual(); S.decidedDay = S.day; return; }
   if (S.manualOverride) return;
   const f = ufqFocus(), z = ufqSize(), p = ufqPace();
   S.focus = f.v;
@@ -2899,12 +2909,49 @@ function decisionCard() {
       <div class="dv">${esc(val)}</div>
       <div class="dw">${esc(why || '')}</div>
     </div>`).join('')}
-    <details class="fold"><summary>أريد أن أختار بنفسي</summary>
-      <div class="note">أُفق يعيد النظر في هذه الثلاثة كل يوم بحسب دقّتك وثباتك وما بقي من وقتك.
-        وإن أردتَ تعطيلها وضبطها بيدك فذلك في «جهازك ← متقدّم» — ولا ننصح به.</div>
+    <details class="fold"${S.manual ? ' open' : ''}><summary>أريد أن أختار بنفسي</summary>
+      <div class="mpick">
+        <p class="note">أُفق يعيد النظر في هذه الثلاثة كل يوم بحسب دقّتك وثباتك وما بقي
+          من وقتك. وإن ضبطتَها بيدك توقّف عن تغييرها — ويبقى اختيارك حتى تعيده إليه.</p>
+
+        <div class="mrow"><span class="ml">قسم اليوم</span>
+          <div class="seg3">${[['verbal', 'لفظيّ'], ['quant', 'كمّيّ'], ['mix', 'الاثنان']]
+            .map(([v, t]) => `<button class="sg ${S.manual && S.mFocus === v ? 'on' : ''}"
+              data-act="pickFocus" data-arg="${v}">${t}</button>`).join('')}</div></div>
+
+        <div class="mrow"><span class="ml">حجم الجلسة</span>
+          <div class="seg3">${[20, 25, 30, 35]
+            .map(v => `<button class="sg ${S.manual && S.mSize === v ? 'on' : ''}"
+              data-act="pickSize" data-arg="${v}">${ar(v)}</button>`).join('')}</div></div>
+
+        <div class="mrow"><span class="ml">جولات اليوم</span>
+          <div class="seg3">${[1, 2, 3, 4]
+            .map(v => `<button class="sg ${S.manual && S.mPace === v ? 'on' : ''}"
+              data-act="pickPace" data-arg="${v}">${ar(v)}</button>`).join('')}</div></div>
+
+        ${S.manual ? `<button class="btn ghost" data-act="autoBack">
+          أعِد القرار إلى أُفق ›</button>` : ''}
+      </div>
     </details>
   </div>`;
 }
+
+/* الطالب اختار بنفسه: نثبّت الثلاثة ونوقف محرّك القرار عن تغييرها */
+function manualOn() {
+  if (S.manual) return;
+  S.manual = true;
+  if (S.mFocus == null) S.mFocus = S.focus || 'verbal';
+  if (S.mSize  == null) S.mSize  = S.size  || 30;
+  if (S.mPace  == null) S.mPace  = S.preset || 2;
+}
+
+function applyManual() {
+  if (!S.manual) return;
+  S.focus  = S.mFocus;
+  S.size   = S.mSize;
+  S.preset = S.mPace;
+}
+
 
 
 /* ══════════════ شريط سفليّ للتحديث والتثبيت ══════════════
@@ -3569,6 +3616,35 @@ function rowPreview(q) {
     t = t.replace(/^[^؟]*؟\s*/, '').trim() || t;
   }
   return t.length > 64 ? t.slice(0, 64) + '…' : t;
+}
+
+
+/* ══════════════ توصية النموذج ══════════════
+   الطالب يختار، لكنّ أُفق يرشّح. فمن تدرّب على اللفظيّ وحده ثمّ خاض
+   نموذجًا كاملًا قِيس بما لم يدرسه — فخرج برقمٍ يُحبطه ولا يدلّه.
+   والقيد لا يصلح: قد يريد أن يرى الصورة كاملةً، وذلك حقّه. */
+function examRecommend() {
+  const live = mySkills().filter(x => hasContent(x.id));
+  const worked = live.filter(x => ((S.skills[x.id] || {}).days || []).length > 0);
+  if (S.track !== 'qudurat' || !worked.length) {
+    return { pick: 'full', why: 'النموذج الكامل يقيس ما درّبتَه كلّه.' };
+  }
+  const v = worked.filter(x => partOf(x.id) === 'verbal').length;
+  const q = worked.filter(x => partOf(x.id) === 'quant').length;
+  const one = (v === 0 || q === 0);
+  if (one) {
+    const nm = v ? 'اللفظيّ' : 'الكمّيّ';
+    return { pick: 'mini',
+      why: `تدرّبتَ على ${nm} وحده حتى الآن. ابدأ بقسمٍ منه — `
+         + `فالنموذج الكامل يقيسك فيما لم تدرسه بعد، ورقمُه لا يدلّك على شيء.` };
+  }
+  const tot = v + q, weak = Math.min(v, q) / tot;
+  if (weak < 0.3) {
+    return { pick: 'mini',
+      why: 'تدريبك مائلٌ إلى قسمٍ أكثر من الآخر. قسمٌ واحد أصدق قياسًا الآن.' };
+  }
+  return { pick: 'full',
+    why: 'درّبتَ القسمين. النموذج الكامل يقيس أين أنت فعلًا.' };
 }
 
 const SCREENS = {
@@ -4837,6 +4913,16 @@ const ACTIONS = {
     S.name = v; haptic(14); go('pick');
   },
   skipName() { S.name = S.name || 'صديقي'; haptic(12); go('pick'); },
+  pickFocus(v) { manualOn(); S.mFocus = v; applyManual(); haptic(12); saveState(); render(); },
+  pickSize(v)  { manualOn(); S.mSize = +v;  applyManual(); haptic(12); saveState(); render(); },
+  pickPace(v)  { manualOn(); S.mPace = +v;  applyManual(); haptic(12); saveState(); render(); },
+  autoBack() {
+    S.manual = false; S.mFocus = null; S.mSize = null; S.mPace = null;
+    S.decidedDay = null;            /* ليُعيد المحرّك حسابه فورًا */
+    haptic(14); saveState();
+    try { applyDecisions(); } catch (e) {}
+    render();
+  },
   dismissBack() { S.showBack = false; haptic(12); saveState(); render(); },
   gearTap() {
     /* نقرةٌ واحدة: الزرّ خافتٌ في الزاوية فلا يجذب الطالب،
