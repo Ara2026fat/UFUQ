@@ -13,6 +13,14 @@
 /* البنك ومفاتيح الحلّ في ملفّين مستقلّين: تحميلٌ واحد يُخزَّن على الجهاز،
    فلا يُعاد تنزيل ٤٫٥ ميجا كلّما صحّحنا سطرًا في التطبيق. */
 const DATA = window.__BANK, LESSONS = window.__KEYS;
+/* وضع المطوّر مغلقٌ على الطلاب: لا يعمل إلا بعد أن يفتح صاحب التطبيق الرابط مرّةً بـ ?dev=1
+   (و?dev=0 يُغلقه). فلا يستطيع طفلٌ بالنقر المتتابع أن يزيد الأيّام فتنتفخ أرقامه. */
+try {
+  const _q = new URLSearchParams(location.search);
+  if (_q.get('dev') === '1') localStorage.setItem('ufuq.dev', '1');
+  if (_q.get('dev') === '0') localStorage.removeItem('ufuq.dev');
+} catch (e) {}
+const DEV_OK = (() => { try { return localStorage.getItem('ufuq.dev') === '1'; } catch (e) { return false; } })();
 const Q = DATA.questions;
 const SKILLS = {}, SKILL_LIST = [];
 DATA.stages.forEach(st => st.domains.forEach(dm => dm.skills.forEach(sk => {
@@ -139,10 +147,10 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '12.4.0';
-const APP_DATE = 'السبت ٢٦ سبتمبر ٢٠٢٦';
-const APP_STAMP = 'السبت ٢٦ سبتمبر ٢٠٢٦ · ٥:٣٣ م';
-const APP_BUILD = 152;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_VERSION = '12.5.3';
+const APP_DATE = 'الثلاثاء ٢٩ سبتمبر ٢٠٢٦';
+const APP_STAMP = 'الخميس ١ أكتوبر ٢٠٢٦';
+const APP_BUILD = 157;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -202,7 +210,7 @@ const TRACK_FIELDS = ['day','streak','lastActive','sessionCount','asked','review
   'notes','noteSeen','qMiss','duel','preset','sched','roundsDone','lastExamDay','examLog','vizMode','lastBackup','lastBackupDay','focus','phaseSeen','course','goal','courses',
   'seenLessons','activeStage','targetDiff','size','sizeManual','audio','examDays','corrected','tagCount','todayCount','lastWeak',
   'diag','lastSummary','session','anchor','reminder','logOpen','suggestion','introIdx','whyCount',
-  'cardState','cardSess','lastCards','paceHist'];
+  'cardState','cardSess','lastCards','paceHist','activeDates','dayBumpedOn','bestRealStreak'];
 function blankTrack(t) {
   const st0 = trackStages(t)[0];
   return {
@@ -211,7 +219,8 @@ function blankTrack(t) {
     examDays: t === 'qudurat' ? 90 : 60,
     corrected: [], tagCount: {}, todayCount: 0, diag: null, lastSummary: null, session: null,
     anchor: 'maghrib', reminder: '٨:٠٠ م', logOpen: null, suggestion: null, introIdx: 0,
-    whyCount: 0, cardState: {}, cardSess: null, lastCards: null, paceHist: []
+    whyCount: 0, cardState: {}, cardSess: null, lastCards: null, paceHist: [],
+    activeDates: [], dayBumpedOn: null, bestRealStreak: 0
   };
 }
 function saveTrack() {
@@ -232,7 +241,35 @@ function trackDays(t) {
 }
 function trackStreak(t) {
   const o = (S.tracks || {})[t];
-  return t === S.track ? (S.streak || 0) : (o ? o.streak || 0 : 0);
+  return t === S.track ? realStreak() : (o ? realStreakOf(o.activeDates) : 0);
+}
+
+/* ══════════ العدّ الحقيقيّ للأيام ══════════
+   الأيام والسلسلة المعروضتان للطالب تُحسبان من التقويم الفعليّ: يومٌ يُعدّ إذا أُكملت فيه جلسة واحدة على الأقلّ.
+   أمّا S.streak فيبقى عدّادًا داخليًّا يحدّد حجم الجلسة، ولا يُعرض للطالب. */
+function localDate(d) {
+  d = d || new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function realStreakOf(dates) {
+  const ds = new Set(Array.isArray(dates) ? dates : []);
+  const d = new Date(); d.setHours(12, 0, 0, 0);
+  if (!ds.has(localDate(d))) d.setDate(d.getDate() - 1);   /* اليوم لم ينتهِ: السلسلة حيّة إن كان أمس نشطًا */
+  let n = 0;
+  while (ds.has(localDate(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function realStreak() { return realStreakOf(S.activeDates); }
+function activeDayCount() { return new Set(Array.isArray(S.activeDates) ? S.activeDates : []).size; }
+function markActiveToday() {
+  const t = localDate();
+  if (!Array.isArray(S.activeDates)) S.activeDates = [];
+  if (!S.activeDates.includes(t)) S.activeDates.push(t);
+  if (S.activeDates.length > 400) S.activeDates = S.activeDates.slice(-400);
+  const r = realStreak(); if (r > (S.bestRealStreak || 0)) S.bestRealStreak = r;
+}
+function masteredCount() {
+  return mySkills().filter(x => hasContent(x.id) && S.skills[x.id] && S.skills[x.id].status === 'mastered').length;
 }
 
 /* ---------- mastery model ---------- */
@@ -293,7 +330,11 @@ function mastery(id) {
   }
   if (st.paused) v *= 0.9;
   const ceiling = a * 100 + 8;      /* لا يُظهَر إتقانٌ يفوق دقّته بأكثر من ثمانٍ */
-  return Math.max(0, Math.min(100, Math.round(Math.min(v, ceiling))));
+  /* سقف الأيّام: الثبات عبر الأيّام شرطٌ للإتقان نصًّا (٣ أيّام فأكثر و٥ أيّام مدّةً)،
+     فلا تصل النسبة إلى «قويّة» بيومٍ واحد مهما بلغت الدقّة. */
+  const nd = (st.days || []).length;
+  const dayCap = nd >= 5 ? 100 : [0, 50, 62, 74, 84][nd] || 0;
+  return Math.max(0, Math.min(100, Math.round(Math.min(v, ceiling, dayCap))));
 }
 function masteryWord(p) {
   if (p >= 85) return 'راسخة';
@@ -1045,6 +1086,7 @@ function finishSession(sess) {
   S.todayCount = (S.lastActive === S.day ? (S.todayCount || 0) : 0) + 1;
   S.lastActive = S.day;
   S.sessionCount += 1;
+  markActiveToday();
   // advance review intervals
   S.review.forEach(r => { if (r.due <= S.day) { r.interval = Math.min(21, r.interval * 2 + 1); r.due = S.day + r.interval; } });
   S.paceHist = (S.paceHist || []);
@@ -1290,7 +1332,7 @@ function weekReport() {
   else if (days.size >= 4) { state = 'إيقاع ثابت'; tone = 'good'; }
   else if (days.size >= 2) { state = 'إيقاع متقطّع'; tone = 'mid'; }
   else                     { state = 'نشاط ضعيف هذا الأسبوع'; tone = 'warn'; }
-  return { days: days.size, built, near, active, streak: S.streak, state, tone,
+  return { days: days.size, built, near, active, streak: realStreak(), state, tone,
            weeks: buildPlan().span, rhythm: buildPlan().rhythm };
 }
 
@@ -1358,6 +1400,14 @@ const ROUND_PRESETS = {
                           wknd: [{ at: '10:30', mins: 18, kind: 'new' },
                                  { at: '17:00', mins: 12, kind: 'review' },
                                  { at: '21:00', mins: 8,  kind: 'ideas' }] },
+  heavy:  { name: 'مكثّف جدًّا', week: [{ at: '15:00', mins: 15, kind: 'new' },
+                                 { at: '17:00', mins: 12, kind: 'new' },
+                                 { at: '20:00', mins: 12, kind: 'review' },
+                                 { at: '22:00', mins: 10, kind: 'ideas' }],
+                          wknd: [{ at: '10:00', mins: 18, kind: 'new' },
+                                 { at: '13:00', mins: 15, kind: 'new' },
+                                 { at: '17:00', mins: 12, kind: 'review' },
+                                 { at: '21:00', mins: 10, kind: 'ideas' }] },
   full:   { name: 'مكثّف', week: [{ at: '15:30', mins: 15, kind: 'new' },
                                  { at: '17:30', mins: 12, kind: 'new' },
                                  { at: '21:00', mins: 15, kind: 'review' },
@@ -1378,11 +1428,44 @@ function fmtTime(t) {
   const pm = h >= 12, h12 = h % 12 === 0 ? 12 : h % 12;
   return ar(h12) + ':' + ar(String(m).padStart(2, '0')) + (pm ? ' م' : ' ص');
 }
+
+/* ══════════════ عدد الجولات ══════════════
+   العيب الذي عُولج: S.preset اسمُ نمط ('steady')، وكنتُ أكتب فيه
+   رقمًا من الضبط اليدويّ فيسقط إلى الافتراضيّ ولا يتغيّر شيء.
+   فالترجمة الآن صريحة في الاتّجاهين. */
+const PACE_BY_N = { 1: 'light', 2: 'light', 3: 'steady', 4: 'heavy' };
+const N_BY_PACE = { light: 2, steady: 3, full: 3, heavy: 4 };
+
+function paceKey() {
+  const p = S.preset;
+  if (typeof p === 'number') return PACE_BY_N[p] || 'steady';
+  return ROUND_PRESETS[p] ? p : 'steady';
+}
+function paceCount() { return N_BY_PACE[paceKey()] || 3; }
+
+/* جولةٌ واحدة: نأخذ الأولى من النمط الخفيف */
+function roundsFor(key) {
+  const pk = paceKey();
+  let list = ROUND_PRESETS[pk][key].map(r => Object.assign({}, r));
+  if (S.preset === 1 || S.mPace === 1) list = list.slice(0, 1);
+  return list;
+}
+
+/* عند تغيير عدد الجولات يُعاد بناء جدول اليوم — وإلا بقي القديم */
+function rebuildSchedule() {
+  const k = dayKey();
+  if (!S.sched) S.sched = {};
+  const done = (S.sched[k] || []).filter(r => r.done).length;
+  S.sched[k] = roundsFor(k);
+  /* نحفظ ما أُنجز فعلًا فلا يضيع عمله */
+  for (let i = 0; i < Math.min(done, S.sched[k].length); i++) S.sched[k][i].done = true;
+}
+
 function myRounds(key) {
   const k = key || dayKey();
   if (!S.sched) S.sched = {};
   if (!S.sched[k] || !S.sched[k].length)
-    S.sched[k] = ROUND_PRESETS[S.preset || 'steady'][k].map(r => Object.assign({}, r));
+    S.sched[k] = roundsFor(k);
   return S.sched[k];
 }
 /* حالة كلّ جولة اليوم: تمّت · حان وقتها · قادمة · فاتت */
@@ -1939,6 +2022,7 @@ function render() {
     mt.onclick = () => {
       const now = Date.now();
       n = (now - t0 < 900) ? n + 1 : 1; t0 = now;
+      if (n >= 5 && !DEV_OK) { n = 0; return; }
       if (n >= 5) { n = 0; S.admin = true; S.audit = true; S.devUnlocked = true;
         S.name = S.name || 'المشرف';
         haptic(30); S.setTab = 7; go('settings'); }
@@ -2012,7 +2096,7 @@ function statSummary() {
   const seen = sk.filter(x => S.skills[x.id] && (S.skills[x.id].seen || 0) > 0).length;
   const total = Object.values(S.asked || {}).reduce((a, b) => a + (Array.isArray(b) ? b.length : 0), 0)
     || (S.answered || 0);
-  return { done, seen, total, sk: sk.length, sessions: S.sessionCount || 0, streak: S.streak || 0 };
+  return { done, seen, total, sk: sk.length, sessions: S.sessionCount || 0, streak: realStreak() };
 }
 function sessionRail() {
   const s = S.session;
@@ -2900,7 +2984,7 @@ function decisionCard() {
   const rows = [
     ['قسمك اليوم', FN[v.focus] || '—', w.focus],
     ['حجم الجلسة', ar(v.size || 30) + ' سؤالًا', w.size],
-    ['جولات اليوم', ar(v.pace || 2) + (v.pace === 1 ? ' جولة' : ' جولات'), w.pace]
+    ['جولات اليوم', ar(myRounds().length) + (myRounds().length === 1 ? ' جولة' : ' جولات'), w.pace]
   ];
   return `<div class="decide">
     <div class="dh"><span class="di">✦</span><b>قرّرها أُفق لك</b></div>
@@ -2949,7 +3033,9 @@ function applyManual() {
   if (!S.manual) return;
   S.focus  = S.mFocus;
   S.size   = S.mSize;
-  S.preset = S.mPace;
+  S.preset = PACE_BY_N[S.mPace] || 'steady';
+  S.paceN  = S.mPace;                /* نحفظ العدد كما اختاره */
+  try { rebuildSchedule(); } catch (e) {}
 }
 
 
@@ -3152,12 +3238,44 @@ function comebackCard() {
     <div class="bk-h">عُدتَ</div>
     <div class="bk-t">أُفق حفظ لك كل شيء</div>
     <div class="bk-g">
-      <div><b>${ar(S.bestStreak || 0)}</b><span>أطول تتابع لك</span></div>
+      <div><b>${ar(S.bestRealStreak || 0)}</b><span>أطول تتابع لك</span></div>
       <div><b>${ar(overallMastery())}٪</b><span>إتقانك محفوظ</span></div>
       ${due ? `<div><b>${ar(due)}</b><span>خطأً ينتظرك</span></div>` : ''}
     </div>
     <p class="bk-n">${days > 0 ? ar(days) + ' أيام لا تُحسَب عليك. ' : ''}نبدأ من حيث وقفت.</p>
     <button class="btn" data-act="dismissBack">أكمل من هنا ›</button>
+  </div>`;
+}
+
+
+/* ══════════════ استدراك الجولة الفائتة ══════════════
+   الطالب لا يلتزم بالجدول دائمًا — والجدول الذي يعاقب على التأخّر يُهجَر.
+   فالجولة التي مضى وقتها ولم تُنجَز تبقى متاحةً إلى آخر اليوم. */
+function missedRounds() {
+  const rs = myRounds();
+  const now = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  return rs.filter(r => {
+    if (r.done) return false;
+    const p = String(r.at || '').split(':');
+    const at = (+p[0] || 0) * 60 + (+p[1] || 0);
+    return mins > at + 45;            /* مضى موعدها بثلاثة أرباع الساعة */
+  });
+}
+
+function missedCard() {
+  const m = missedRounds();
+  if (!m.length) return '';
+  const KIND = { new: 'جلسة جديدة', review: 'مراجعة', ideas: 'أفكار' };
+  return `<div class="missed">
+    <div class="ms-h">فاتتك ${ar(m.length)}${m.length === 1 ? ' جولة' : ' جولات'} اليوم</div>
+    <p class="ms-b">لا بأس. الجدول اقتراحٌ لا التزام — وما فاتك لم يُشطَب.
+      أنجزه الآن ويُحسَب لك كاملًا.</p>
+    ${m.map((r, i) => `<button class="ms-r" data-act="runMissed" data-arg="${i}">
+      <span class="ms-t">${esc(r.at || '')}</span>
+      <span class="ms-k">${esc(KIND[r.kind] || r.kind || '')}</span>
+      <span class="ms-g">${ar(r.mins || 12)} دقيقة ›</span>
+    </button>`).join('')}
   </div>`;
 }
 
@@ -3647,6 +3765,18 @@ function examRecommend() {
     why: 'درّبتَ القسمين. النموذج الكامل يقيس أين أنت فعلًا.' };
 }
 
+
+/* ══════════════ بطاقات التعارف ══════════════
+   العيب الذي عُولج: الشاشة كانت تعرض intros[track] (بطاقتان)
+   وintroNext يعدّ على intro (خمس)، فتُطلَب بطاقةٌ لا وجود لها فيتعطّل.
+   فالمصدر الآن واحد، ومعه حارسٌ يمنع تجاوز الطرفين. */
+function introCards() {
+  const byTrack = LESSONS.intros && LESSONS.intros[S.track];
+  const cards = (Array.isArray(byTrack) && byTrack.length) ? byTrack
+              : (Array.isArray(LESSONS.intro) ? LESSONS.intro : []);
+  return cards.length ? cards : [{ t: 'أهلًا بك في أُفق', b: 'نبدأ بأسئلةٍ قصيرة نعرف بها مستواك.' }];
+}
+
 const SCREENS = {
 
 
@@ -3661,8 +3791,8 @@ wipe: () => {
       ? 'لا رجعة بعد هذه الخطوة. سيبدأ أُفق فارغًا كأنك تفتحه لأول مرّة.'
       : 'سيُمحى تقدّمك كلّه من هذا الجهاز ولا يمكن استرجاعه إلا من نسخةٍ حفظتَها.'}</p>
     <div class="wlist">
-      ${[['يومك', ar(S.day || 1)], ['جلساتك', ar(S.sessionCount || 0)],
-         ['سلسلتك', ar(S.streak || 0) + ' يومًا'],
+      ${[['أيّام تدريبك', ar(activeDayCount())], ['جلساتك', ar(S.sessionCount || 0)],
+         ['سلسلتك', ar(realStreak()) + ' يومًا'],
          ['أخطاؤك المحفوظة', ar((S.review || []).length)]]
         .map(([k, v]) => `<div class="wrow"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('')}
     </div>
@@ -4041,10 +4171,11 @@ report: () => {
 
 
 intro: () => {
-  const i = S.introIdx || 0;
-  const cards = (LESSONS.intros && LESSONS.intros[S.track]) || LESSONS.intro;
-  const c = cards[i];
-  const last = i === cards.length - 1;
+  const cards = introCards();
+  const i = Math.max(0, Math.min(cards.length - 1, S.introIdx || 0));
+  if (S.introIdx !== i) S.introIdx = i;
+  const c = cards[i] || {};
+  const last = i >= cards.length - 1;
   return `<div class="center">
     <div class="top" style="padding:0"><span class="eyebrow" style="margin:0">${esc(TRACKS[S.track].journey)}</span>
       <span class="faint num">${ar(i+1)} / ${ar(cards.length)}</span></div>
@@ -4055,7 +4186,7 @@ intro: () => {
       ${c.k ? `<div class="ic-k"><span class="ic-q">”</span>${esc(c.k)}</div>` : ''}
     </div>
     <div class="spacer"></div>
-    <button class="btn" data-act="introNext">${last ? `ابدأ — ${ar(12)} سؤالًا نعرف بها مستواك` : 'التالي'}</button>
+    <button class="btn" data-act="introNext">${last ? `ابدأ — ${ar((S.diag && S.diag.plan && S.diag.plan.length) || 12)} سؤالًا نعرف بها مستواك` : 'التالي'}</button>
     ${i ? `<button class="btn ghost" data-act="introBack">رجوع</button>`
         : `<button class="btn ghost" data-act="skipIntro">تجاوز</button>`}
   </div>`;
@@ -4347,6 +4478,7 @@ learn: () => {
   }).join('');
   const pct = pd.total ? Math.round(100 * pd.done / pd.total) : 0;
   return `${comebackCard()}
+  ${missedCard()}
   <div class="top"><button class="back" data-go="home">رجوع ›</button>
     <span class="eyebrow" style="margin:0">${esc(TRACKS[S.track].name)}</span></div>
   <h1 style="margin-top:6px">${esc(TRACKS[S.track].journey)}</h1>
@@ -4727,8 +4859,8 @@ progress: () => {
   ` : ''}
   ${S.prTab === 2 ? `
   <hr class="rule">
-  <p class="num">${S.streak === 0 ? 'تبدأ البناء اليوم'
-    : ar(S.streak) + (S.streak === 1 ? ' يوم' : ' يومًا') + ' من البناء'}</p>
+  <p class="num">${realStreak() === 0 ? 'تبدأ البناء اليوم'
+    : ar(realStreak()) + (realStreak() === 1 ? ' يوم' : ' يومًا') + ' من البناء'}</p>
   <button class="btn ghost" style="text-align:right;width:auto;padding-inline-start:0"
     data-act="showExam">${S.showExam ? `${ar(Math.max(0, S.examDays - S.day))} يومًا حتى الاختبار` : 'كم بقي على الاختبار؟ ›'}</button>
   ` : ''}`;
@@ -4802,7 +4934,7 @@ settings: () => {
 
 paywall: () => `<div class="center"><div class="glass">
   <div class="eyebrow">أكملتَ ${ar(5)} جلسات</div>
-  <h1>بنيتَ ${ar(S.streak)} ${S.streak === 1 ? 'يومًا' : 'يومًا'} و${ar(SKILL_LIST.filter(s => ['mastered', 'near'].includes(S.skills[s.id].status)).length)} مهارات.</h1>
+  <h1>بنيتَ ${ar(realStreak())} يومًا و${ar(SKILL_LIST.filter(s => ['mastered', 'near'].includes(S.skills[s.id].status)).length)} مهارات.</h1>
   <p class="soft" style="margin-top:10px">أكمل حتى الاختبار.</p>
   <hr class="rule">
   <div class="kv"><span>موسم — ٣ أشهر</span><span class="v">الأكثر اختيارًا</span></div>
@@ -4819,12 +4951,12 @@ const ACTIONS = {
   toggleHaptics: () => { S.haptics = S.haptics === false; if (S.haptics) haptic(14); render(); },
   startIntro() { S.introIdx = 0; go('intro'); },
   introNext() {
-    if (S.introIdx < LESSONS.intro.length - 1) { S.introIdx++; render(); return; }
+    if ((S.introIdx || 0) < introCards().length - 1) { S.introIdx = (S.introIdx || 0) + 1; render(); return; }
     const a = chooseActive();
     if (a && LESSONS.lessons[a.id]) { S.lessonFor = a.id; S.lessonTab = 0; go('lesson'); }
     else ACTIONS.startDiag();
   },
-  introBack() { S.introIdx--; render(); },
+  introBack() { S.introIdx = Math.max(0, (S.introIdx || 0) - 1); render(); },
   skipIntro() { ACTIONS.startDiag(); },
   flagQ(qid) { S.flagFor = qid; haptic(12); render(); },
   flagWhy(kind) {
@@ -4923,6 +5055,13 @@ const ACTIONS = {
     try { applyDecisions(); } catch (e) {}
     render();
   },
+  runMissed(i) {
+    const m = missedRounds()[+i];
+    if (!m) { render(); return; }
+    S.roundKind = m.kind;
+    haptic(14); saveState();
+    ACTIONS.startSession ? ACTIONS.startSession() : go('question');
+  },
   dismissBack() { S.showBack = false; haptic(12); saveState(); render(); },
   gearTap() {
     /* نقرةٌ واحدة: الزرّ خافتٌ في الزاوية فلا يجذب الطالب،
@@ -4930,6 +5069,7 @@ const ACTIONS = {
     haptic(12); S.setRow = null; go('settings');
   },
   devTap() {
+    if (!DEV_OK) return;
     const now = Date.now();
     S._dt = (now - (S._dt0 || 0) < 1200) ? (S._dt || 0) + 1 : 1;
     S._dt0 = now;
@@ -4944,6 +5084,7 @@ const ACTIONS = {
     S.showParked = false; S.setTab = 4; haptic(16); saveState(); render();
   },
   devDay(n) {
+    if (!DEV_OK || !S.devUnlocked) return;
     const d = +n || 0;
     S.day = Math.max(1, (S.day || 1) + d);
     S.suggestion = null; haptic(9); saveState(); render();
@@ -5146,7 +5287,7 @@ const ACTIONS = {
     x.globalAlpha = .3; x.strokeStyle = soft; x.lineWidth = 2;
     x.beginPath(); x.moveTo(200, 660); x.lineTo(W - 200, 660); x.stroke(); x.globalAlpha = 1;
     x.fillStyle = ink; x.font = '400 44px system-ui,sans-serif';
-    x.fillText('اليوم ' + ar(S.day + 1) + ' · سلسلة ' + ar(S.streak || 0) + ' يومًا', W / 2, 740);
+    x.fillText('يوم التدريب ' + ar(activeDayCount()) + ' · سلسلة ' + ar(realStreak()) + ' يومًا', W / 2, 740);
     if (r.pace) { x.fillStyle = soft; x.font = '400 36px system-ui,sans-serif';
       x.fillText('إيقاع ' + ar(r.pace) + ' ثانية للسؤال', W / 2, 810); }
     x.fillStyle = soft; x.globalAlpha = .7; x.font = '400 30px system-ui,sans-serif';
@@ -5164,7 +5305,7 @@ const ACTIONS = {
   },
   done() { S.lastWeak = null; S.suggestion = null; go('home'); },
   again() { S.suggestion = makeSuggestion(); ACTIONS.startSession(); },
-  endDay() { S.suggestion = null; S.day += 1; go('home'); },
+  endDay() { const t = localDate(); if (S.dayBumpedOn !== t) { S.day += 1; S.dayBumpedOn = t; } S.suggestion = null; go('home'); },
   showExam() { S.showExam = !S.showExam; render(); },
   openPause() { S.openPause = true; render(); },
   logToggle(i) { S.logOpen = S.logOpen === +i ? null : +i; render(); },
@@ -5289,7 +5430,7 @@ const ACTIONS = {
   exportState() {
     try {
       const o = {}; Object.keys(S).forEach(k => { if (!NOSAVE.includes(k)) o[k] = S[k]; });
-      o._v = 1; o._at = new Date().toISOString().slice(0, 10); o._app = 'ufuq';
+      o._v = 1; o._at = localDate(); o._app = 'ufuq';
       const blob = new Blob([JSON.stringify(o)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -5318,7 +5459,7 @@ const ACTIONS = {
           S.restored = {
             name: S.name || '', day: S.day + 1,
             phase: ph ? ph.name : (TRACKS[S.track] ? TRACKS[S.track].name : ''),
-            sessions: S.sessionCount || 0, streak: S.streak || 0,
+            sessions: S.sessionCount || 0, streak: realStreak(),
             skills: mySkills().filter(x => (S.skills[x.id].days || []).length).length,
             errors: (S.review || []).length, at: o._at || ''
           };
@@ -5438,7 +5579,7 @@ const ACTIONS = {
     haptic(12); saveState(); render();
   },
   togglePause(id) { S.skills[id].paused = !S.skills[id].paused; S.suggestion = null; render(); },
-  advance(n) { S.day += +n; S.suggestion = null; render(); },
+  advance(n) { if (!DEV_OK || !S.devUnlocked) return; S.day += +n; S.suggestion = null; render(); },
   reset() { const n = S.name; S = freshState(); S.name = n; go(n ? 'pick' : 'name'); },
   editName() { go('name'); },
   leaveTrack() { saveTrack(); haptic(14); go('pick'); },
@@ -5491,7 +5632,7 @@ function saveState() {
   try {
     const o = {};
     Object.keys(S).forEach(k => { if (!NOSAVE.includes(k)) o[k] = S[k]; });
-    o._at = new Date().toISOString().slice(0, 10);
+    o._at = localDate();
     o._v = 1;
     localStorage.setItem(SAVE_KEY, JSON.stringify(o));
     S.storageBlocked = false;
@@ -5506,6 +5647,8 @@ function daysBetween(a, b) {
 /* إصلاح ذاتيّ: من المستحيل أن يُتمّ الطالب كلّ المفاتيح في جلسات قليلة.
    إن وجدنا ذلك فهي حالة أفسدتها لوحة المعاينة — نعيدها إلى الصفر. */
 function healState(b) {
+  /* أوّل ما يُفعل، خارج أيّ احتمال خطأ: وضع المطوّر لا يبقى مفتوحًا لغير صاحبه */
+  if (b && (!b.devUnlocked || !DEV_OK)) { b.devUnlocked = false; b.admin = false; b.audit = false; }
   try {
     /* من كان على مسارٍ أُجّل يُنقَل إلى القدرات، ويبقى تقدّمه محفوظًا كما هو */
     if (b && b.track && !isOpenTrack(b.track)) {
@@ -5520,7 +5663,6 @@ function healState(b) {
       b._healed = true;
     }
     /* وضع المطوّر يبقى ما دام مفتوحًا — ويُقفَل من تبويبه بيد صاحبه */
-    if (!b.devUnlocked) { b.admin = false; b.audit = false; }
   } catch (e) {}
   return b;
 }
@@ -5538,10 +5680,13 @@ function loadState() {
     Object.keys(fresh).forEach(id => { if (!base.skills[id]) base.skills[id] = fresh[id]; });
   }
   /* اليوم يتقدّم بالتقويم الحقيقي لا بزرّ */
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDate();
   if (o._at) {
-    const gap = daysBetween(o._at, today);
-    if (gap > 0) { base.day = (base.day || 0) + gap; base.todayCount = 0; }
+    let gap = daysBetween(o._at, today);
+    /* إن ضغط الطالب «اكتفيتُ اليوم» في آخر يومٍ محفوظ فقد حُسب ذلك اليوم، فلا يُعدّ ثانيةً */
+    if (gap > 0 && base.dayBumpedOn === o._at) gap -= 1;
+    if (o._at !== today) { base.todayCount = 0; base.dayBumpedOn = null; }
+    base.day = (base.day || 0) + gap;
   }
   base.session = null; base.exam = null; base.sheet = null; base.stopOffer = false;
   healState(base);
@@ -5861,8 +6006,8 @@ function drawCard() {
   x.fillStyle = GOLD; x.font = '600 44px system-ui';
   x.fillText(masteryWord(p), M, 392);
   x.fillStyle = SOFT; x.font = '28px system-ui';
-  x.fillText('إتقان ' + ar(mySkills().filter(s => hasContent(s.id)).length) + ' مهارة', M, 444);
-  x.fillText(ar(S.streak || 0) + ' يومًا متتاليًا · ' + ar(S.sessionCount || 0) + ' جلسة', M, 494);
+  x.fillText('أتقنتَ ' + ar(masteredCount()) + ' من ' + ar(mySkills().filter(s => hasContent(s.id)).length) + ' مهارة', M, 444);
+  x.fillText(ar(realStreak()) + ' يومًا متتاليًا · ' + ar(activeDayCount()) + ' يوم تدريب · ' + ar(S.sessionCount || 0) + ' جلسة', M, 494);
   /* أقوى خمس مهارات */
   let y = 640;
   x.fillStyle = LINE; x.fillRect(88, y - 46, W - 176, 2);
@@ -5904,7 +6049,7 @@ async function shareProgress() {
   const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
   if (!blob) return;
   const file = new File([blob], 'ufuq.png', { type: 'image/png' });
-  const txt = `تقدّمي في أُفق — ${ar(overallMastery())}٪ · ${ar(S.streak || 0)} يومًا متتاليًا`;
+  const txt = `تقدّمي في أُفق — ${ar(overallMastery())}٪ · ${ar(realStreak())} يومًا متتاليًا`;
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try { await navigator.share({ files: [file], text: txt }); return; } catch (e) { return; }
   }

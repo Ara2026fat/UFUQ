@@ -2937,6 +2937,24 @@ body[data-screen="errors"] #app{
 .btn.ghost{margin-top:6px;background:transparent;color:var(--ink-soft);
   border:1px solid var(--line);box-shadow:none}
 .btn.ghost:active{background:rgba(255,255,255,.06);color:var(--ink)}
+
+/* ══════ الجولات الفائتة ══════ */
+.missed{margin:14px 0 18px;padding:18px 17px;border-radius:17px;
+  background:color-mix(in oklab,var(--near) 9%,transparent);
+  border:1px solid color-mix(in oklab,var(--near) 28%,transparent)}
+.ms-h{font-family:var(--display);font-size:16px;font-weight:500;color:#F0DFB8;margin-bottom:6px}
+.ms-b{font-size:13.5px;color:var(--ink-soft);line-height:1.85;margin:0 0 13px}
+.ms-r{display:flex;align-items:center;gap:11px;width:100%;margin-bottom:7px;
+  padding:12px 14px;border-radius:12px;cursor:pointer;font:inherit;text-align:start;
+  color:var(--ink);background:var(--flat);border:1px solid var(--line)}
+.ms-r:active{background:rgba(255,255,255,.08)}
+.ms-t{flex:0 0 auto;font-family:var(--display);font-size:13px;color:var(--ink-dim)}
+.ms-k{flex:1;font-size:14px;color:var(--ink-strong)}
+.ms-g{flex:0 0 auto;font-size:12.5px;color:var(--near)}
+
+/* ── إصلاح: «.stn» اسمٌ مشترك بين شارة خطوات الدرس ومحطّات الدورة؛ القاعدة الأولى كانت تحشر عنصر المحطّة في ٢٩×٢٩ بكسل ── */
+.path .stn{width:auto;height:auto;border-radius:0;justify-content:flex-start;font-family:inherit;font-size:inherit;
+  background:none;color:inherit;border:0}
 </style>
 </head>
 <body>
