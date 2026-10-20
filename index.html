@@ -553,11 +553,18 @@ p{margin:0;line-height:1.8;font-size:15px}
   opacity:0;transition:opacity .4s ease}
 .choice:active::after{opacity:1;transition:opacity .1s}
 /* ── شريط تقدّم الجلسة ── */
-.rail{position:relative;height:3px;border-radius:3px;background:var(--flat);margin:2px 0 18px;overflow:visible}
-.rail i{display:block;height:100%;border-radius:3px;background:var(--glow);
+/* شريطُ تقدُّمِ الجلسةِ اسمُه srail لا rail: كان rail، وفي السطرِ ٨٨٢
+   صنفٌ آخَرُ بالاسمِ نفسِه — ‎.rail{display:flex;margin-inline-start:auto}‎ —
+   وهو مُتأخِّرٌ فيَغلِب. فانهار الشريطُ إلى عَرضِ صفرٍ، واختفى من كلِّ
+   شاشةِ سؤال، وانطوى العدّادُ داخلَه «١٢ / ٣٠» على ثلاثةِ أسطرٍ في
+   أحدَ عشرَ بكسلًا. ولا يُرى هذا في شيفرةٍ ولا في بيانات: يُرى بقياسِ
+   العُنصرِ في المتصفّح. وclass_audit كان قد رَصَد التصادمَ فأُدخِل في
+   خطِّ الأساسِ على أنّه مقصود — وهو لم يَكُن. */
+.srail{position:relative;height:3px;border-radius:3px;background:var(--flat);margin:2px 0 18px;overflow:visible}
+.srail i{display:block;height:100%;border-radius:3px;background:var(--glow);
   box-shadow:0 0 10px var(--glow-tint);transition:width .55s cubic-bezier(.22,.8,.28,1)}
-.rail .rn{position:absolute;inset-inline-end:0;top:9px;font-size:10.5px;color:var(--ink-faint);
-  font-family:var(--display);font-variant-numeric:tabular-nums}
+.srail .rn{position:absolute;inset-inline-end:0;top:9px;font-size:10.5px;color:var(--ink-faint);
+  font-family:var(--display);font-variant-numeric:tabular-nums;white-space:nowrap}
 /* ── عمق وطبقات ── */
 .glass,.wex,
 .glass::before,.pocket::before{content:'';position:absolute;inset:0;border-radius:inherit;
@@ -565,7 +572,7 @@ p{margin:0;line-height:1.8;font-size:15px}
 h1{letter-spacing:-.012em}
 @media(prefers-reduced-motion:reduce){
   #app>.fade.inF,#app>.fade.inB,.choice.pop{animation:none!important}
-  .rail i{transition:none}
+  .srail i{transition:none}
 }
 
 .lwrap{display:flex;flex-direction:column;flex:1;min-height:0}
@@ -725,6 +732,7 @@ h1{letter-spacing:-.016em}
   font-size:14px;flex:0 0 auto}
 .exmark.ok{background:rgba(124,199,166,.14);color:#7CC7A6}
 .exmark.no{background:rgba(217,140,140,.12);color:#D98C8C}
+.exmark.soft{background:var(--glow-tint);color:var(--ink-faint)}
 .qrecall{white-space:pre-line;font-size:14.5px;line-height:1.95;color:var(--ink-soft);background:var(--flat);
   border-radius:14px;padding:14px 15px;margin-bottom:12px}
 .lpane .tip{margin-top:0}
@@ -878,7 +886,6 @@ h1{letter-spacing:-.016em}
 .lb-l .lg{color:var(--glow);flex:0 0 auto}
 .lb-n{font-family:var(--display);font-size:15px;color:var(--ink);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rail{display:flex;gap:6px;margin-inline-start:auto;flex:0 0 auto}
 .rl{width:22px;height:22px;padding:0;background:transparent;border:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center}
 .rl i{display:block;width:7px;height:7px;border-radius:50%;background:var(--flat-line);
@@ -1409,7 +1416,6 @@ h1{font-size:clamp(23px,6.4vw,28px);line-height:1.45}
 }
 
 /* ⑤ الخيط — تقدّمٌ كأقسام كتاب لا كشمسٍ تطلع */
-.lwrap.ideas .rail{display:flex;gap:5px;align-items:center}
 .lwrap.ideas .rl{width:auto;height:18px;padding:0 1px}
 .lwrap.ideas .rl i{
   width:15px;height:2px;border-radius:0;
@@ -1764,7 +1770,6 @@ h1{font-size:clamp(23px,6.4vw,28px);line-height:1.45}
 .lwrap.ideas .sc{max-width:23em;margin-inline:auto;width:100%}
 .sc-h .scn{font-style:normal;font-size:10.5px;color:var(--paper-faint);margin-inline-start:8px;
   font-variant-numeric:tabular-nums}
-.lwrap.ideas .rail .rl{display:inline-block;width:auto;height:18px;padding:0 1px;pointer-events:none}
 .lwrap.ideas .lfoot{flex:0 0 auto;padding-top:14px}
 .lwrap.ideas .skipl{display:block;width:100%;margin-top:9px;background:none;border:0;
   color:var(--paper-faint);font-size:12.5px;font-family:var(--body);cursor:pointer}
@@ -2378,6 +2383,21 @@ h1{font-size:clamp(23px,6.4vw,28px);line-height:1.45}
 .rev .k2res b{font-size:14px}
 .rev .k2res span{font-size:12.5px}
 
+/* ══ بابُ «العلامة» ══
+   ما يُعرَف به نوعُ السؤال من النظرة الأولى، وأين يَقَع ثِقَلُ الفكرة.
+   كان هذا مكتوبًا في كلّ فكرةٍ ولا يُعرَض في شاشةٍ قطّ. */
+.k2gl{padding:13px 16px;border-radius:13px;margin-bottom:11px;font-size:14px;line-height:1.75;
+  background:color-mix(in oklab,var(--glow) 9%,transparent);border:1px solid rgba(132,140,203,.26)}
+.k2gl b{color:var(--ink-strong);font-weight:500}
+.k2mp{margin-top:13px}
+.k2mt{font-size:11.5px;letter-spacing:.09em;color:var(--glow);margin-bottom:9px}
+.k2mr{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:baseline;margin-bottom:9px}
+.k2mn{font-size:13.5px;color:var(--ink-soft);line-height:1.5}
+.k2mv{font-size:13px;color:var(--ink-strong);font-variant-numeric:tabular-nums}
+.k2mb{grid-column:1 / -1;height:5px;border-radius:3px;background:var(--btn-line);overflow:hidden}
+.k2mb i{display:block;height:100%;border-radius:3px;width:var(--w);
+  background:linear-gradient(90deg,color-mix(in oklab,var(--glow) 72%,transparent),var(--glow))}
+
 .k2tabs{display:flex;gap:6px;margin-bottom:12px}
 .k2tb{flex:1;padding:11px 4px;border-radius:12px;font:inherit;font-size:13px;cursor:pointer;
   color:var(--ink-soft);background:var(--flat);border:1px solid var(--line);
@@ -2681,6 +2701,19 @@ body[data-screen="settings"] #app{padding-bottom:30px}
 .gearbtn svg path{transition:d .2s}
 
 /* ══════ شريط التحديث والتثبيت ══════ */
+/* شريطُ الهَمسة: كان يُنادى في ستّةِ مواضعَ ولم يُكتَب قطّ، فكان كلُّ نداءٍ
+   منها يَكسِر الشاشةَ — وأقربُها إلى الطالب زِرُّ «الوضع الحرّ». */
+#toastbar{position:fixed;inset-inline:16px;bottom:calc(76px + env(safe-area-inset-bottom,0px));
+  z-index:960;padding:12px 15px;border-radius:15px;text-align:center;
+  font-size:13.5px;line-height:1.6;color:var(--ink-strong);
+  background:color-mix(in oklab,var(--void) 88%,var(--glow) 12%);
+  border:1px solid color-mix(in oklab,var(--glow) 40%,transparent);
+  box-shadow:0 14px 34px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.04) inset;
+  backdrop-filter:blur(14px);animation:tbIn .34s cubic-bezier(.2,.8,.3,1) both}
+#toastbar.out{animation:tbOut .3s ease both}
+@keyframes tbIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes tbOut{to{opacity:0;transform:translateY(10px) scale(.98)}}
+@media (prefers-reduced-motion:reduce){#toastbar,#toastbar.out{animation:none}}
 #updbar{position:fixed;inset-inline:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));
   z-index:940;display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:17px;
   background:color-mix(in oklab,var(--void) 86%,var(--glow) 14%);
@@ -2952,9 +2985,162 @@ body[data-screen="errors"] #app{
 .ms-k{flex:1;font-size:14px;color:var(--ink-strong)}
 .ms-g{flex:0 0 auto;font-size:12.5px;color:var(--near)}
 
-/* ── إصلاح: «.stn» اسمٌ مشترك بين شارة خطوات الدرس ومحطّات الدورة؛ القاعدة الأولى كانت تحشر عنصر المحطّة في ٢٩×٢٩ بكسل ── */
-.path .stn{width:auto;height:auto;border-radius:0;justify-content:flex-start;font-family:inherit;font-size:inherit;
-  background:none;color:inherit;border:0}
+/* ══════════════ ا ل م م ـ ر ══════════════
+   شاشةٌ واحدةٌ وهدفٌ واحد. والشريطُ لا يرجع أبدًا. */
+
+.crail{margin:2px 0 14px}
+.cr-h{display:flex;align-items:baseline;gap:10px}
+.cr-s{font-family:var(--display);font-size:13.5px;color:var(--ink)}
+.cr-o{margin-inline-start:auto;font-size:11px;color:var(--ink-faint);
+  font-variant-numeric:tabular-nums}
+.cr-l{display:flex;gap:5px;margin-top:9px}
+.cr-l i{flex:1;height:3px;border-radius:2px;background:var(--flat-line);
+  transition:background .5s ease}
+.cr-l i.done{background:var(--glow);opacity:.55}
+.cr-l i.now{background:var(--glow);box-shadow:0 0 10px var(--glow)}
+.cr-n{margin-top:8px;font-size:11px;color:var(--glow);letter-spacing:.05em}
+
+/* ── الورشة ── */
+.wsh-h{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.wsh-n{font-size:11px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+.wsh-k{margin-inline-start:auto;font-size:11.5px;color:var(--ink-soft)}
+.wsh-dg{padding:16px 17px;border-radius:20px;margin-bottom:16px;
+  background:var(--idea-tint);border:1px solid var(--idea-line)}
+.wdl{font-size:10.5px;color:var(--ink-faint);letter-spacing:.06em}
+.wdt{font-family:var(--display);font-size:19px;line-height:1.4;margin-top:7px;color:var(--idea)}
+.wdw{font-size:13px;line-height:1.95;color:var(--ink-soft);margin-top:9px}
+.wsh-q{font-size:16px;line-height:2;color:var(--ink);padding:4px 0 2px;
+  overflow-wrap:anywhere;max-width:100%}
+.wsh-q.dim{color:var(--ink-dim);font-size:14.5px;line-height:1.9}
+.wsh-lbl{font-size:11px;color:var(--ink-faint);letter-spacing:.05em;margin:4px 0 10px}
+.wsh-hint{margin:10px 0 4px;padding:12px 14px;border-radius:16px;font-size:13px;
+  line-height:1.9;color:var(--ink-soft);background:var(--flat);
+  border:1px solid var(--flat-line)}
+.wsh-card{margin-top:14px;padding:17px 18px;border-radius:20px;
+  background:var(--flat);border:1px solid var(--flat-line)}
+.wsh-card.b{background:var(--glass);border-color:var(--glass-line)}
+.wsh-card.c{background:var(--grow-tint);border-color:var(--grow)}
+.wcl{font-size:10.5px;color:var(--ink-faint);letter-spacing:.06em}
+.wct{font-size:14.5px;line-height:1.95;color:var(--ink);margin-top:9px}
+.wcp{font-family:var(--display);font-size:19px;line-height:1.45;margin-top:9px;
+  color:var(--ink);overflow-wrap:anywhere}
+.wcp.ok{color:var(--grow)}
+.wcw{font-size:13px;line-height:1.95;color:var(--ink-soft);margin-top:9px}
+.wcf{font-size:13px;line-height:1.95;color:var(--ink-soft);margin-top:11px;
+  padding-top:11px;border-top:1px solid var(--flat-line)}
+.wsl{margin:10px 0 0;padding-inline-start:20px}
+.wsl li{font-size:14px;line-height:2.05;color:var(--ink-soft);margin-bottom:5px;
+  overflow-wrap:anywhere}
+.wsh-win{margin-top:20px;padding:26px 20px;border-radius:24px;text-align:center;
+  background:var(--grow-tint);border:1px solid var(--grow)}
+.wsh-win.soft{background:var(--glass);border-color:var(--glass-line)}
+.wwm{font-size:28px;color:var(--grow);line-height:1}
+.wsh-win.soft .wwm{color:var(--ink-soft)}
+.wwt{font-family:var(--display);font-size:23px;margin-top:12px;color:var(--ink)}
+.www{font-size:13.5px;line-height:2;color:var(--ink-soft);margin-top:10px}
+.qnote{margin-top:14px;text-align:center;font-size:11.5px;color:var(--ink-faint)}
+
+/* ── الخَتم ── */
+.seal{display:flex;flex-direction:column;min-height:100%;padding-top:22px;text-align:center}
+.sl-m{display:flex;justify-content:center;color:var(--glow)}
+/* مِيدالِيَّةُ الخَتم: قرصٌ بنُتوءٍ — ضوءٌ من أعلى اليسار وظلٌّ من أسفل اليمين،
+   فيَصير الإنجازُ شيئًا يُرى لا سطرًا يُقرأ. تعمل على الفاتح والداكن معًا. */
+.sl-m{position:relative;width:96px;height:96px;margin:0 auto;align-items:center;border-radius:50%;
+  background:
+    radial-gradient(circle at 31% 24%,color-mix(in oklab,var(--glow) 62%,#fff) 0,
+      color-mix(in oklab,var(--glow) 30%,transparent) 17%,transparent 44%),
+    radial-gradient(circle at 74% 84%,color-mix(in oklab,#000 34%,transparent) 0,transparent 60%),
+    color-mix(in oklab,var(--glow) 15%,var(--card));
+  box-shadow:
+    inset -5px -7px 12px color-mix(in oklab,#000 24%,transparent),
+    inset 4px 5px 10px color-mix(in oklab,var(--glow) 30%,transparent),
+    inset 0 0 0 1.5px color-mix(in oklab,var(--glow) 40%,transparent),
+    0 12px 24px -12px color-mix(in oklab,#000 55%,transparent),
+    0 0 30px -10px color-mix(in oklab,var(--glow) 55%,transparent);
+  animation:slrise .62s cubic-bezier(.2,.9,.3,1.18) both}
+.sl-m svg{position:relative;z-index:2}
+@keyframes slrise{from{opacity:0;transform:scale(.72)}to{opacity:1;transform:scale(1)}}
+/* لمعةٌ واحدةٌ تمرّ مرّةً ثمّ تسكُن. تُحرَّك بموضع التدرُّج لا بإزاحة الصندوق،
+   فيَبقى القرصُ حابسًا لها ولا تَنفلت منه. */
+.sl-m::after{content:'';position:absolute;inset:0;border-radius:50%;z-index:1;
+  background:linear-gradient(104deg,transparent 42%,
+    color-mix(in oklab,#fff 30%,transparent) 50%,transparent 58%) no-repeat;
+  background-size:260% 100%;animation:slglint 1.3s ease-out .42s both}
+@keyframes slglint{from{background-position:120% 0}to{background-position:-120% 0}}
+@media (prefers-reduced-motion:reduce){
+  .sl-m{animation:none}.sl-m::after{animation:none;background-position:20% 0;opacity:.5}}
+.sl-e{font-size:11px;color:var(--ink-faint);letter-spacing:.08em;margin-top:16px}
+.sl-t{font-family:var(--display);font-size:31px;line-height:1.3;margin-top:9px;color:var(--ink)}
+.sl-c{margin-top:22px;padding:18px;border-radius:20px;text-align:start;
+  background:var(--idea-tint);border:1px solid var(--idea-line)}
+.slcl{font-size:10.5px;color:var(--ink-faint);letter-spacing:.06em}
+.sl-c p{font-size:14.5px;line-height:2;color:var(--ink);margin-top:9px}
+.sl-o{margin-top:24px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.sl-o b{font-family:var(--display);font-size:46px;color:var(--glow);line-height:1;
+  font-variant-numeric:tabular-nums}
+.sl-o span{font-size:12.5px;color:var(--ink-soft)}
+
+/* ── الرئيسةُ الموجَّهة: هدفٌ واحد ── */
+.gtop{display:flex;align-items:center;gap:10px;padding-top:4px}
+.gbrand{display:inline-flex;color:var(--glow)}
+.gown{margin-inline-start:auto;font-size:11.5px;color:var(--ink-faint);
+  font-variant-numeric:tabular-nums}
+.gcard{padding:26px 22px 22px;border-radius:26px;
+  background:var(--glow-tint);border:1px solid var(--glow);
+  box-shadow:0 18px 50px -32px var(--glow)}
+.gc-e{font-size:11px;color:var(--ink-faint);letter-spacing:.07em}
+.gc-t{font-family:var(--display);font-size:32px;line-height:1.26;margin-top:10px;color:var(--glow)}
+.gc-w{font-size:14px;line-height:2.05;color:var(--ink-soft);margin-top:12px}
+.gc-f{display:flex;align-items:center;gap:9px;margin-top:20px;padding-top:15px;
+  border-top:1px solid var(--glow);border-top-color:color-mix(in oklab,var(--glow) 35%,transparent)}
+.gc-b{font-family:var(--display);font-size:14px;color:var(--ink)}
+.gc-a{margin-inline-start:auto;color:var(--glow);font-size:18px}
+.gcard{display:block;width:100%;text-align:start;font-family:inherit;cursor:pointer;
+  transition:transform .32s cubic-bezier(.34,1.5,.64,1)}
+.gcard:active{transform:perspective(700px) rotateX(6deg) scale(.978)}
+.gnote{text-align:center;font-size:12.5px;line-height:1.95;color:var(--ink-faint)}
+.ggear{position:fixed;inset-block-start:calc(env(safe-area-inset-top,0px) + 10px);
+  inset-inline-start:12px;width:36px;height:36px;display:grid;place-items:center;
+  border:0;background:transparent;color:var(--ink-faint);opacity:.4;cursor:pointer;
+  z-index:30;transition:opacity .25s}
+.ggear:active{opacity:.9}
+body[data-screen="guide"] #tabs,
+body[data-screen="guide"] #brandbar{display:none !important}
+body[data-screen="guide"] #app{padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+
+
+/* ══════ الدَّرب: شريطٌ يُري الطالبَ موضعَه ولا يُتاح له لمسُه ══════
+   ثلاثُ حالاتٍ لا رابعَ لها، ولا يتحرّك إلّا الموضعُ الحاليّ.
+   ولا خطَّ بين المواضع: النقاطُ المتساويةُ تَقرأ دربًا بنفسها. */
+.drb{display:flex;align-items:center;justify-content:center;
+  padding:36px 0 2px;pointer-events:none;user-select:none}
+.drb-in{display:flex;align-items:center;gap:10px;max-width:100%}
+.wpt{width:6px;height:6px;border-radius:50%;flex:0 0 auto;
+  background:color-mix(in oklab,var(--ink-faint) 34%,transparent)}
+/* المختوم: ممتلئٌ ساكن — الإنجازُ لا يحتاج حركةً ليُرى */
+.wpt.own{width:8px;height:8px;background:var(--glow)}
+/* الموضعُ الحاليّ: حلقةٌ تنبض ببطءٍ وتَميل ميلةً صغيرة، وحدَها على الشاشة */
+.wpt.now{width:16px;height:16px;display:grid;place-items:center;margin-inline:2px;
+  background:none;border:1.5px solid color-mix(in oklab,var(--glow) 55%,transparent);
+  animation:pnow 3.2s ease-in-out infinite}
+.wpt.now b{width:7px;height:7px;border-radius:50%;background:var(--glow)}
+@keyframes pnow{
+  0%,100%{transform:scale(1) rotate(0);box-shadow:0 0 0 0 color-mix(in oklab,var(--glow) 42%,transparent)}
+  18%{transform:scale(1.06) rotate(-2.5deg)}
+  36%{transform:scale(1.06) rotate(2.5deg)}
+  54%{transform:scale(1.03) rotate(0);box-shadow:0 0 0 9px color-mix(in oklab,var(--glow) 0%,transparent)}}
+@media (prefers-reduced-motion:reduce){
+  /* تبقى الدلالةُ حلقةً ثابتةً: مَن أطفأ الحركةَ لا يَفقِد الإشارة */
+  .wpt.now{animation:none;box-shadow:0 0 0 3.5px color-mix(in oklab,var(--glow) 28%,transparent)}}
+.drb-lb{text-align:center;font-size:11.5px;color:var(--ink-faint);
+  font-variant-numeric:tabular-nums;padding:6px 0 2px}
+.drb-lb b{color:var(--ink-soft);font-weight:600}
+/* حافّةٌ مضيئةٌ للبطاقة الواحدة: الشيءُ المُشعُّ الوحيدُ على الشاشة */
+.gcard.lit{border:1.5px solid transparent;
+  background:linear-gradient(170deg,var(--card),var(--card)) padding-box,
+    linear-gradient(150deg,color-mix(in oklab,var(--glow) 52%,transparent),
+      color-mix(in oklab,var(--glow) 8%,transparent) 48%,
+      color-mix(in oklab,var(--glow) 34%,transparent)) border-box}
 </style>
 </head>
 <body>

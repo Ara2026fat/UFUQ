@@ -13,14 +13,6 @@
 /* البنك ومفاتيح الحلّ في ملفّين مستقلّين: تحميلٌ واحد يُخزَّن على الجهاز،
    فلا يُعاد تنزيل ٤٫٥ ميجا كلّما صحّحنا سطرًا في التطبيق. */
 const DATA = window.__BANK, LESSONS = window.__KEYS;
-/* وضع المطوّر مغلقٌ على الطلاب: لا يعمل إلا بعد أن يفتح صاحب التطبيق الرابط مرّةً بـ ?dev=1
-   (و?dev=0 يُغلقه). فلا يستطيع طفلٌ بالنقر المتتابع أن يزيد الأيّام فتنتفخ أرقامه. */
-try {
-  const _q = new URLSearchParams(location.search);
-  if (_q.get('dev') === '1') localStorage.setItem('ufuq.dev', '1');
-  if (_q.get('dev') === '0') localStorage.removeItem('ufuq.dev');
-} catch (e) {}
-const DEV_OK = (() => { try { return localStorage.getItem('ufuq.dev') === '1'; } catch (e) { return false; } })();
 const Q = DATA.questions;
 const SKILLS = {}, SKILL_LIST = [];
 DATA.stages.forEach(st => st.domains.forEach(dm => dm.skills.forEach(sk => {
@@ -38,6 +30,118 @@ CARDS.forEach(c => (cardsBySkill[c.skill] = cardsBySkill[c.skill] || []).push(c)
 const qBySkill = {};
 Q.forEach(q => (qBySkill[q.skill] = qBySkill[q.skill] || []).push(q));
 const hasContent = id => (qBySkill[id] || []).length > 0 || (cardsBySkill[id] || []).length > 0;
+
+/* ══════════════ عددٌ يَحسِب نفسَه ══════════════
+   نصوصُ الأفكارِ تَستشهِد ببنكنا: «سبعةَ عشرَ مُشتِّتًا سببُه الإشارةُ وحدها».
+   وكانت صادقةً يومَ كُتِبت، ثمّ نَما البنكُ فصارت عشرٌ من إحدى عشرةَ دعوًى
+   كاذبةً — والعددُ الخاطئُ في نصٍّ يُعلِّم أسوأُ من ألّا يُذكَر عددٌ أصلًا.
+
+   فبدَل أن يُكتَب العددُ حرفًا يُكتَب رمزًا {t:الوسم}، ويُحسَب من البنكِ
+   حين يُعرَض — فلا يَكذِب بعد اليوم مهما نَما. */
+const CNT_FORMS = ['مُشتِّت', 'مُشتِّتات', 'مُشتِّتًا'];
+function countTag(skillId, tag) {
+  let n = 0;
+  (qBySkill[skillId] || []).forEach(q => (q.choices || []).forEach(c => {
+    if (!c.c && c.tag === tag) n++;
+  }));
+  return n;
+}
+/* المعدودُ يَتبَع آخرَ ما يُنطَق من العدد، لا العددَ كلَّه:
+   ٤٧٥٧ آخرُها «سبعةٌ وخمسون» فهو «سؤالًا»، و٢٠٤ آخرُها «أربعة» فهي
+   «أسئلة»، و٢٠٠ مئتان فهو «سؤال». وكانت الشاشةُ تقول «٤٧٥٧ سؤال». */
+function countForm(n, F) {
+  const t = Math.abs(+n || 0) % 100;
+  if (t >= 3 && t <= 10) return F[1];
+  if (t >= 11 && t <= 99) return F[2];
+  return F[0];
+}
+function sayCount(n) { return `${ar(n)} ${countForm(n, CNT_FORMS)}`; }
+/* يُبدِّل {t:وسم} بعددِ مُشتِّتاتِه، و{q} بعددِ أسئلة الفكرة */
+const QF = ['سؤال', 'أسئلة', 'سؤالًا'];
+function sayQ(n) { return `${ar(n)} ${countForm(n, QF)}`; }
+/* ══ خريطةُ الفكرةِ تُحسَب من البنك ══
+   كانت الخريطةُ مخزونةً في keys.json، فشاخت كما شاخت الأعدادُ قبلها:
+   القراءةُ تقول «استنتاج ٥٦٪» والبنكُ يقول ٢٢٪. فتُحسَب عند العَرض.
+
+   والتصنيفُ من البنكِ نفسِه: أكثرُ المهاراتِ اللفظيّةِ تُصدِّر خطوتَها
+   الأولى بترويسةٍ تُسمّي النمط («نمط الخطأ: قلب الاتجاه»)، فتُجمَع بها.
+   وما لا ترويسةَ له فله بابُه، وما لا بابَ له فلا خريطةَ — ولا تُختلَق. */
+const MAP_HEAD = ['نمط الخطأ', 'نوع الإكمال', 'أساس التجميع', 'نوع الارتباط', 'العلاقة'];
+/* تُسوّى الشَّكلةُ وصورُ الهمزةِ قبل الجمع، وإلّا عُدَّ «ترادف» و«ترادفٌ»
+   بابَين، و«أداة ووظيفتها» و«أداةٌ ووظيفتها» بابَين آخرَين. */
+function mapKey(s) {
+  return String(s).replace(/[\u064B-\u0652\u0640\u0670]/g, '')
+    .replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+    .replace(/\s+/g, ' ').trim();
+}
+function classify(q) {
+  const s = ((q.steps || [])[0] || '').trim();
+  for (const h of MAP_HEAD) {
+    if (s.indexOf(h) !== 0) continue;
+    /* «العلاقة في «أ : ب»: فلان» — يُطرَح الزوجُ قبل القولون الأخير */
+    const rest = s.slice(h.length).replace(/^\s*في\s*«[^»]*»/, '');
+    const m = rest.match(/^\s*[:：]\s*(.+?)\s*\.?\s*$/);
+    if (!m) continue;
+    /* «وعاء ومظروف — والاتجاه طردي» بابُه «وعاء ومظروف»، والاتجاهُ وصفٌ
+       للسؤالِ لا للباب؛ لو بقي لانقسم كلُّ بابٍ بابَين وضاعت حِصّتُه. */
+    const t = m[1].split('—')[0].replace(/[\s.،]+$/, '').trim();
+    if (t && t.length <= 46) return t;
+  }
+  if (q.skill === 'comparisons') {
+    const c = (q.choices || []).find(x => x.c);
+    return c ? c.t : null;
+  }
+  if (q.skill === 'reading') {
+    const t = q.stem || '';
+    if (/^(أنسب عنوان|أفضل عنوان|العنوان)/.test(t)) return 'اختيار العنوان';
+    if (/^معنى|المقصود/.test(t)) return 'معنى مفردة في سياقها';
+    if (/يُفهم|يفهم|يُستنتج|يستنتج|علاقة الفقرة|ما عدا/.test(t)) return 'استنتاج';
+    return 'فهم صريح';
+  }
+  return null;
+}
+/* «أكثرُ ما يَتكرّر» لا خريطةَ له من ترويسات الخطوات، لأنّ سؤالَه عن
+   المراجعةِ لا عن بابٍ من أبواب المادّة. وخريطتُه نصيبُ الموادّ الأربعِ
+   من أسئلةِ التحصيليّ — وكانت مخزونةً فشاخت: قالت الفيزياءُ ٢٥٪
+   والأحياءُ ٢٤٪، والبنكُ يقول العكس. فتُحسَب كغيرها. */
+const SUBJ = [
+  ['الرياضيات', ['th_algebra', 'th_geo', 'th_stat', 'th_calc']],
+  ['الفيزياء', ['th_motion', 'th_energy', 'th_elec', 'th_wave']],
+  ['الكيمياء', ['th_atom', 'th_bond', 'th_react', 'th_sol']],
+  ['الأحياء', ['th_cell', 'th_gen', 'th_sys', 'th_eco']]
+];
+function liveShare() {
+  const cnt = SUBJ.map(([name, ids]) =>
+    ({ n: name, k: ids.reduce((a, s) => a + ((qBySkill[s] || []).length), 0) }));
+  const tot = cnt.reduce((a, r) => a + r.k, 0);
+  if (tot < 100) return null;
+  return {
+    n: tot,
+    rows: cnt.map(r => ({ n: r.n, p: Math.round(r.k * 100 / tot) }))
+            .sort((a, b) => b.p - a.p)
+  };
+}
+function liveMap(skillId) {
+  if (skillId === 'th_freq') return liveShare();
+  const c = {}, label = {}; let n = 0;
+  (qBySkill[skillId] || []).forEach(q => {
+    const raw = classify(q); if (!raw) return;
+    const k = mapKey(raw);
+    if (!label[k] || raw.length < label[k].length) label[k] = raw;
+    c[k] = (c[k] || 0) + 1; n++;
+  });
+  if (n < 20) return null;
+  const rows = Object.keys(c).map(k => ({ n: label[k], p: Math.round(c[k] * 100 / n) }))
+    .sort((a, b) => b.p - a.p).filter(r => r.p >= 2).slice(0, 7);
+  return rows.length >= 2 ? { rows, n } : null;
+}
+
+function liveCounts(text, skillId) {
+  return String(text == null ? '' : text)
+    .replace(/\{t:([a-z_|]+)\}/g, (_, tags) =>
+      sayCount(tags.split('|').reduce((a, t) => a + countTag(skillId, t), 0)))
+    .replace(/\{q\}/g, () => sayQ((qBySkill[skillId] || []).length));
+}
 function ensureSkills() {
   if (!S.skills || typeof S.skills !== 'object') S.skills = {};
   SKILL_LIST.forEach(x => {
@@ -147,10 +251,10 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '12.5.3';
-const APP_DATE = 'الثلاثاء ٢٩ سبتمبر ٢٠٢٦';
-const APP_STAMP = 'الخميس ١ أكتوبر ٢٠٢٦';
-const APP_BUILD = 157;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_VERSION = '15.25.1';
+const APP_DATE = 'الأربعاء ١٤ أكتوبر ٢٠٢٦';
+const APP_STAMP = 'الأربعاء ١٤ أكتوبر ٢٠٢٦ · ١٠:١٥ ص';
+const APP_BUILD = 199;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -171,9 +275,34 @@ const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
 const el = document.getElementById('app');
 const tabsEl = document.getElementById('tabs');
 const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+/* نصُّ المحتوى قد يحمل **تأكيدًا**. يُحرَس أوّلًا ثمّ يُحوَّل التأكيدُ وحدَه،
+   فلا يَتسرّب نجمٌ إلى عين الطالب ولا وسمٌ إلى الصفحة. */
+/* النصُّ يُهرَّب كلُّه، ثمّ يُسمَح بشيئَين قصدًا: **التأكيد**، و<br> فاصلًا
+   بين الفقرات — وهو مكتوبٌ في فِخاخ إحدى وخمسين فكرة. وكان الهروبُ يَشمَله
+   فتَظهَر حروفُه للطالبِ عِوَضًا عن السطر. وما عداهما يَبقى مُهرَّبًا. */
+const md = t => esc(String(t == null ? '' : t))
+  .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+  .replace(/&lt;br\s*\/?&gt;/g, '<br>');
 
 /* ---------- state ---------- */
 let S;
+/* أفي الممرّ نحن؟ تُستعمَل قبل تعريف وحدة الممرّ، فتُدافِع عن نفسها. */
+/* أعلى شاشةٍ من شاشات الممرّ نحن؟ الممرُّ منطقةٌ مسوَّرة: لا شريطةَ علويّةً
+   ولا تبويبات، فلا بابَ إلّا الذي يَمضي به إلى الأمام. */
+const CORRIDOR_SCREENS = ['question', 'why', 'explain', 'shop', 'seal', 'summary'];
+function onCorridorScreen() {
+  try {
+    if (!S || S.guided === false || !stCur()) return false;
+    if (S.screen === 'lesson') return S.lessonFrom === 'corridor';
+    return CORRIDOR_SCREENS.indexOf(S.screen) >= 0;
+  } catch (e) { return false; }
+}
+function inCorridor() {
+  try {
+    return S && S.guided !== false && S.screen === 'home' && !!S.name && !!S.track
+      && (!!stCur() || !!corridorNext());
+  } catch (e) { return false; }
+}
 let paceTimer = null;
 function freshState() {
   const skills = {};
@@ -183,6 +312,7 @@ function freshState() {
   });
   return {
     day: 0, screen: 'name', haptics: true, name: '', visits: 0, skills, review: [], asked: {},
+    guided: true, st: null, sealed: {},
     sessionCount: 0, streak: 0, lastActive: null, session: null,
     targetDiff: 2, size: 30, reminder: '٨:٠٠ م', examDays: 90,
     paid: true, diag: null, lastSummary: null, corrected: [],
@@ -210,7 +340,7 @@ const TRACK_FIELDS = ['day','streak','lastActive','sessionCount','asked','review
   'notes','noteSeen','qMiss','duel','preset','sched','roundsDone','lastExamDay','examLog','vizMode','lastBackup','lastBackupDay','focus','phaseSeen','course','goal','courses',
   'seenLessons','activeStage','targetDiff','size','sizeManual','audio','examDays','corrected','tagCount','todayCount','lastWeak',
   'diag','lastSummary','session','anchor','reminder','logOpen','suggestion','introIdx','whyCount',
-  'cardState','cardSess','lastCards','paceHist','activeDates','dayBumpedOn','bestRealStreak'];
+  'cardState','cardSess','lastCards','paceHist'];
 function blankTrack(t) {
   const st0 = trackStages(t)[0];
   return {
@@ -219,8 +349,7 @@ function blankTrack(t) {
     examDays: t === 'qudurat' ? 90 : 60,
     corrected: [], tagCount: {}, todayCount: 0, diag: null, lastSummary: null, session: null,
     anchor: 'maghrib', reminder: '٨:٠٠ م', logOpen: null, suggestion: null, introIdx: 0,
-    whyCount: 0, cardState: {}, cardSess: null, lastCards: null, paceHist: [],
-    activeDates: [], dayBumpedOn: null, bestRealStreak: 0
+    whyCount: 0, cardState: {}, cardSess: null, lastCards: null, paceHist: []
   };
 }
 function saveTrack() {
@@ -241,35 +370,7 @@ function trackDays(t) {
 }
 function trackStreak(t) {
   const o = (S.tracks || {})[t];
-  return t === S.track ? realStreak() : (o ? realStreakOf(o.activeDates) : 0);
-}
-
-/* ══════════ العدّ الحقيقيّ للأيام ══════════
-   الأيام والسلسلة المعروضتان للطالب تُحسبان من التقويم الفعليّ: يومٌ يُعدّ إذا أُكملت فيه جلسة واحدة على الأقلّ.
-   أمّا S.streak فيبقى عدّادًا داخليًّا يحدّد حجم الجلسة، ولا يُعرض للطالب. */
-function localDate(d) {
-  d = d || new Date();
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-}
-function realStreakOf(dates) {
-  const ds = new Set(Array.isArray(dates) ? dates : []);
-  const d = new Date(); d.setHours(12, 0, 0, 0);
-  if (!ds.has(localDate(d))) d.setDate(d.getDate() - 1);   /* اليوم لم ينتهِ: السلسلة حيّة إن كان أمس نشطًا */
-  let n = 0;
-  while (ds.has(localDate(d))) { n++; d.setDate(d.getDate() - 1); }
-  return n;
-}
-function realStreak() { return realStreakOf(S.activeDates); }
-function activeDayCount() { return new Set(Array.isArray(S.activeDates) ? S.activeDates : []).size; }
-function markActiveToday() {
-  const t = localDate();
-  if (!Array.isArray(S.activeDates)) S.activeDates = [];
-  if (!S.activeDates.includes(t)) S.activeDates.push(t);
-  if (S.activeDates.length > 400) S.activeDates = S.activeDates.slice(-400);
-  const r = realStreak(); if (r > (S.bestRealStreak || 0)) S.bestRealStreak = r;
-}
-function masteredCount() {
-  return mySkills().filter(x => hasContent(x.id) && S.skills[x.id] && S.skills[x.id].status === 'mastered').length;
+  return t === S.track ? (S.streak || 0) : (o ? o.streak || 0 : 0);
 }
 
 /* ---------- mastery model ---------- */
@@ -330,11 +431,7 @@ function mastery(id) {
   }
   if (st.paused) v *= 0.9;
   const ceiling = a * 100 + 8;      /* لا يُظهَر إتقانٌ يفوق دقّته بأكثر من ثمانٍ */
-  /* سقف الأيّام: الثبات عبر الأيّام شرطٌ للإتقان نصًّا (٣ أيّام فأكثر و٥ أيّام مدّةً)،
-     فلا تصل النسبة إلى «قويّة» بيومٍ واحد مهما بلغت الدقّة. */
-  const nd = (st.days || []).length;
-  const dayCap = nd >= 5 ? 100 : [0, 50, 62, 74, 84][nd] || 0;
-  return Math.max(0, Math.min(100, Math.round(Math.min(v, ceiling, dayCap))));
+  return Math.max(0, Math.min(100, Math.round(Math.min(v, ceiling))));
 }
 function masteryWord(p) {
   if (p >= 85) return 'راسخة';
@@ -386,22 +483,37 @@ function cleanCount(skillId) {
       فيراه الطالب ثماني مرّات في شهرين فيحفظ الجواب ويبدو متقنًا وهو ليس كذلك.
    ② حين تنفد الجدّة، نعود إلى الأقدم عهدًا لا إلى الأقرب.
    والاختيار من شريحة واسعة لا من ثلاثة، فلا يتشابه طالبان. */
+/* ══════════════ انتقاءُ السؤال ══════════════
+   كان الترتيبُ: الجِدّةُ أوّلًا ثمّ الدرجة. فإذا نفِد السهلُ الجديدُ في مهارةٍ
+   قُذِف الطالبُ إلى أصعبِ ما في البنك لأنّه لم يُسأل عنه بعد — فتَنقلِب
+   الرَّمْيةُ هاويةً: جلسةٌ سهلُها ٧٦٪ تَليها جلسةٌ سهلُها ١٪.
+
+   والصوابُ عكسُه: الدرجةُ أوّلًا ثمّ الجِدّة. فمن استنفَد السهلَ أَولى به
+   أن يُعيد سهلًا حلَّه — وفي الإعادةِ تثبيتٌ — من أن يُرمى إلى ما لا يُطيق.
+   وإذا لم يَبقَ جديدٌ في درجته خُلِط له القديمُ في درجتِه بالجديدِ في
+   الدرجةِ التي تَليها، فيَصعَد درجةً لا خمسًا. */
 function pool(skillId, diff, used, noImg) {
   const all = (qBySkill[skillId] || []).filter(q =>
     !used.has(q.id) && !(noImg && q.img) && isClean(q));
   if (!all.length) return null;
-  const never = all.filter(q => S.asked[q.id] == null);
-  let base;
-  if (never.length) {
-    base = never;
+  const fresh = q => S.asked[q.id] == null;
+  const age = q => S.asked[q.id] || 0;
+  const atDiff = all.filter(q => q.d === diff);
+  const freshAt = atDiff.filter(fresh);
+  let best;
+  if (freshAt.length >= 3) {
+    best = freshAt;                                   // جديدٌ في درجته
+  } else if (atDiff.length >= 3) {
+    const seen = atDiff.filter(q => !fresh(q)).sort((a, b) => age(a) - age(b));
+    /* وكلّما ضاقت الدرجةُ المطلوبةُ اتَّسع المأخوذُ من جارتها،
+       لئلّا تَصير الجلسةُ دورانًا على أسئلةٍ معدودةٍ يَحفَظها. */
+    const step = all.filter(q => fresh(q) && Math.abs(q.d - diff) === 1)
+                    .sort((a, b) => (a.d - diff) - (b.d - diff));
+    best = freshAt.concat(seen.slice(0, 6), step.slice(0, Math.max(3, 14 - atDiff.length)));
   } else {
-    const byAge = all.slice().sort((a, b) => (S.asked[a.id] || 0) - (S.asked[b.id] || 0));
-    base = byAge.slice(0, Math.max(6, Math.ceil(byAge.length * 0.4)));
-  }
-  let best = base.filter(q => q.d === diff);
-  if (best.length < 3) {
-    const near = base.slice().sort((a, b) => Math.abs(a.d - diff) - Math.abs(b.d - diff));
-    best = best.concat(near.filter(q => best.indexOf(q) < 0)).slice(0, Math.max(6, best.length));
+    best = all.slice().sort((a, b) =>
+      (Math.abs(a.d - diff) - Math.abs(b.d - diff)) ||
+      ((fresh(b) ? 1 : 0) - (fresh(a) ? 1 : 0)) || (age(a) - age(b)));
   }
   const span = Math.min(best.length, 8);
   return best[Math.floor(Math.random() * span)];
@@ -1086,7 +1198,6 @@ function finishSession(sess) {
   S.todayCount = (S.lastActive === S.day ? (S.todayCount || 0) : 0) + 1;
   S.lastActive = S.day;
   S.sessionCount += 1;
-  markActiveToday();
   // advance review intervals
   S.review.forEach(r => { if (r.due <= S.day) { r.interval = Math.min(21, r.interval * 2 + 1); r.due = S.day + r.interval; } });
   S.paceHist = (S.paceHist || []);
@@ -1125,10 +1236,13 @@ function finishSession(sess) {
 /* ---------- الخطة: تتوقّع ولا تُلزِم، وتُعاد حسابها كل يوم ---------- */
 const TRACK_THEME = { qudurat:'royal', tahsili:'forest', kfupm:'obsidian', step:'plum', aramco:'petrol' };
 /* ══════════ المسارات المعروضة ══════════
-   البترول وأرامكو مؤجَّلان: محتواهما باقٍ كاملًا في البنك ولا يُعرَضان للطالب.
-   السبب أن مواصفتيهما لم تُدرَسا بالقدر الذي دُرست به القدرات والتحصيلي وستيب،
-   وأن جمهورهما مختلف في وقته ورسالته. يُفتحان حين تكتمل الجاهزية.
-   لإعادتهما: أضف 'kfupm' و'aramco' إلى OPEN_TRACKS — ولا حاجة إلى شيء آخر. */
+   البترول وأرامكو مؤجَّلان إلى أجلٍ غير مسمّى — قرارٌ صاحبُ المشروع.
+   محتواهما باقٍ كاملًا في البنك (نحو ألف سؤالٍ ومفاتيحُ أفكارهما كلُّها)
+   ولا يُعرَضان للطالب. والسببُ أنّ آليّةَ الاختبارَين وطريقتَهما لم تَثبُت
+   عندنا بمعلوماتٍ دقيقة، وبناءُ منهجٍ على مواصفةٍ مظنونةٍ يُضِلّ الطالبَ
+   وهو يَحسَب أنّه يَستعدّ. فلا يُفتَحان حتّى تَرِد المعلومةُ الموثوقة.
+   لا تُفتَحا باجتهادٍ من جولةٍ لاحقة: الفتحُ قرارٌ لا يُتَّخذ إلّا بإذنٍ صريح.
+   وحين يُؤذَن: أضف 'kfupm' و'aramco' إلى OPEN_TRACKS — ولا حاجة إلى شيء آخر. */
 const OPEN_TRACKS = ['qudurat', 'tahsili', 'step'];
 const isOpenTrack = t => OPEN_TRACKS.includes(t);
 
@@ -1215,7 +1329,9 @@ function stemView(q) {
   // ④ الخطأ السياقي — الجملة في بطاقة اقتباس
   if (q.skill === 'context_error') {
     const ask = L.length > 1 ? L[0] : 'أيّ الكلمات الآتية وُضعت في غير موضعها الصحيح؟';
-    const sent = L.length > 1 ? L.slice(1).join(' ') : raw;
+    /* في الخطأ السياقيّ تُنزَع علامةُ التأكيد ولا تُحوَّل: فالمؤكَّدُ هو الجواب،
+       وإبرازُه — بنجمٍ أو بخطٍّ — يَكشِفه قبل أن يَبحث عنه الطالب. */
+    const sent = (L.length > 1 ? L.slice(1).join(' ') : raw).replace(/\*\*/g, '');
     return `<div class="sv sv-ce">
       <p class="sv-ask">${esc(ask)}</p>
       <div class="quote"><span class="qm">”</span>${esc(sent)}</div>
@@ -1225,13 +1341,13 @@ function stemView(q) {
   // ⑤ إكمال الجمل — الفراغ يُبرز
   if (q.skill === 'completion' || q.skill === 'sp_word' || q.skill === 'sp_tense'
       || q.skill === 'sp_prep' || q.skill === 'sp_agree' || q.skill === 'sp_article') {
-    const marked = esc(raw)
+    const marked = md(raw)
       .replace(/\.{4,}|_{3,}|\u2026{2,}/g, '<span class="blankx"></span>')
       .replace(/\s______\s/g, ' <span class="blankx"></span> ');
     if (marked.includes('blankx')) return `<div class="sv sv-cp">
       <p class="stem${ltr}">${marked}</p></div>`;
   }
-  return `<p class="stem${ltr}">${esc(raw)}</p>`;
+  return `<p class="stem${ltr}">${md(raw)}</p>`;
 }
 const ideaGlyph = sz => `<svg viewBox="0 0 24 24" width="${sz}" height="${sz}" fill="none"
   stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
@@ -1332,7 +1448,7 @@ function weekReport() {
   else if (days.size >= 4) { state = 'إيقاع ثابت'; tone = 'good'; }
   else if (days.size >= 2) { state = 'إيقاع متقطّع'; tone = 'mid'; }
   else                     { state = 'نشاط ضعيف هذا الأسبوع'; tone = 'warn'; }
-  return { days: days.size, built, near, active, streak: realStreak(), state, tone,
+  return { days: days.size, built, near, active, streak: S.streak, state, tone,
            weeks: buildPlan().span, rhythm: buildPlan().rhythm };
 }
 
@@ -1934,7 +2050,9 @@ function render() {
   const frame = document.createElement('div');
   const d = S._dir || 0;
   frame.className = 'fade' + (d > 0 ? ' inF' : d < 0 ? ' inB' : '');
-  try { document.body.dataset.screen = S.screen; } catch (e) {}
+  /* الهيكلُ يَتبع ما يُرسَم لا ما في الحالة: الممرُّ يُعلِن نفسَه guide
+     فتَختفي الشريطةُ العلويّةُ وشريطُ التبويبات، ويبقى على الشاشة هدفٌ واحد. */
+  try { document.body.dataset.screen = inCorridor() ? 'guide' : S.screen; } catch (e) {}
   try { bottomBar(); } catch (e) {}
   frame.innerHTML = (S.storageBlocked ? `<div class="blocked">
       <b>تعذّر حفظ تقدّمك</b>
@@ -1943,11 +2061,11 @@ function render() {
     </div>` : '')
     + (SCREENS[S.screen] ? safeScreen(S.screen) : safeScreen('home'));
   let bb = document.getElementById('brandbar');
-  const hideOn = ['name','pick','welcome','intro','diag','diagResult','save','paywall','question','exam','settings','goal','wipe'];
+  const hideOn = ['name','pick','welcome','intro','diag','diagResult','save','paywall','question','exam','settings','goal','wipe','seal','shop'];
   if (!bb) { bb = document.createElement('div'); bb.id = 'brandbar';
     const sh = document.getElementById('shell');
     sh.insertBefore(bb, document.getElementById('app')); }
-  bb.hidden = hideOn.includes(S.screen);
+  bb.hidden = hideOn.includes(S.screen) || onCorridorScreen();
   try {
     const ss = S.session;
     const pr = ss && ss.items && ss.items.length
@@ -1989,7 +2107,8 @@ function render() {
   });
   void el.offsetHeight;              // إجبار إعادة تخطيط قبل تحريك التمرير
   el.scrollTop = 0;
-  tabsEl.innerHTML = ['home', 'progress', 'errors'].includes(S.screen) ? tabbar() : '';
+  tabsEl.innerHTML = (!inCorridor() && !onCorridorScreen()
+    && ['home', 'progress', 'errors'].includes(S.screen)) ? tabbar() : '';
   let dev = document.getElementById('devlayer');
   if (!dev) { dev = document.createElement('div'); dev.id = 'devlayer';
     document.getElementById('shell').appendChild(dev); }
@@ -2022,7 +2141,6 @@ function render() {
     mt.onclick = () => {
       const now = Date.now();
       n = (now - t0 < 900) ? n + 1 : 1; t0 = now;
-      if (n >= 5 && !DEV_OK) { n = 0; return; }
       if (n >= 5) { n = 0; S.admin = true; S.audit = true; S.devUnlocked = true;
         S.name = S.name || 'المشرف';
         haptic(30); S.setTab = 7; go('settings'); }
@@ -2062,6 +2180,34 @@ function haptic(ms) {
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) {} }
 }
+/* هَمسةٌ تَمُرّ: كلمةٌ واحدةٌ تَظهَر ثمّ تَذهَب، ولا تُوقِف الطالبَ ولا تَطلُب
+   منه نَقرًا. كانت تُنادى في ستّةِ مواضعَ ولم تُكتَب، فكان نداؤها
+   ReferenceError يَجمِّد الشاشة — ومنها زِرُّ «الوضع الحرّ».
+   وأبلغُها ما قيل مرّةً، فلا تُكرَّر همسةٌ على همسة. */
+let toastT = null;
+function toast(msg) {
+  const txt = String(msg == null ? '' : msg);
+  if (!txt) return;
+  try {
+    let el = document.getElementById('toastbar');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'toastbar';
+      el.setAttribute('role', 'status');
+      el.setAttribute('aria-live', 'polite');
+      (document.body || document.documentElement).appendChild(el);
+    }
+    el.classList.remove('out');
+    el.textContent = txt;
+    if (toastT) clearTimeout(toastT);
+    toastT = setTimeout(() => {
+      const e = document.getElementById('toastbar');
+      if (!e) return;
+      e.classList.add('out');
+      setTimeout(() => { const x = document.getElementById('toastbar'); if (x) x.remove(); }, 320);
+    }, 2600);
+  } catch (e) {}
+}
 function tabbar() {
   const t = [['home', 'اليوم'], ['progress', 'التقدّم'], ['errors', 'أخطاؤك']];
   return `<div class="tabbar">${t.map(([k, n]) =>
@@ -2096,13 +2242,13 @@ function statSummary() {
   const seen = sk.filter(x => S.skills[x.id] && (S.skills[x.id].seen || 0) > 0).length;
   const total = Object.values(S.asked || {}).reduce((a, b) => a + (Array.isArray(b) ? b.length : 0), 0)
     || (S.answered || 0);
-  return { done, seen, total, sk: sk.length, sessions: S.sessionCount || 0, streak: realStreak() };
+  return { done, seen, total, sk: sk.length, sessions: S.sessionCount || 0, streak: S.streak || 0 };
 }
 function sessionRail() {
   const s = S.session;
   if (!s || !s.items || !s.items.length) return '';
   const pct = Math.round(100 * s.idx / s.items.length);
-  return `<div class="rail"><i style="width:${pct}%"></i>
+  return `<div class="srail"><i style="width:${pct}%"></i>
     <span class="rn">${ar(s.idx + 1)} / ${ar(s.items.length)}</span></div>`;
 }
 function dayToggle() {
@@ -3238,7 +3384,7 @@ function comebackCard() {
     <div class="bk-h">عُدتَ</div>
     <div class="bk-t">أُفق حفظ لك كل شيء</div>
     <div class="bk-g">
-      <div><b>${ar(S.bestRealStreak || 0)}</b><span>أطول تتابع لك</span></div>
+      <div><b>${ar(S.bestStreak || 0)}</b><span>أطول تتابع لك</span></div>
       <div><b>${ar(overallMastery())}٪</b><span>إتقانك محفوظ</span></div>
       ${due ? `<div><b>${ar(due)}</b><span>خطأً ينتظرك</span></div>` : ''}
     </div>
@@ -3452,6 +3598,11 @@ function settingsList() {
     ${row('exam', '⏱', 'موعد اختبارك', V.exam)}
 
     <div class="sgrp">تدريبك</div>
+    <button class="srow" data-act="toggleGuided">
+      <span class="sic">⇥</span>
+      <span class="sbd"><b>الممرّ الموجَّه</b><em>يقود الطالبَ فكرةً فكرة ولا يدعه يتجوّل</em></span>
+      <span class="sv">${S.guided === false ? 'مطفأ' : 'يعمل'}</span>
+      <span class="sar">‹</span></button>
     ${row('plan', '✦', 'ما يقرّره أُفق', V.plan, 'القسم والحجم والجولات')}
     ${row('remind', '◔', 'مواعيد التذكير', V.remind)}
 
@@ -3724,8 +3875,11 @@ function rowPreview(q) {
   else if (q.skill === 'completion') {
     t = t.replace(/^اختر[^:]*:\s*/, '').replace(/^أكمل[^:]*:\s*/, '').trim();
   }
-  /* الاستيعاب: متنُه سؤالٌ قصير، فنضمّ عنوان القطعة */
-  else if (q.skill === 'reading' && q.passage) {
+  /* كلُّ سؤالٍ على قطعةٍ متنُه سؤالٌ قصيرٌ لا يُعرَف من أيِّ قطعةٍ هو:
+     «What is the main idea of the passage?» تَتكرَّر في عشرات الأسئلة.
+     فيُضَمّ عنوانُ القطعةِ إليه في القوائمِ والمراجعة — لا في القراءةِ
+     وحدَها، فقد صارت أبوابُ ستيبَ الأربعةُ على القطعِ كذلك. */
+  else if (q.passage) {
     const p = PASSAGES[q.passage];
     if (p && p.title) t = p.title + ' — ' + t;
   }
@@ -3791,8 +3945,8 @@ wipe: () => {
       ? 'لا رجعة بعد هذه الخطوة. سيبدأ أُفق فارغًا كأنك تفتحه لأول مرّة.'
       : 'سيُمحى تقدّمك كلّه من هذا الجهاز ولا يمكن استرجاعه إلا من نسخةٍ حفظتَها.'}</p>
     <div class="wlist">
-      ${[['أيّام تدريبك', ar(activeDayCount())], ['جلساتك', ar(S.sessionCount || 0)],
-         ['سلسلتك', ar(realStreak()) + ' يومًا'],
+      ${[['يومك', ar(S.day || 1)], ['جلساتك', ar(S.sessionCount || 0)],
+         ['سلسلتك', ar(S.streak || 0) + ' يومًا'],
          ['أخطاؤك المحفوظة', ar((S.review || []).length)]]
         .map(([k, v]) => `<div class="wrow"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('')}
     </div>
@@ -4195,11 +4349,31 @@ intro: () => {
 lesson: () => {
   const id = S.lessonFor, L = LESSONS.lessons[id];
   if (!L) { return SCREENS.home(); }
-  const bold = t => String(t == null ? '' : t).replace(/\*\*(.+?)\*\*/g, (m, x) => '<b>' + esc(x) + '</b>');
+  const bold = md;
   const DISP = L.disp || L.name;
   const picked = (S.exPickFor === id && S.exPick != null);
   const right = L.exAns;
   const hasEx = !!(L.ex && L.exOpts && L.exOpts.length);
+  /* ══ ترتيبُ خيارات المثال ══
+     كان الصوابُ أوّلَ الخيارات في ستٍّ وستّين فكرةً من ثمانٍ وستّين، فيَتعلّم
+     الطالبُ أن يَضغَط الأوّلَ ولا يَنظُر — وبهذا تَبطُل شاشةُ «جرِّبْ أوّلًا»
+     التي بُنِيت ليُحاوِل قبل أن يُعلَّم.
+     فتُخلَط بترتيبٍ ثابتٍ لكلِّ فكرة — ثابتٌ ليَستقِرّ تحت إصبعه إن أُعيد
+     الرسم — ويَحمِل كلُّ زرٍّ موضعَه الأصليَّ فلا يَتغيّر الحساب. */
+  const exOrder = (() => {
+    const n = (L.exOpts || []).length;
+    const ix = Array.from({ length: n }, (_, k) => k);
+    let h = 0;
+    for (let k = 0; k < id.length; k++) h = ((h << 5) - h + id.charCodeAt(k)) | 0;
+    h = Math.abs(h);
+    /* البتّاتُ الدنيا من هذا المولِّدِ ضعيفةُ الدوران، فتُؤخَذ العُليا. */
+    for (let k = n - 1; k > 0; k--) {
+      h = (h * 1103515245 + 12345) & 0x7fffffff;
+      const j = ((h >>> 16) % (k + 1));
+      const t = ix[k]; ix[k] = ix[j]; ix[j] = t;
+    }
+    return ix;
+  })();
 
   /* ══ المشهد الأول: جرّب — لا شرح قبل المحاولة ══ */
   if (!picked && hasEx) {
@@ -4211,8 +4385,8 @@ lesson: () => {
       </div>
       <div class="k2q">${esc(L.ex)}</div>
       <div class="k2ops">
-        ${L.exOpts.map((o, k) => `<button class="k2o" data-act="exPick" data-arg="${k}"
-          style="--d:${60 + k * 70}ms">${esc(o)}</button>`).join('')}
+        ${exOrder.map((k, pos) => `<button class="k2o" data-act="exPick" data-arg="${k}"
+          style="--d:${60 + pos * 70}ms">${esc(L.exOpts[k])}</button>`).join('')}
       </div>
       <div class="k2hint">جرّب أولًا — ثمّ ينكشف المفتاح</div>
     </div>`;
@@ -4233,9 +4407,25 @@ lesson: () => {
       ${L.card ? `<div class="k2cc">${esc(L.card)}</div>` : ''}
       ${listenBtn((L.card || '') + '. ' + (L.key || ''), 'card')}
     </div>`]);
+  /* ══ العلامة ══
+     بِمَ يُعرَف نوعُ السؤالِ من النظرة الأولى — وهو مكتوبٌ في كلّ فكرةٍ منذ
+     البداية ولم يُعرَض في شاشةٍ قطّ — ومعه حَدُّ الفكرةِ المميِّزُ لها عمّا
+     يُشبِهها، وخريطةُ ثِقَلِها: أين تَقَع أكثرُ أسئلتها فيَبدأ منه. */
+  const spot = (L.spot || []).map(x => `<li>${bold(x)}</li>`).join('');
+  const LM = liveMap(id);
+  if (spot || L.gloss || LM) TABS.push(['العلامة', `
+    ${L.gloss ? `<div class="k2gl">${bold(L.gloss)}</div>` : ''}
+    ${spot ? `<ol class="k2l big">${spot}</ol>` : ''}
+    ${LM ? `<div class="k2mp">
+      <div class="k2mt">${esc(L.mapTitle || 'أين يقع ثِقَلُ الفكرة')} · ${esc(sayQ(LM.n))}</div>
+      ${LM.rows.map(r => `<div class="k2mr">
+        <span class="k2mn">${esc(r.n)}</span><span class="k2mv">${ar(r.p)}٪</span>
+        <span class="k2mb"><i style="--w:${Math.max(2, Math.min(100, +r.p || 0))}%"></i></span>
+      </div>`).join('')}
+    </div>` : ''}`]);
   if (steps) TABS.push(['لماذا', `<ol class="k2l big">${steps}</ol>`]);
   if (L.trap || con.length >= 2) TABS.push(['الفخّ', `
-    ${L.trap ? `<div class="k2b trap"><p>${bold(L.trap)}</p></div>` : ''}
+    ${L.trap ? `<div class="k2b trap"><p>${bold(liveCounts(L.trap, id))}</p></div>` : ''}
     ${con.length >= 2 ? `<div class="k2face">
       <div class="k2f bad"><div class="k2fl">يسقط</div><p>${bold(con[0])}</p></div>
       <div class="k2f good"><div class="k2fl">يثبت</div><p>${bold(con[1])}</p></div>
@@ -4312,7 +4502,9 @@ why: () => {
   <div class="center" style="padding:10px 0">
     <div class="eyebrow">قبل أن ترى الحل</div>
     <h2>${right ? 'كيف وصلتَ إليها؟' : 'أين تظنّ أن الخطأ حدث؟'}</h2>
-    <p class="faint" style="margin-top:10px">سؤال واحد — يجعل ما بعده يثبت أكثر.</p>
+    <p class="faint" style="margin-top:10px">${(typeof guided === 'function' && guided() && S.st)
+      ? 'ليس تقييمًا — نحتاج أن نعرف متى نُعيدها عليك.'
+      : 'سؤال واحد — يجعل ما بعده يثبت أكثر.'}</p>
     <div style="margin-top:22px">
       ${opts.map(([k, t]) => `<button class="choice" data-act="explainWhy" data-arg="${k}">${t}</button>`).join('')}
     </div>
@@ -4542,7 +4734,7 @@ question: () => {
   <div class="skilltag">${esc(SKILLS[q.skill].name)}${
     ''}</div>
   ${S.track === 'qudurat' ? `<div class="parttag">القسم ${esc(PART_NAME[s.part || partOf(q.skill)])}</div>` : ''}
-  ${pre ? `<div class="diag" style="margin-top:14px">${esc(q.steps[0])} — تذكير سريع قبل السؤال</div>` : ''}
+  ${pre ? `<div class="diag" style="margin-top:14px">${md(q.steps[0])} — تذكير سريع قبل السؤال</div>` : ''}
   ${roleNote(item, s)}
   ${item.role === 'duel' ? `<div class="duelpre"><span class="dmark">✦</span>هذا السؤال هزمك مرّتين.<span>مضى عليه أسبوعان. جرّبه الآن.</span></div>` : ''}
   ${q.passage && PASSAGES[q.passage] ? (() => {
@@ -4564,7 +4756,7 @@ question: () => {
       const show = q.steps.slice(0, Math.max(0, q.steps.length - item.fade));
       return `<div class="faded">
         <div class="lbl">الخطوات — أكمِل ما نقص</div>
-        ${show.map(s => `<div class="st">${esc(s)}</div>`).join('')}
+        ${show.map(s => `<div class="st">${md(s)}</div>`).join('')}
         ${Array.from({length: item.fade}, () => `<div class="st blank"></div>`).join('')}
       </div>`;
     })() : ''}
@@ -4594,9 +4786,9 @@ explain: () => {
     ${(!right && chosen != null) ? `<div class="choice chosen${isLTR(q.choices[chosen].t) ? ' ltr' : ''}" style="cursor:default">${esc(q.choices[chosen].t)}
       <span class="mark">اخترتَ</span></div>` : ''}
     <div class="choice right${isLTR(q.choices[correctIdx].t) ? ' ltr' : ''}" style="cursor:default">${esc(q.choices[correctIdx].t)}<span class="mark">✓</span></div>
-    ${note ? `<div class="diag">${esc(note)}</div>` : ''}
+    ${note ? `<div class="diag">${md(note)}</div>` : ''}
     ${!right ? `<p class="faint" style="margin-top:16px">سيعود هذا في المراجعة</p>` : ''}`]);
-  T.push(['الخطوات', `<ol class="steps num">${q.steps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`]);
+  T.push(['الخطوات', `<ol class="steps num">${q.steps.map(x => `<li>${md(x)}</li>`).join('')}</ol>`]);
   if (S.tip) T.push([S.tip.kind === 'fact' ? 'عن الاختبار' : 'مهارة', `
     <div class="tip${S.tip.kind === 'fact' ? ' fact' : ''}" style="margin-top:0">
       <div class="t">${esc(S.tip.t)}</div><div class="b">${esc(S.tip.b)}</div></div>`]);
@@ -4618,7 +4810,11 @@ explain: () => {
     <div class="lbar">
       ${horizonBar(s.idx + 1, s.items.length, '')}
       <div class="exhead"><span class="skilltag" style="margin:0">${esc(SKILLS[q.skill].name)}</span>
-        <span class="exmark ${right ? 'ok' : 'no'}">${right ? '✓' : '✕'}</span></div>
+        ${/* في الممرِّ لا تُوضَع علامةُ حُكم: الصوابُ يُعلَّم، والخطأُ يُشرَح ولا يُوسَم.
+             وخارجَه تبقى العلامةُ كما كانت لمن يَختبِر نفسَه بنفسه. */ ''}
+        ${onCorridorScreen()
+          ? `<span class="exmark ${right ? 'ok' : 'soft'}">${right ? '✓' : '•'}</span>`
+          : `<span class="exmark ${right ? 'ok' : 'no'}">${right ? '✓' : '✕'}</span>`}</div>
       <div class="ltabs">${T.map(([n], k) =>
         `<button class="lt ${k === cur ? 'on' : ''}" data-act="expTab" data-arg="${k}">${esc(n)}</button>`).join('')}</div>
     </div>
@@ -4859,8 +5055,8 @@ progress: () => {
   ` : ''}
   ${S.prTab === 2 ? `
   <hr class="rule">
-  <p class="num">${realStreak() === 0 ? 'تبدأ البناء اليوم'
-    : ar(realStreak()) + (realStreak() === 1 ? ' يوم' : ' يومًا') + ' من البناء'}</p>
+  <p class="num">${S.streak === 0 ? 'تبدأ البناء اليوم'
+    : ar(S.streak) + (S.streak === 1 ? ' يوم' : ' يومًا') + ' من البناء'}</p>
   <button class="btn ghost" style="text-align:right;width:auto;padding-inline-start:0"
     data-act="showExam">${S.showExam ? `${ar(Math.max(0, S.examDays - S.day))} يومًا حتى الاختبار` : 'كم بقي على الاختبار؟ ›'}</button>
   ` : ''}`;
@@ -4934,7 +5130,7 @@ settings: () => {
 
 paywall: () => `<div class="center"><div class="glass">
   <div class="eyebrow">أكملتَ ${ar(5)} جلسات</div>
-  <h1>بنيتَ ${ar(realStreak())} يومًا و${ar(SKILL_LIST.filter(s => ['mastered', 'near'].includes(S.skills[s.id].status)).length)} مهارات.</h1>
+  <h1>بنيتَ ${ar(S.streak)} ${S.streak === 1 ? 'يومًا' : 'يومًا'} و${ar(SKILL_LIST.filter(s => ['mastered', 'near'].includes(S.skills[s.id].status)).length)} مهارات.</h1>
   <p class="soft" style="margin-top:10px">أكمل حتى الاختبار.</p>
   <hr class="rule">
   <div class="kv"><span>موسم — ٣ أشهر</span><span class="v">الأكثر اختيارًا</span></div>
@@ -4988,7 +5184,7 @@ const ACTIONS = {
     const M = { card: (L.card || '') + ' . ' + (L.key || ''),
                 spot: (L.spot || []).join(' . '),
                 drill: (L.drill || []).join(' . '),
-                trap: L.trap || '',
+                trap: liveCounts(L.trap || '', S.lessonFor),
                 contrast: (L.contrast || []).join(' . '),
                 ex: L.ex || '' };
     speakText(M[id] || '', id);
@@ -5069,7 +5265,6 @@ const ACTIONS = {
     haptic(12); S.setRow = null; go('settings');
   },
   devTap() {
-    if (!DEV_OK) return;
     const now = Date.now();
     S._dt = (now - (S._dt0 || 0) < 1200) ? (S._dt || 0) + 1 : 1;
     S._dt0 = now;
@@ -5084,7 +5279,6 @@ const ACTIONS = {
     S.showParked = false; S.setTab = 4; haptic(16); saveState(); render();
   },
   devDay(n) {
-    if (!DEV_OK || !S.devUnlocked) return;
     const d = +n || 0;
     S.day = Math.max(1, (S.day || 1) + d);
     S.suggestion = null; haptic(9); saveState(); render();
@@ -5287,7 +5481,7 @@ const ACTIONS = {
     x.globalAlpha = .3; x.strokeStyle = soft; x.lineWidth = 2;
     x.beginPath(); x.moveTo(200, 660); x.lineTo(W - 200, 660); x.stroke(); x.globalAlpha = 1;
     x.fillStyle = ink; x.font = '400 44px system-ui,sans-serif';
-    x.fillText('يوم التدريب ' + ar(activeDayCount()) + ' · سلسلة ' + ar(realStreak()) + ' يومًا', W / 2, 740);
+    x.fillText('اليوم ' + ar(S.day + 1) + ' · سلسلة ' + ar(S.streak || 0) + ' يومًا', W / 2, 740);
     if (r.pace) { x.fillStyle = soft; x.font = '400 36px system-ui,sans-serif';
       x.fillText('إيقاع ' + ar(r.pace) + ' ثانية للسؤال', W / 2, 810); }
     x.fillStyle = soft; x.globalAlpha = .7; x.font = '400 30px system-ui,sans-serif';
@@ -5305,7 +5499,7 @@ const ACTIONS = {
   },
   done() { S.lastWeak = null; S.suggestion = null; go('home'); },
   again() { S.suggestion = makeSuggestion(); ACTIONS.startSession(); },
-  endDay() { const t = localDate(); if (S.dayBumpedOn !== t) { S.day += 1; S.dayBumpedOn = t; } S.suggestion = null; go('home'); },
+  endDay() { S.suggestion = null; S.day += 1; go('home'); },
   showExam() { S.showExam = !S.showExam; render(); },
   openPause() { S.openPause = true; render(); },
   logToggle(i) { S.logOpen = S.logOpen === +i ? null : +i; render(); },
@@ -5430,7 +5624,7 @@ const ACTIONS = {
   exportState() {
     try {
       const o = {}; Object.keys(S).forEach(k => { if (!NOSAVE.includes(k)) o[k] = S[k]; });
-      o._v = 1; o._at = localDate(); o._app = 'ufuq';
+      o._v = 1; o._at = new Date().toISOString().slice(0, 10); o._app = 'ufuq';
       const blob = new Blob([JSON.stringify(o)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -5459,7 +5653,7 @@ const ACTIONS = {
           S.restored = {
             name: S.name || '', day: S.day + 1,
             phase: ph ? ph.name : (TRACKS[S.track] ? TRACKS[S.track].name : ''),
-            sessions: S.sessionCount || 0, streak: realStreak(),
+            sessions: S.sessionCount || 0, streak: S.streak || 0,
             skills: mySkills().filter(x => (S.skills[x.id].days || []).length).length,
             errors: (S.review || []).length, at: o._at || ''
           };
@@ -5579,7 +5773,7 @@ const ACTIONS = {
     haptic(12); saveState(); render();
   },
   togglePause(id) { S.skills[id].paused = !S.skills[id].paused; S.suggestion = null; render(); },
-  advance(n) { if (!DEV_OK || !S.devUnlocked) return; S.day += +n; S.suggestion = null; render(); },
+  advance(n) { S.day += +n; S.suggestion = null; render(); },
   reset() { const n = S.name; S = freshState(); S.name = n; go(n ? 'pick' : 'name'); },
   editName() { go('name'); },
   leaveTrack() { saveTrack(); haptic(14); go('pick'); },
@@ -5632,7 +5826,7 @@ function saveState() {
   try {
     const o = {};
     Object.keys(S).forEach(k => { if (!NOSAVE.includes(k)) o[k] = S[k]; });
-    o._at = localDate();
+    o._at = new Date().toISOString().slice(0, 10);
     o._v = 1;
     localStorage.setItem(SAVE_KEY, JSON.stringify(o));
     S.storageBlocked = false;
@@ -5647,8 +5841,6 @@ function daysBetween(a, b) {
 /* إصلاح ذاتيّ: من المستحيل أن يُتمّ الطالب كلّ المفاتيح في جلسات قليلة.
    إن وجدنا ذلك فهي حالة أفسدتها لوحة المعاينة — نعيدها إلى الصفر. */
 function healState(b) {
-  /* أوّل ما يُفعل، خارج أيّ احتمال خطأ: وضع المطوّر لا يبقى مفتوحًا لغير صاحبه */
-  if (b && (!b.devUnlocked || !DEV_OK)) { b.devUnlocked = false; b.admin = false; b.audit = false; }
   try {
     /* من كان على مسارٍ أُجّل يُنقَل إلى القدرات، ويبقى تقدّمه محفوظًا كما هو */
     if (b && b.track && !isOpenTrack(b.track)) {
@@ -5663,6 +5855,7 @@ function healState(b) {
       b._healed = true;
     }
     /* وضع المطوّر يبقى ما دام مفتوحًا — ويُقفَل من تبويبه بيد صاحبه */
+    if (!b.devUnlocked) { b.admin = false; b.audit = false; }
   } catch (e) {}
   return b;
 }
@@ -5680,13 +5873,10 @@ function loadState() {
     Object.keys(fresh).forEach(id => { if (!base.skills[id]) base.skills[id] = fresh[id]; });
   }
   /* اليوم يتقدّم بالتقويم الحقيقي لا بزرّ */
-  const today = localDate();
+  const today = new Date().toISOString().slice(0, 10);
   if (o._at) {
-    let gap = daysBetween(o._at, today);
-    /* إن ضغط الطالب «اكتفيتُ اليوم» في آخر يومٍ محفوظ فقد حُسب ذلك اليوم، فلا يُعدّ ثانيةً */
-    if (gap > 0 && base.dayBumpedOn === o._at) gap -= 1;
-    if (o._at !== today) { base.todayCount = 0; base.dayBumpedOn = null; }
-    base.day = (base.day || 0) + gap;
+    const gap = daysBetween(o._at, today);
+    if (gap > 0) { base.day = (base.day || 0) + gap; base.todayCount = 0; }
   }
   base.session = null; base.exam = null; base.sheet = null; base.stopOffer = false;
   healState(base);
@@ -5939,7 +6129,7 @@ function vizWitness() {
   return `<div class="vwit">
     <div class="wrow bad"><div class="wd">أخطأتَ فيه</div>
       <div class="wq">${esc(q.stem.slice(0, 80))}${q.stem.length > 80 ? '…' : ''}</div>
-      ${wrong ? `<div class="wn">${esc(wrong.note)}</div>` : ''}</div>
+      ${wrong ? `<div class="wn">${md(wrong.note)}</div>` : ''}</div>
     <div class="wrow good"><div class="wd">اليوم ${ar(pick.day)} — أصبتَه</div>
       <div class="wq">${esc(right ? right.t : '')}</div>
       <div class="wn">${esc(SKILLS[q.skill] ? SKILLS[q.skill].name : '')}</div></div>
@@ -6006,8 +6196,8 @@ function drawCard() {
   x.fillStyle = GOLD; x.font = '600 44px system-ui';
   x.fillText(masteryWord(p), M, 392);
   x.fillStyle = SOFT; x.font = '28px system-ui';
-  x.fillText('أتقنتَ ' + ar(masteredCount()) + ' من ' + ar(mySkills().filter(s => hasContent(s.id)).length) + ' مهارة', M, 444);
-  x.fillText(ar(realStreak()) + ' يومًا متتاليًا · ' + ar(activeDayCount()) + ' يوم تدريب · ' + ar(S.sessionCount || 0) + ' جلسة', M, 494);
+  x.fillText('إتقان ' + ar(mySkills().filter(s => hasContent(s.id)).length) + ' مهارة', M, 444);
+  x.fillText(ar(S.streak || 0) + ' يومًا متتاليًا · ' + ar(S.sessionCount || 0) + ' جلسة', M, 494);
   /* أقوى خمس مهارات */
   let y = 640;
   x.fillStyle = LINE; x.fillRect(88, y - 46, W - 176, 2);
@@ -6049,7 +6239,7 @@ async function shareProgress() {
   const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
   if (!blob) return;
   const file = new File([blob], 'ufuq.png', { type: 'image/png' });
-  const txt = `تقدّمي في أُفق — ${ar(overallMastery())}٪ · ${ar(realStreak())} يومًا متتاليًا`;
+  const txt = `تقدّمي في أُفق — ${ar(overallMastery())}٪ · ${ar(S.streak || 0)} يومًا متتاليًا`;
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try { await navigator.share({ files: [file], text: txt }); return; } catch (e) { return; }
   }
@@ -6268,6 +6458,654 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     }).catch(() => { INSTALL_DIAG.sw = false; });
   });
 }
+
+
+/* ════════════════════════════════════════════════════════════════
+   ا ل م م ـ ر   —   تعليمٌ موجَّهٌ أحاديُّ الاتّجاه
+   أُفق منارةٌ تُعلِّم، لا مقياسٌ يحكم. فالممرُّ يقود الطالب فكرةً فكرة:
+   مفتاحٌ يُدرَّس أوّلًا، ثمّ مثالٌ يُشاهَد، ثمّ خطواتٌ تُكمَل،
+   ثمّ أسئلةٌ تُحَلّ، ثمّ ورشةٌ لكلّ خطأ تنتهي بإصابة،
+   ثمّ سؤالُ امتيازٍ من الدرجة الخامسة يُحَلّ بالقاعدة فتُختَم الفكرة.
+   لا نسبةَ عبورٍ ولا رقمَ يُعرَض: الفشلُ غيرُ موجودٍ في البناء نفسه.
+   ════════════════════════════════════════════════════════════════ */
+
+/* عائلاتُ الخطأ: نحوّل وَسمَ المُشتِّت إلى جملةٍ تُسمّي عادةً واحدةً تُصلَح */
+const ERRFAM = [
+  { k: 'calc', t: 'حسابٌ غيرُ مضبوط',
+    w: 'الطريقُ كان صحيحًا والعددُ انحرف. خطؤك في التنفيذ لا في الفهم.',
+    tags: ['miscalculated','added','multiplied','half','total','calc','div','mult','sub',
+           'nodiv','nohalf','nosq','nosqrt','shift','double','quarter','sum','count','add'] },
+  { k: 'dir', t: 'العلاقةُ صحيحةٌ والاتّجاهُ مقلوب',
+    w: 'رأيتَ العلاقةَ كما هي، وقلبتَ ترتيبَها. والترتيبُ جزءٌ من العلاقة.',
+    tags: ['order','reverse','inverted','flip','swap','reversed','inverse'] },
+  { k: 'opp', t: 'اخترتَ النقيض',
+    w: 'الفكرةُ عندك، والإشارةُ انقلبت. راجِع كلمةَ النفي قبل الخيارات.',
+    tags: ['opposite','negate','deny','sign'] },
+  { k: 'part', t: 'جوابٌ صحيحٌ ناقص',
+    w: 'ما اخترتَه صحيحٌ في جزئه، والسؤالُ يطلب تمامَه. تقرأ السؤال ولا تُكمِله.',
+    tags: ['partial','part','one','half','incomplete'] },
+  { k: 'invent', t: 'أضفتَ ما ليس في النصّ',
+    w: 'ما اخترتَه معقولٌ في نفسه، ولا دليلَ عليه في النصّ. الجوابُ ما يُلزِمه النصّ لا ما يحتمله.',
+    tags: ['invent','add','contradict','irrelevant','unrel','over','overreach','claim','assume','blame'] },
+  { k: 'unit', t: 'وحداتٌ لم تُحوَّل',
+    w: 'حسابُك صحيحٌ ووحدتُك ناقصة. حوِّل أوّلًا ثمّ احسب — خطوةٌ واحدةٌ تنجّي الحلَّ كلَّه.',
+    tags: ['units','unit'] },
+  { k: 'near', t: 'خلطُ القاعدتَين المتجاورتَين',
+    w: 'أخذتَ القاعدةَ المجاورةَ للمطلوبة. وهذا يُصلَح بتسميةِ المطلوب قبل الاختيار.',
+    tags: ['meaning','form','logic','group','mismatch','analogy_mismatch','comparison_mismatch',
+           'odd_one_mismatch','context_error_mismatch','clause','word','tense','def'] },
+  { k: 'read', t: 'قراءةٌ لم تُكمَل',
+    w: 'الخيارُ الذي أخذتَه يَظهُر صحيحًا إن قُرِئ أوّلُ السؤال وحده.',
+    tags: ['reading_distractor','wrong','trap','surface','literal','first','start'] },
+  { k: 'lin', t: 'حسبتَها خطّيّةً وهي ليست كذلك',
+    w: 'العلاقةُ أُسّيّةٌ أو تربيعيّة، فالمضاعفةُ لا تُضاعِف النتيجة.',
+    tags: ['linear','square','cube','direct'] }
+];
+const ERRTAG = (() => { const m = {}; ERRFAM.forEach(f => f.tags.forEach(t => m[t] = f)); return m; })();
+/* الوَسمُ الذي لا عائلةَ له يَسقُط من التشخيصِ كلِّه: shopDiagnosis يَتخطّاه،
+   فلا يُقال لمحمدٍ «عادةٌ واحدةٌ تكرّرت ثلاثَ مرّات». وقِيسَ فوُجِد أنّ
+   نصفَ مُشتِّتاتِ البنكِ كذلك، وأنّ الدُّفعاتِ السهلةَ الخمسَ — وهي أَولى
+   ما يَحتاج فيه إلى معرفةِ عادتِه — صِفرٌ تمامًا: كلُّ وَسمٍ فيها مُبتكَر.
+   فيُلتمَس للوَسمِ المجهولِ عائلتُه من لفظِه. ولا يُلتمَس إلّا بمفتاحٍ لا
+   يَحتمِل إلّا معنًى واحدًا؛ وما احتمل اثنَين تُرِك بلا عائلةٍ كما كان،
+   لأنّ تشخيصًا خاطئًا يُقال للطالبِ أسوأُ من سكوتٍ عنه.
+   وزِيدت دفعةٌ ثانيةٌ بعد قراءةِ أشيعِ الوُسومِ بلا عائلةٍ مع أبوابِها:
+   ما كان اسمَ نوعِ خطأٍ أُلحِق (different · complement · raw · agreement)،
+   وما كان اسمَ مضمونٍ تُرِك (mass · power · base · area · moles) — فهذه
+   أسماءُ مقاديرَ لا أسماءُ أخطاء، وإلحاقُها بعائلةٍ يَقول لمحمدٍ عن
+   غلطتِه ما ليس فيها. */
+const ERRFUZZ = [
+  ['calc',  ['miscalc','calc','arith','sum_','_sum','added','subtract','divided','divide',
+             'multipl','product','doubl','halv','half_step','off_by','rounded',
+             'coefficient']],
+  ['dir',   ['revers','invert','inverse','swap','flip','direction','wrong_order','order_',
+             'dir']],
+  ['opp',   ['opposite','contra','negat','antonym','complement']],
+  ['part',  ['partial','incomplete','only_','_only','raw','unchanged']],
+  ['invent',['invent','assume','unsupported','overreach','leap','not_stated','fabricat',
+             'claim']],
+  ['unit',  ['unit','conversion','convert']],
+  ['near',  ['mismatch','near_miss','confus','collocation','synonym','adjacent',
+             'different','same','compare','fit','agreement','max','range','mean',
+             // وأسماءُ العلاقاتِ في التناظُر — material_of_tool وplace_of_use —
+             // معناها كلِّها واحدٌ: أخَذ علاقةً غيرَ المطلوبة. وكذلك
+             // صِيَغُ الفعلِ: future_form وpast_form خلطُ قاعدةٍ بجارتِها.
+             // و«place» وحدَها تُترَك لأنّها تَصلُح للمنزلةِ العدديّةِ أيضًا.
+             'form','_of_','whole','_place','place_','user_','agent_',
+             'material','context','l1_','marker']],
+  ['read',  ['misread','literal','surface','first_heard','first_seen','skim']],
+  ['lin',   ['linear']],
+];
+const ERRKEY = (() => { const m = {}; ERRFAM.forEach(f => m[f.k] = f); return m; })();
+function errFam(tag) {
+  if (!tag) return null;
+  if (ERRTAG[tag]) return ERRTAG[tag];
+  for (let i = 0; i < ERRFUZZ.length; i++) {
+    const keys = ERRFUZZ[i][1];
+    for (let j = 0; j < keys.length; j++)
+      if (tag.indexOf(keys[j]) >= 0) return ERRKEY[ERRFUZZ[i][0]] || null;
+  }
+  return null;
+}
+
+/* الممرُّ هو الأصل. والأبُ وحده يُطفئه من الإعدادات، والطالبُ لا يراه */
+function guided() { return S.guided !== false; }
+
+/* ══════ حالةُ المحطّة ══════
+   phase: key → solved → fade → free → gate → shop → again → seal
+   ولا يُعرَض للطالب رقمُ محاولةٍ ولا نسبةُ صوابٍ في أيّ منها */
+function stNew(skillId) {
+  return { skill: skillId, phase: 'key', dwell: 0, errs: [], shopAt: 0,
+           shopStep: 0, shopPick: null, twinOk: 0, started: S.day, seal: null, round: 0 };
+}
+function stCur() { return S.st || null; }
+
+/* المهارةُ التالية في الممرّ: أضعفُ ما له مفتاحٌ ومحتوًى ولم يُختَم */
+function corridorNext() {
+  const sealed = S.sealed || {};
+  const pool = mySkills().filter(x => hasContent(x.id) && LESSONS.lessons[x.id]
+    && !S.skills[x.id].paused && !sealed[x.id]);
+  if (!pool.length) return null;
+  /* القدرات: لا نخلط اللفظيّ بالكمّيّ في ممرٍّ واحد */
+  const part = S.track === 'qudurat' ? (S.focus === 'quant' ? 'quant' : 'verbal') : null;
+  const inPart = x => !part || partOf(x.id) === part;
+  const same = pool.filter(inPart);
+  const use = same.length ? same : pool;
+  return use.map(x => ({ id: x.id, m: mastery(x.id), seen: (S.skills[x.id].days || []).length }))
+    .sort((a, b) => (a.m - b.m) || (a.seen - b.seen))[0].id;
+}
+/* عدّادُ المِلكيّة: لغةُ معلّمٍ لا لغةُ قاضٍ */
+function ownCount() {
+  const sealed = S.sealed || {};
+  const all = mySkills().filter(x => hasContent(x.id) && LESSONS.lessons[x.id]);
+  return { own: all.filter(x => sealed[x.id]).length, all: all.length };
+}
+function corridorStart(skillId) {
+  const id = skillId || corridorNext();
+  if (!id) return false;
+  S.st = stNew(id);
+  S.session = null; S.lessonFor = id; S.lessonFrom = 'corridor';
+  S.exPick = null; S.exPickFor = null; S.k2tab = 0;
+  saveState(); return true;
+}
+
+/* ══════ بناءُ أسئلة الطور ══════ */
+function stBuild(phase) {
+  const st = stCur(); if (!st) return null;
+  const id = st.skill, used = new Set((st.used || []));
+  const items = [];
+  const take = (d, role, extra) => {
+    const q = pool(id, d, used) || pool(id, Math.max(1, d - 1), used) || pool(id, Math.min(5, d + 1), used);
+    if (!q) return false;
+    used.add(q.id);
+    items.push(Object.assign({ qid: q.id, role: role || 'active', done: false, ph: phase }, extra || {}));
+    return true;
+  };
+  if (phase === 'solved') { take(2, 'active', { shown: 1 }); take(3, 'active', { shown: 1 }); }
+  else if (phase === 'fade') { take(3, 'active', { fade: 1 }); take(3, 'active', { fade: 2 }); take(4, 'active', { fade: 1 }); }
+  else if (phase === 'free') {
+    [3, 3, 4, 4, 4, 5, 4, 5].forEach(d => take(d, 'active'));
+  }
+  else if (phase === 'gate') { [4, 4, 5, 4, 5].forEach(d => take(d, 'active', { gate: 1 })); }
+  else if (phase === 'again') { [4, 4, 5].forEach(d => take(d, 'active')); }
+  else if (phase === 'seal') { take(5, 'active', { seal: 1 }) || take(4, 'active', { seal: 1 }); }
+  st.used = [...used];
+  if (!items.length) return null;
+  return { items, idx: 0, right: 0, wrong: 0, rStreak: 0, wStreak: 0,
+           skill: id, station: 'guided', phase, size: items.length };
+}
+/* الطورُ التالي — ولا يرجع الطالبُ إلى الوراء أبدًا في العدّاد */
+const ST_SEQ = ['key','solved','fade','free','gate','shop','again','seal'];
+function stAdvance() {
+  const st = stCur(); if (!st) return;
+  if (st.phase === 'gate') { st.phase = st.errs.length ? 'shop' : 'seal'; }
+  else if (st.phase === 'shop') { st.phase = 'again'; }
+  else {
+    const i = ST_SEQ.indexOf(st.phase);
+    st.phase = ST_SEQ[Math.min(i + 1, ST_SEQ.length - 1)];
+  }
+  if (st.phase === 'shop' && !st.errs.length) st.phase = 'seal';
+  if (st.phase === 'shop') st.shopPick = shopPick();
+  st.shopAt = 0; st.shopStep = 0;
+  S.session = null;
+  saveState();
+}
+/* تشغيلُ الطور: سؤالٌ أو شاشة */
+function stRun() {
+  const st = stCur(); if (!st) { go('home'); return; }
+  if (st.phase === 'key') {
+    /* لا فكرةَ تُلقى باردة: المفتاحُ يُكشَف فورًا ولا يُستهَلّ بسؤالٍ يَحكُم عليه */
+    const L = LESSONS.lessons[st.skill];
+    S.lessonFor = st.skill; S.lessonFrom = 'corridor'; S.k2tab = 0;
+    if (L && L.exOpts && L.exAns != null) { S.exPickFor = st.skill; S.exPick = L.exAns; }
+    go('lesson'); return;
+  }
+  if (st.phase === 'shop') { go('shop'); return; }
+  /* يعود إلى منتهاه: إن كانت جلسةُ الطور قائمةً تُستأنَف من موضعها ولا تُبنى من جديد */
+  if (S.session && S.session.station === 'guided' && S.session.phase === st.phase
+      && S.session.idx < S.session.items.length) { go('question'); return; }
+  const s = stBuild(st.phase);
+  if (!s) { stAdvance(); stRun(); return; }
+  S.session = s; go('question');
+}
+/* نهايةُ طور: لا ملخّصَ ولا نسبة — الطورُ التالي يبدأ */
+function stPhaseEnd() {
+  const st = stCur(), s = S.session;
+  if (!st || !s) { go('home'); return; }
+  if (st.phase === 'gate') {
+    st.errs = s.items.filter(it => it.wrong).map(it => ({
+      qid: it.qid, pick: it.choiceIdx, done: false
+    }));
+  }
+  /* سؤالُ الامتياز: لا يُختَم إلّا إذا حُلَّ بالقاعدة لا بالتخمين */
+  if (st.phase === 'seal') {
+    const it = s.items[0];
+    const byRule = it && !it.wrong && it.how !== 'guess';
+    if (byRule) { stSeal(); return; }
+    st.round = (st.round || 0) + 1;
+    /* لا يُقال له «لم تجتز»: فكرةٌ تحتها تحتاج تثبيتًا، والمنهجُ هو من يُعيد */
+    if (st.round >= 2) { stSeal(); return; }
+    st.phase = 'again'; S.session = null; saveState(); stRun(); return;
+  }
+  stAdvance(); stRun();
+}
+function stSeal() {
+  const st = stCur(); if (!st) return;
+  S.sealed = S.sealed || {};
+  S.sealed[st.skill] = { day: S.day, round: (st.round || 0) };
+  S.lastSealed = st.skill;
+  S.st = null; S.session = null;
+  saveState(); go('seal');
+}
+
+/* ══════ الورشة: كلُّ خطأٍ يُفسَّر ثمّ يُصاب ══════ */
+function shopCur() {
+  const st = stCur(); if (!st) return null;
+  const e = shopErrs()[st.shopAt]; if (!e) return null;
+  const q = byQ(e.qid); if (!q) return null;
+  const ri = q.choices.findIndex(c => c.c);
+  const pick = e.pick == null ? -1 : e.pick;
+  const ch = pick >= 0 ? q.choices[pick] : null;
+  return { e, q, right: q.choices[ri], chosen: ch, fam: ch ? errFam(ch.tag) : null };
+}
+/* السؤالُ التوأم: البنيةُ نفسُها بمحتوًى آخر — يُجيب فيصيب */
+function twinFor(q) {
+  const st = stCur();
+  const used = new Set((st && st.used) || []);
+  const near = (qBySkill[q.skill] || []).filter(x => x.id !== q.id && !used.has(x.id)
+    && Math.abs((x.d || 3) - (q.d || 3)) <= 1 && !x.passage);
+  if (!near.length) return null;
+  const t = near[Math.floor(Math.random() * Math.min(near.length, 8))];
+  if (st) { st.used = [...used, t.id]; }
+  return t;
+}
+/* جملةُ التشخيص: إن تكرّر وَسمٌ واحدٌ سُمِّيت العادةُ، وإلّا فتفسيرُ البنك */
+/* الورشةُ تُعالِج عادةً واحدةً لا تُحصي كلَّ زلّة.
+   مَن أخطأ في ثمانيةٍ لا يُراد أن يَمُرّ على اثنتَين وثلاثين شاشةً من التشريح —
+   فذلك إحباطٌ بصورة علاج. فتُؤخَذ ثلاثةٌ على الأكثر، وتُقدَّم أخطاءُ العادة
+   المشخَّصة، والباقي يُعالَج عملًا في طور «ثلاث خطوات» لا شرحًا. */
+const SHOP_MAX = 3;
+function shopPick() {
+  const st = stCur(); if (!st) return [];
+  const errs = st.errs || [];
+  if (errs.length <= SHOP_MAX) return errs.map((_, i) => i);
+  const dg = shopDiagnosis();
+  const famKey = (i) => {
+    const e = errs[i]; const q = byQ(e.qid); if (!q || e.pick == null) return null;
+    const ch = q.choices[e.pick]; if (!ch) return null;
+    const f = errFam(ch.tag); return f ? f.t : null;
+  };
+  const idx = errs.map((_, i) => i);
+  const first = dg ? idx.filter(i => famKey(i) === dg.t) : [];
+  const rest = idx.filter(i => first.indexOf(i) < 0);
+  return first.concat(rest).slice(0, SHOP_MAX);
+}
+function shopErrs() {
+  const st = stCur(); if (!st) return [];
+  const pick = st.shopPick || (st.errs || []).map((_, i) => i);
+  return pick.map(i => (st.errs || [])[i]).filter(Boolean);
+}
+
+function shopDiagnosis() {
+  const st = stCur(); if (!st || !(st.errs || []).length) return null;
+  const fams = {};
+  st.errs.forEach(e => {
+    const q = byQ(e.qid); if (!q || e.pick == null) return;
+    const ch = q.choices[e.pick]; if (!ch) return;
+    const f = errFam(ch.tag); if (!f) return;
+    fams[f.k] = fams[f.k] || { f, n: 0 }; fams[f.k].n++;
+  });
+  const top = Object.values(fams).sort((a, b) => b.n - a.n)[0];
+  if (!top || top.n < 2) return null;
+  return { t: top.f.t, w: top.f.w, n: top.n };
+}
+
+/* ══════ شريطُ الممرّ: لا يرجع أبدًا ══════ */
+const ST_LABEL = { key:'المفتاح', solved:'مثالٌ محلول', fade:'أكمِل الخطوة',
+  free:'على مهارتك', gate:'خمسُ أفكار', shop:'ورشة', again:'ثلاثُ خطوات', seal:'سؤال الامتياز' };
+const ST_ORDER = ['key','solved','fade','free','gate','shop','again','seal'];
+function corridorRail() {
+  const st = stCur(); if (!st) return '';
+  const o = ownCount();
+  const i = Math.max(0, ST_ORDER.indexOf(st.phase));
+  const shown = ST_ORDER.filter(p => p !== 'shop' || st.errs.length);
+  const j = Math.max(0, shown.indexOf(st.phase));
+  return `<div class="crail">
+    <div class="cr-h">
+      <span class="cr-s">${esc(SKILLS[st.skill] ? SKILLS[st.skill].name : '')}</span>
+      <span class="cr-o">تملك ${ar(o.own)} من ${ar(o.all)} فكرة</span>
+    </div>
+    <div class="cr-l">${shown.map((p, k) =>
+      `<i class="${k < j ? 'done' : k === j ? 'now' : ''}"></i>`).join('')}</div>
+    <div class="cr-n">${esc(ST_LABEL[st.phase] || '')}</div>
+  </div>`;
+}
+
+/* ══════ الورشة ══════
+   أربعُ شاشاتٍ لكلّ فكرة: ما يقيسه · ما اخترتَه ومعناه · الفرق · توأمٌ يُصاب.
+   لا كلمةَ «خطأ» ولا رقمَ ولا عدّادَ محاولات. */
+SCREENS.shop = () => {
+  const st = stCur();
+  if (!st) return SCREENS.home();
+  const cur = shopCur();
+  if (!cur) { stAdvance(); return SCREENS.home(); }
+  const { q, right, chosen, fam } = cur;
+  const step = st.shopStep || 0;
+  const n = shopErrs().length, at = (st.shopAt || 0) + 1;
+  const head = `${corridorRail()}
+    <div class="wsh-h"><span class="wsh-n">${ar(at)} من ${ar(n)}</span>
+      <span class="wsh-k">${esc(SKILLS[q.skill].name)}</span></div>`;
+  const dg = (st.shopAt === 0 && step === 0) ? shopDiagnosis() : null;
+
+  /* ١ · ما يقيسه هذا السؤال */
+  if (step === 0) return head + `
+    ${dg ? `<div class="wsh-dg"><div class="wdl">عادةٌ واحدةٌ تكرّرت ${ar(dg.n)} مرّات</div>
+      <div class="wdt">${esc(dg.t)}</div><p class="wdw">${esc(dg.w)}</p></div>` : ''}
+    <div class="wsh-q">${esc(q.stem)}</div>
+    <div class="wsh-card a">
+      <div class="wcl">ما يقيسه هذا السؤال</div>
+      <p class="wct">${md((q.steps && q.steps[0]) || SKILLS[q.skill].name)}</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" data-act="shopNext">تابِع ›</button>`;
+
+  /* ٢ · ما اخترتَه — بمعناه لا بوصفه خطأً */
+  if (step === 1) return head + `
+    <div class="wsh-q dim">${esc(q.stem)}</div>
+    <div class="wsh-card b">
+      <div class="wcl">الذي اخترتَه</div>
+      <p class="wcp">${esc(chosen ? chosen.t : '—')}</p>
+      <p class="wcw">${md(chosen && chosen.note ? chosen.note : 'يَظهُر صحيحًا من زاويةٍ واحدة.')}</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" data-act="shopNext">وما الفرق؟ ›</button>`;
+
+  /* ٣ · الفرق — وهو سطرٌ واحد، ثمّ القاعدة */
+  if (step === 2) {
+    const steps = (q.steps || []).slice(0, 3);
+    return head + `
+    <div class="wsh-card c">
+      <div class="wcl">والمطلوب</div>
+      <p class="wcp ok">${esc(right.t)}</p>
+      ${fam ? `<p class="wcf">${esc(fam.t)} — ${esc(fam.w)}</p>` : ''}
+    </div>
+    <div class="wsh-card d">
+      <div class="wcl">القاعدة</div>
+      <ol class="wsl">${steps.map(x => `<li>${md(x)}</li>`).join('')}</ol>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" data-act="shopTwin">الآن سؤالٌ مثلُه ›</button>`;
+  }
+
+  /* ٤ · التوأم: يُجيب فيصيب — وإن لم يُصِب فخطوتُه الأولى معطاة */
+  const tw = st.twin && byQ(st.twin) ? byQ(st.twin) : null;
+  if (!tw) { return head + `<div class="wsh-card c"><div class="wcl">أتقنتَها</div>
+    <p class="wcp ok">${esc(right.t)}</p></div>
+    <div class="spacer"></div><button class="btn" data-act="shopDone">تابِع ›</button>`; }
+  if (st.twinDone) {
+    const won = st.twinWon;
+    return head + `
+    <div class="wsh-win ${won ? '' : 'soft'}">
+      <div class="wwm">${won ? '✦' : '◆'}</div>
+      <div class="wwt">${won ? 'أتقنتَها.' : 'صارت الفكرةُ أوضح.'}</div>
+      <p class="www">${won
+        ? 'هذا بعينه الطريق — والفكرةُ صارت لك.'
+        : 'هذه فكرةٌ دقيقة، ونُعيدها عليك في خطواتٍ قريبة.'}</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" data-act="shopDone">تابِع ›</button>`;
+  }
+  const ord = st.twinOrder || tw.choices.map((_, k) => k);
+  st.twinOrder = ord;
+  return head + `
+  <div class="wsh-lbl">سؤالٌ بالبنية نفسها — والقاعدةُ بين يديك</div>
+  <div class="wsh-q">${esc(tw.stem)}</div>
+  ${st.twinHint ? `<div class="wsh-hint">ابدأ من هنا: ${md((tw.steps || [])[0] || '')}</div>` : ''}
+  ${ord.map((k, i) => `<button class="choice pop${isLTR(tw.choices[k].t) ? ' ltr' : ''}"
+    style="--d:${70 + i * 65}ms" data-act="twinPick" data-arg="${k}">${esc(tw.choices[k].t)}</button>`).join('')}`;
+};
+
+/* ══════ الخَتم: ما صار يملكه ══════ */
+SCREENS.seal = () => {
+  const id = S.lastSealed, L = id ? LESSONS.lessons[id] : null;
+  const o = ownCount();
+  const nx = corridorNext();
+  return `<div class="seal">
+    <div class="sl-m">${markSVG(34)}</div>
+    <div class="sl-e">خُتِمت</div>
+    <h1 class="sl-t">${esc(id && SKILLS[id] ? SKILLS[id].name : 'فكرة')}</h1>
+    ${L && L.card ? `<div class="sl-c"><div class="slcl">احفظ هذه</div>
+      <p>${esc(L.card)}</p></div>` : ''}
+    <div class="sl-o"><b>${ar(o.own)}</b><span>من ${ar(o.all)} فكرةً صارت لك</span></div>
+    <div class="spacer"></div>
+    ${nx ? `<button class="btn" data-act="corridorGo">الفكرةُ التالية: ${esc(SKILLS[nx].name)} ›</button>
+      <button class="btn ghost" data-act="stopHere">أوقِف هنا</button>`
+     : `<p class="soft" style="text-align:center">أتممتَ أفكارَ مسارك كلَّها. من هنا يُعيد أُفق عليك
+        ما تحتاج تثبيته.</p>
+      <button class="btn" data-go="home">تابِع ›</button>`}
+  </div>`;
+};
+
+/* ══════ الدَّرب: يُري الطالبَ موضعَه ولا يَمنحه بابًا ثانيًا ══════
+   ثلاثُ حالاتٍ فقط: مختومٌ ساكن، وموضعٌ حاليٌّ يتحرّك وحده، وباقٍ باهت.
+   لا يُلمَس ولا يُفتَح منه شيء — فعددُ ما يُلمَس على الشاشة يبقى اثنَين. */
+function corridorPath() {
+  const o = ownCount();
+  if (!o.all) return '';
+  const LEFT = Math.max(o.all - o.own - 1, 0);   /* ما بعد الموضع الحاليّ */
+  const CAP = 8;                                  /* أقصى ما يُرسَم من كلّ جهة */
+  const ownDots = Math.min(o.own, CAP);
+  const restDots = Math.min(LEFT, CAP);
+  return `<div class="drb" aria-hidden="true"><div class="drb-in">
+    ${'<span class="wpt own"></span>'.repeat(ownDots)}
+    <span class="wpt now"><b></b></span>
+    ${'<span class="wpt"></span>'.repeat(restDots)}
+  </div></div>
+  <p class="drb-lb"><b>${ar(o.own)}</b> من ${ar(o.all)} فكرةً صارت لك</p>`;
+}
+
+/* ══════ الرئيسةُ الموجَّهة: بطاقةٌ واحدةٌ وهدفٌ واحد ══════ */
+SCREENS.guide = () => {
+  const o = ownCount();
+  const st = stCur();
+  const id = st ? st.skill : corridorNext();
+  if (!id) return SCREENS.home();
+  const L = LESSONS.lessons[id];
+  const resuming = !!st && st.phase !== 'key';
+  const DONE = S.lastActive === S.day && (S.todayCount || 0) > 0;
+  return `<div class="gtop">
+    <span class="gbrand">${trackGlyph(S.track, 20)}</span>
+    </div>
+  ${corridorPath()}
+  <div class="spacer" style="flex:.85;min-height:0"></div>
+  <button class="gcard lit" data-act="corridorGo">
+    <div class="gc-e">${resuming ? 'تابِع من حيث وقفتَ' : 'فكرةُ اليوم'}</div>
+    <h1 class="gc-t">${esc(SKILLS[id].name)}</h1>
+    <p class="gc-w">${esc(resuming ? (ST_LABEL[st.phase] || '') + ' — ثلاثُ خطواتٍ وتُختَم'
+      : (L && L.what ? L.what : 'نبدأ بالمفتاح، ثمّ أمثلةٌ، ثمّ تُختَم الفكرة.'))}</p>
+    <div class="gc-f"><span class="gc-b">${resuming ? 'تابِع' : 'ابدأ'}</span><span class="gc-a">›</span></div>
+  </button>
+  <div class="spacer" style="flex:1;min-height:14px"></div>
+  ${DONE ? `<p class="gnote">أنهيتَ ${ar(S.todayCount)} ${S.todayCount === 1 ? 'جلسة' : 'جلسات'} اليوم.
+    والتكرارُ هو ما يُثبِّت.</p>` : ''}
+  <button class="ggear" data-act="gearTap" aria-label="الإعدادات">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+      stroke-width="1.7" stroke-linecap="round"><path d="M4 9h16"/><path d="M4 15h16"/></svg>
+  </button>`;
+};
+
+/* ══════ أفعالُ الممرّ ══════ */
+Object.assign(ACTIONS, {
+  corridorGo() {
+    haptic(14);
+    if (!stCur()) { if (!corridorStart()) { toast('لا فكرةَ جديدةً في مسارك الآن'); go('home'); return; } }
+    stRun();
+  },
+  stopHere() { haptic(9); S.st = null; S.session = null; saveState(); go('guide'); },
+  /* المفتاح: الزرُّ لا يعمل قبل مُهلةٍ — فالشريحةُ تُقرأ ولا تُنقَر */
+  keyDone() {
+    const st = stCur(); if (!st) { go('home'); return; }
+    haptic(14); stAdvance(); stRun();
+  },
+  shopNext() { const st = stCur(); if (!st) return; haptic(10);
+    st.shopStep = (st.shopStep || 0) + 1; saveState(); render(); },
+  shopTwin() {
+    const st = stCur(); if (!st) return; haptic(10);
+    const cur = shopCur(); if (!cur) return;
+    const t = twinFor(cur.q);
+    st.twin = t ? t.id : null; st.twinDone = false; st.twinWon = false;
+    st.twinOrder = null; st.twinHint = false;
+    st.shopStep = 3; saveState(); render();
+  },
+  twinPick(i) {
+    const st = stCur(); if (!st || !st.twin) return;
+    const tw = byQ(st.twin); if (!tw) return;
+    const ok = !!tw.choices[+i].c;
+    haptic(ok ? 18 : 8);
+    if (!ok && !st.twinHint) {
+      /* لا طريقَ مسدود: الخطوةُ الأولى تُعطى ويُعاد السؤالُ نفسُه */
+      st.twinHint = true; saveState(); render(); return;
+    }
+    st.twinDone = true; st.twinWon = ok;
+    /* يُسجَّل بوصفه تمرينًا على الفكرة لا حكمًا على الطالب */
+    try { record({ qid: tw.id, how: ok ? 'calc' : 'ask' }, ok, false); } catch (e) {}
+    saveState(); render();
+  },
+  shopDone() {
+    const st = stCur(); if (!st) return; haptic(12);
+    const e = shopErrs()[st.shopAt]; if (e) e.done = true;
+    st.shopAt = (st.shopAt || 0) + 1; st.shopStep = 0;
+    st.twin = null; st.twinDone = false; st.twinOrder = null; st.twinHint = false;
+    if (st.shopAt >= shopErrs().length) { stAdvance(); saveState(); stRun(); return; }
+    saveState(); render();
+  },
+  /* الأبُ وحده: من الإعدادات */
+  toggleGuided() { S.guided = S.guided === false; S.st = null; S.session = null;
+    haptic(14); saveState(); toast(S.guided === false ? 'الوضع الحرّ' : 'الممرّ الموجَّه'); render(); }
+});
+
+/* ══════ تركيبُ الممرّ على الشاشات القائمة ══════ */
+/* ١ · الرئيسة: في الممرّ بطاقةٌ واحدة */
+const _homeFree = SCREENS.home;
+SCREENS.home = () => {
+  if (guided() && S.name && S.track) {
+    if (stCur() || corridorNext()) return SCREENS.guide();
+  }
+  return _homeFree();
+};
+
+/* ٢ · المفتاح: بلا رجوعٍ في الممرّ، وزرُّ المضيّ يَسكُن ثمانيَ ثوانٍ */
+const _lessonFree = SCREENS.lesson;
+SCREENS.lesson = () => {
+  const html = _lessonFree();
+  if (!(guided() && stCur() && S.lessonFrom === 'corridor')) return html;
+  return corridorRail()
+    + html
+        .replace(/<button class="back"[^>]*>[^<]*<\/button>/g, '')
+        .replace(/<div class="k2res[\s\S]*?<\/div>\s*<\/div>/, '')
+        .replace(/data-act="drillSkill" data-arg="[^"]*"/,
+                 'data-act="keyDone" id="kGo" disabled')
+        .replace(/جرّبها على أسئلة ›/, 'فهمتُ — أبدأ ›');
+};
+
+/* ٣ · السؤال: لا تخطّي في الممرّ، وشريطُ الممرّ فوقه */
+const _qFree = SCREENS.question;
+SCREENS.question = () => {
+  const html = _qFree();
+  if (!(guided() && stCur() && S.session && S.session.station === 'guided')) return html;
+  const it = S.session.items[S.session.idx] || {};
+  const shown = it.shown
+    ? (() => { const q = byQ(it.qid);
+        return `<div class="wsh-card d" style="margin:10px 0 2px">
+          <div class="wcl">مثالٌ محلول — تابِع الخطوات</div>
+          <ol class="wsl">${(q.steps || []).map(x => `<li>${md(x)}</li>`).join('')}</ol>
+        </div>`; })()
+    : '';
+  const lbl = it.seal ? `<div class="wsh-lbl">سؤالُ الامتياز — من الدرجة الخامسة</div>`
+            : it.gate ? `<div class="wsh-lbl">بلا شرحٍ ولا تلميح</div>` : '';
+  return corridorRail() + lbl + shown
+    + html.replace(/<div style="display:flex;justify-content:flex-end;margin-top:6px">[\s\S]*?<\/div>/,
+        '<div class="qnote">كلُّ فكرةٍ تُفسَّر بعد قليل — لا تخطّي</div>');
+};
+
+/* ٤ · الجواب: في الممرّ يُسأل عن الطريقة دائمًا، والبوّابةُ لا تُشرَح أثناءها */
+const _answerFree = ACTIONS.answer;
+ACTIONS.answer = function (i) {
+  const s = S.session;
+  if (!(guided() && stCur() && s && s.station === 'guided')) return _answerFree.call(ACTIONS, i);
+  const item = s.items[s.idx], q = byQ(item.qid);
+  const ok = !!q.choices[+i].c;
+  const secs = (Date.now() - (s.qStart || Date.now())) / 1000;
+  item.choiceIdx = +i; item.wrong = !ok; item.secs = Math.round(secs);
+  if (!ok) { const tag = q.choices[+i].tag; if (tag) S.tagCount[tag] = (S.tagCount[tag] || 0) + 1; }
+  if (ok) { s.right++; s.rStreak++; s.wStreak = 0; } else { s.wrong++; s.wStreak++; s.rStreak = 0; }
+  s.time = (s.time || 0) + Math.min(secs, 180); s.timed = (s.timed || 0) + 1;
+  /* سؤالُ الطريقة في كلّ مرّة: هو ما يحوّل التطبيق من عدِّ أجوبةٍ إلى تتبُّع فهم */
+  S.pendingRecord = { item, ok }; go('why');
+};
+
+/* ٥ · الطريقة: الإصابةُ في ثلاث ثوانٍ على سؤالٍ صعبٍ تخمينٌ وإن قال غير ذلك */
+const _whyFree = ACTIONS.explainWhy;
+ACTIONS.explainWhy = function (kind) {
+  const s = S.session, pr = S.pendingRecord;
+  if (!(guided() && stCur() && s && s.station === 'guided' && pr)) return _whyFree.call(ACTIONS, kind);
+  const item = pr.item, q = byQ(item.qid);
+  let how = kind;
+  if (pr.ok && (item.secs || 99) < 4 && (q.d || 3) >= 4 && kind !== 'guess') how = 'guess';
+  item.how = how;
+  record(item, pr.ok && how !== 'guess', false);
+  S.pendingRecord = null;
+  /* البوّابةُ لا تُشرَح أثناءها — الورشةُ تتولّاها بعدها */
+  if (item.gate) { ACTIONS.next(); return; }
+  go('explain');
+};
+
+/* ٦ · التالي: نهايةُ الطور لا نهايةُ جلسة — فلا ملخّصَ ولا نسبة */
+const _nextFree = ACTIONS.next;
+ACTIONS.next = function () {
+  const s = S.session;
+  if (!(guided() && stCur() && s && s.station === 'guided')) return _nextFree.call(ACTIONS);
+  S.expTab = 0; S.tip = null;
+  s.idx++;
+  if (s.idx >= s.items.length) {
+    /* تُحتسَب جلسةً لليوم مرّةً واحدةً في المحطّة */
+    const st = stCur();
+    if (st && !st.counted && s.phase === 'free') {
+      st.counted = true;
+      S.todayCount = (S.todayCount || 0) + 1;
+      S.lastActive = S.day; S.sessionCount = (S.sessionCount || 0) + 1;
+    }
+    saveState(); stPhaseEnd(); return;
+  }
+  go('question');
+};
+
+/* ٧ · شاشةُ الشرح في الممرّ: الطريقُ يُسمّى على الصواب أيضًا */
+const _expFree = SCREENS.explain;
+SCREENS.explain = () => {
+  const s = S.session;
+  if (!(guided() && stCur() && s && s.station === 'guided')) return _expFree();
+  const item = s.items[s.idx], q = byQ(item.qid);
+  if (!item.wrong) {
+    const L = LESSONS.lessons[q.skill];
+    const way = (L && L.card) || (q.steps || [])[0] || '';
+    return corridorRail() + `
+    <div class="wsh-win">
+      <div class="wwm">✓</div>
+      <div class="wwt">${item.how === 'guess' ? 'وافقتَ الصواب.' : 'هذا بعينه الطريق.'}</div>
+      <p class="www">${esc(item.how === 'guess'
+        ? 'والطريقُ الذي يُثبِّتها: ' + way
+        : way)}</p>
+    </div>
+    ${(q.steps || []).length ? `<div class="wsh-card d">
+      <div class="wcl">كما تُحَلّ</div>
+      <ol class="wsl">${q.steps.map(x => `<li>${esc(x)}</li>`).join('')}</ol></div>` : ''}
+    <div class="spacer"></div>
+    <button class="btn" data-act="next">تابِع ›</button>`;
+  }
+  return corridorRail() + _expFree();
+};
+
+/* ٨ · مُهلةُ المفتاح: الزرُّ يَستيقظ بعد ثمانيَ ثوانٍ */
+const _renderFree = render;
+render = function () {
+  _renderFree();
+  try {
+    if (S.screen === 'lesson' && guided() && stCur()) {
+      const b = document.getElementById('kGo');
+      if (b && b.disabled) {
+        let left = 8;
+        const txt = b.textContent;
+        b.textContent = 'اقرأ المفتاح…';
+        const t = setInterval(() => {
+          left--;
+          if (left <= 0) { clearInterval(t); b.disabled = false; b.textContent = txt; }
+          else if (document.getElementById('kGo') !== b) clearInterval(t);
+        }, 1000);
+      }
+    }
+  } catch (e) {}
+};
 
 /* ---------- boot ---------- */
 if (!loadState()) S = freshState();
