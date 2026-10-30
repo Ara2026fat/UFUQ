@@ -75,8 +75,14 @@ function mapKey(s) {
     .replace(/\s+/g, ' ').trim();
 }
 function classify(q) {
-  const s = ((q.steps || [])[0] || '').trim();
-  for (const h of MAP_HEAD) {
+  /* تُسوّى الشَّكلةُ قبلَ مُطابَقةِ الترويسةِ لا بعدَها: كانت المُطابَقةُ
+     على النصِّ الخامِ، فسؤالٌ ترويستُه «نوعُ الإكمال:» بضمّةٍ على النونِ
+     لا تُطابِق «نوع الإكمال» فيَسقُط من الخريطةِ وهو مُروَّسٌ مكتوبٌ.
+     وُجِد سبعةٌ وعشرونَ سؤالًا كذلك — ترويستُها مكتوبةٌ ولا تُقرَأ.
+     وتسويةُ الهمزةِ لازمةٌ معها، وإلّا لم تُطابِق «أساس التجميع». */
+  const s = mapKey(((q.steps || [])[0] || '').trim());
+  for (const h0 of MAP_HEAD) {
+    const h = mapKey(h0);
     if (s.indexOf(h) !== 0) continue;
     /* «العلاقة في «أ : ب»: فلان» — يُطرَح الزوجُ قبل القولون الأخير */
     const rest = s.slice(h.length).replace(/^\s*في\s*«[^»]*»/, '');
@@ -251,10 +257,10 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '15.25.1';
-const APP_DATE = 'الأربعاء ١٤ أكتوبر ٢٠٢٦';
-const APP_STAMP = 'الأربعاء ١٤ أكتوبر ٢٠٢٦ · ١٠:١٥ ص';
-const APP_BUILD = 199;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_VERSION = '15.27.0';
+const APP_DATE = 'الجمعة ٣٠ أكتوبر ٢٠٢٦';
+const APP_STAMP = 'الجمعة ٣٠ أكتوبر ٢٠٢٦ · ٣:٢٣ م';
+const APP_BUILD = 204;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -304,6 +310,13 @@ function inCorridor() {
   } catch (e) { return false; }
 }
 let paceTimer = null;
+/* المسارُ الافتراضيُّ ليس «القدرات» بنصِّه بل أوّلُ مسارٍ مفتوح. وكان
+   freshState يَكتُب 'qudurat' و's1' كلمةً كلمة، فلمّا بُنِي التحصيليُّ
+   وحدَه — ومراحلُه th1 وth2 وth3 — أشارت activeStage إلى مرحلةٍ لا
+   وجودَ لها، فرجَعت chooseActive بلا شيءٍ وانكسَرت شاشةُ البيتِ نفسُها:
+   أوّلُ ما يَراه الطالبُ لا يُرسَم. */
+const firstTrack = () =>
+  (typeof OPEN_TRACKS !== 'undefined' && OPEN_TRACKS[0]) || 'qudurat';
 function freshState() {
   const skills = {};
   SKILL_LIST.forEach(s => skills[s.id] = {
@@ -316,7 +329,7 @@ function freshState() {
     sessionCount: 0, streak: 0, lastActive: null, session: null,
     targetDiff: 2, size: 30, reminder: '٨:٠٠ م', examDays: 90,
     paid: true, diag: null, lastSummary: null, corrected: [],
-    tagCount: {}, tipsSeen: [], tip: null, track: 'qudurat', shareReport: true, tracks: {},
+    tagCount: {}, tipsSeen: [], tip: null, track: firstTrack(), shareReport: true, tracks: {},
     theme: 'night', sheet: null, pace: false, paceHist: [],
     introIdx: 0, seenLessons: [], lessonFor: null, history: [], logOpen: null,
     todayCount: 0, anchor: 'maghrib', whyCount: 0, passOpen: true,
@@ -331,7 +344,8 @@ function freshState() {
     focus: 'all',
     forceSkill: null,
     lastExamDay: null, examLog: [],
-    suggestion: null, activeStage: 's1'
+    suggestion: null,
+    activeStage: (trackStages(firstTrack())[0] || {}).id || 's1'
   };
 }
 
@@ -340,6 +354,13 @@ const TRACK_FIELDS = ['day','streak','lastActive','sessionCount','asked','review
   'notes','noteSeen','qMiss','duel','preset','sched','roundsDone','lastExamDay','examLog','vizMode','lastBackup','lastBackupDay','focus','phaseSeen','course','goal','courses',
   'seenLessons','activeStage','targetDiff','size','sizeManual','audio','examDays','corrected','tagCount','todayCount','lastWeak',
   'diag','lastSummary','session','anchor','reminder','logOpen','suggestion','introIdx','whyCount',
+  /* حالةُ الممرِّ وما يَتبَعها: كانت مُشترَكةً بين المسارات، فكان الانتقالُ
+     إلى مسارٍ يُبقي ممرَّ المسارِ السابقِ عاملًا بفكرتِه. */
+  'st','lessonFor','lessonFrom','exPick','exPickFor',
+  /* وهذانِ كانا يَبقيانِ عبرَ المسارات: forceSkill يُجبِر فكرةً بعينِها
+     وstationKind يُجبِر شكلَ الجلسة. والأوّلُ هو منفَذُ الثلاثينَ سؤالَ
+     جبرٍ التي ظَهَرت في ستيبَ من تطبيقٍ نظيف. */
+  'forceSkill','stationKind','lessonIsStation',
   'cardState','cardSess','lastCards','paceHist'];
 function blankTrack(t) {
   const st0 = trackStages(t)[0];
@@ -349,7 +370,9 @@ function blankTrack(t) {
     examDays: t === 'qudurat' ? 90 : 60,
     corrected: [], tagCount: {}, todayCount: 0, diag: null, lastSummary: null, session: null,
     anchor: 'maghrib', reminder: '٨:٠٠ م', logOpen: null, suggestion: null, introIdx: 0,
-    whyCount: 0, cardState: {}, cardSess: null, lastCards: null, paceHist: []
+    whyCount: 0, cardState: {}, cardSess: null, lastCards: null, paceHist: [],
+    st: null, lessonFor: null, lessonFrom: null, exPick: null, exPickFor: null,
+    forceSkill: null, stationKind: null, lessonIsStation: false, qMiss: {}
   };
 }
 function saveTrack() {
@@ -493,6 +516,12 @@ function cleanCount(skillId) {
    وإذا لم يَبقَ جديدٌ في درجته خُلِط له القديمُ في درجتِه بالجديدِ في
    الدرجةِ التي تَليها، فيَصعَد درجةً لا خمسًا. */
 function pool(skillId, diff, used, noImg) {
+  /* حارسُ المسار في المَعبَر. في الملفِّ سبعةَ عشرَ موضعًا يُنادي pool،
+     وثلاثةٌ منها كانت تُمرِّر فكرةً من مسارٍ آخَر: S.forceSkill خامًا،
+     وS.suggestion.skill، وما يَتبَعهما. ورقعُ المُنادينَ واحدًا واحدًا
+     يُعيد العَطَبَ مع أوّلِ مُنادٍ جديدٍ يَنسى الفحص، فالفحصُ هنا. */
+  const _sk = SKILLS[skillId];
+  if (_sk && S.track && _sk.track !== S.track) return null;
   const all = (qBySkill[skillId] || []).filter(q =>
     !used.has(q.id) && !(noImg && q.img) && isClean(q));
   if (!all.length) return null;
@@ -618,7 +647,13 @@ function chooseActive() {
     const st2 = trackStages(S.track)[1];
     const next = (st2 ? stageSkills(st2.id) : []).filter(s =>
       !S.skills[s.id].paused && S.skills[s.id].status !== 'mastered' && focusOK(s.id));
-    return next[0] || focusSkills()[0] || stageSkills(S.activeStage)[0] || mySkills()[0];
+    /* وآخِرُ المَلاذِ: أيُّ فكرةٍ في المسارِ الجاري فيها أسئلة. وكانت
+       السلسلةُ تَنتهي إلى undefined إن خَلَت الأربعةُ كلُّها — وتَخلو
+       متى كان activeStage أو focus من عالَمِ مسارٍ آخَر — فتَنكسِر
+       شاشةُ البيت. ولا يُرجَع لا شيءٌ إلّا إن كان المسارُ خاليًا حقًّا. */
+    return next[0] || focusSkills()[0] || stageSkills(S.activeStage)[0]
+      || mySkills()[0] || trackSkills(S.track).find(x => hasContent(x.id))
+      || trackSkills(S.track)[0] || null;
   }
   const rank = { building: 0, near: 1, new: 2 };
   cands.sort((a, b) => {
@@ -649,12 +684,13 @@ function stationSession(kind) {
     items.push({ qid: q.id, role, done: false }); } };
   const fill = (id, n, d) => { for (let i = 0; i < n; i++) add(pool(id, d, used), 'active'); };
   const dueNow = (ids) => S.review
-    .filter(r => { const q = byQ(r.qid); return r.due <= S.day && q && (!ids || ids.includes(q.skill)); })
+    .filter(r => { const q = byQ(r.qid); return r.due <= S.day && q && okQid(r.qid)
+      && (!ids || ids.includes(q.skill)); })
     .sort((a, b) => a.due - b.due);
   const myWrong = (ids) => {
     const seen = new Set();
     return (c && c.log || []).reduce((a, e) => a.concat(e.wrong || []), [])
-      .filter(id => { const q = byQ(id); if (!q) return false;
+      .filter(id => { const q = byQ(id); if (!q || !okQid(id)) return false;
         if (ids && !ids.includes(q.skill)) return false;
         if (seen.has(id)) return false; seen.add(id); return true; });
   };
@@ -778,7 +814,8 @@ function buildSession() {
     const q = pool(s.id, 1, used); if (q) { used.add(q.id); warm.push({ qid: q.id, role: 'warmup', done: false }); }
   }
   const due = S.review
-    .filter(r => { const q = byQ(r.qid); return r.due <= S.day && q && inPart(q.skill); })
+    .filter(r => { const q = byQ(r.qid);
+      return r.due <= S.day && q && okQid(r.qid) && inPart(q.skill); })
     .sort((a, b) => a.due - b.due).slice(0, nReview);
   due.forEach(r => { if (!used.has(r.qid)) { used.add(r.qid); rev.push({ qid: r.qid, role: 'review', done: false }); } });
 
@@ -854,13 +891,21 @@ function buildSession() {
   })();
 
   /* السؤال الذي هزمك: يعود وحده بعد أسبوعين، في آخر الجلسة */
-  if (S.duel && S.duel.due <= S.day && byQ(S.duel.qid) && !seq.some(x => x.qid === S.duel.qid)) {
+  if (S.duel && S.duel.due <= S.day && okQid(S.duel.qid) && !seq.some(x => x.qid === S.duel.qid)) {
     seq.push({ qid: S.duel.qid, role: 'duel', done: false });
   }
   return { items: seq, idx: 0, right: 0, wrong: 0, rStreak: 0, wStreak: 0,
     skill: active.id, part: PART, returning: returning ? returning.id : null, resume: false, size: seq.length };
 }
 const byQ = id => Q.find(q => q.id === id);
+/* والمراجعةُ والمبارزةُ والورشةُ تَحقِن أسئلةً بمُعرِّفاتِها، فلا تَمُرّ
+   بحارسِ pool. وحارسُ المراجعةِ الوحيدُ (inPart) لا يَعمَل إلّا في
+   القدرات — فستيبُ والتحصيليُّ كانا بلا حارسٍ أصلًا. */
+const okQid = id => {
+  const q = byQ(id); if (!q) return false;
+  const sk = SKILLS[q.skill];
+  return !!sk && (!S.track || sk.track === S.track);
+};
 
 /* ══════ وضع الأقسام: محاكاة بنية الاختبار الحقيقية ══════
    القدرات الورقي: ٥ أقسام × ٢٤ سؤالًا × ٢٥ دقيقة، لفظي وكمّي متناوبة، ١٢٥ دقيقة.
@@ -1130,7 +1175,7 @@ function adapt(sess) {
     const q = pool(s.id, 1, used);
     if (q) { sess.items[sess.idx] = { qid: q.id, role: 'warmup', done: false }; sess.wStreak = 0; }
   } else if (sess.rStreak >= 4 && nxt.role === 'active') {
-    const q = pool(sess.skill, Math.min(5, byQ(nxt.qid).d + 1), used);
+    const q = pool(sess.skill, Math.min(5, ((byQ(nxt.qid) || {}).d || 3) + 1), used);
     if (q) { sess.items[sess.idx] = { qid: q.id, role: 'active', done: false }; sess.rStreak = 0; }
   }
 }
@@ -1165,7 +1210,8 @@ function record(item, correct, skipped) {
 }
 
 function finishSession(sess) {
-  const touched = [...new Set(sess.items.map(i => byQ(i.qid).skill))];
+  const touched = [...new Set(sess.items.map(i => (byQ(i.qid) || {}).skill)
+    .filter(Boolean))];
   const before = {}; touched.forEach(id => before[id] = S.skills[id].status);
   touched.forEach(evaluate);
   const changed = touched.filter(id => before[id] !== S.skills[id].status && S.skills[id].status !== 'building');
@@ -1654,10 +1700,18 @@ function nextStation() {
 
 /* ---------- suggestion ---------- */
 function makeSuggestion__inner() {
-  const active = chooseActive();
+  /* ولا تُقرَأ مهارةٌ لم تُوجَد: شاشةُ البيتِ أوّلُ ما يُرى، وانكسارُها
+     شاشةٌ بيضاءُ لا رسالةَ فيها. وقرأتُ أوّلَ الأمرِ أنّ إرجاعَ لا شيءٍ
+     كافٍ وأنّ الشاشةَ تَحتمِله — ثمّ قرأتُ الشاشةَ فوجَدتُها تَقرأ g.gain
+     وg.skill وg.size بلا حَرَس. فالإرجاعُ هنا لا يَكون فارغًا أبدًا ما
+     دام في المسارِ فكرةٌ واحدة. */
+  const active = chooseActive()
+    || trackSkills(S.track).find(x => hasContent(x.id)) || trackSkills(S.track)[0];
+  if (!active || !S.skills[active.id]) return null;
   const st = S.skills[active.id];
   let why;
-  if (S.lastSummary && S.lastSummary.wrongQ.length && byQ(S.lastSummary.wrongQ[0]).skill === active.id)
+  const _lsq = S.lastSummary && (S.lastSummary.wrongQ || [])[0];
+  if (_lsq && (byQ(_lsq) || {}).skill === active.id)
     why = 'أخطاؤك أمس تركّزت هنا';
   else if (st.status === 'building') why = 'واصل ما بدأتَه — لم تكتمل بعد';
   else if (st.status === 'near') why = 'جلسة واحدة أو اثنتان وتكتمل';
@@ -4597,6 +4651,14 @@ save: () => `<div class="center">
 home: () => {
   if (!S.suggestion) S.suggestion = makeSuggestion();
   const g = S.suggestion;
+  /* وإن خلا المسارُ من فكرةٍ أصلًا — وهو ما لا يَكون في بناءٍ صحيحٍ —
+     فرسالةٌ تُقرَأ خيرٌ من شاشةٍ بيضاء. */
+  if (!g) return `<div class="center"><div class="glass">
+    <div class="eyebrow">تنبيه</div>
+    <h1>لا توجد أفكارٌ في هذا المسار</h1>
+    <p class="soft" style="margin-top:10px">أعِدْ تحميلَ الصفحة. فإن تكرَّر الأمر
+      فالنسخةُ ناقصةٌ ويَلزَم تنزيلُها من جديد.</p>
+  </div></div>`;
   /* جدار الاشتراك مطفأ حتى تُقرّر التسعير — FREE_LIMIT = 0 يعني بلا حدّ.
      لتفعيله لاحقًا: اجعله ٥ أو ما تشاء. */
   if (FREE_LIMIT > 0 && !S.paid && S.sessionCount >= FREE_LIMIT) return SCREENS.paywall();
@@ -5803,7 +5865,7 @@ function buildSessionFor(skillId) {
     (() => {
       const groups = [], seen = new Map();
       items.forEach(x => {
-        const pz = byQ(x.qid).passage;
+        const pz = (byQ(x.qid) || {}).passage;
         if (!pz) { groups.push([x]); return; }
         if (seen.has(pz)) seen.get(pz).push(x);
         else { const g = [x]; seen.set(pz, g); groups.push(g); }
@@ -6440,7 +6502,17 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (window.__reloading) return; window.__reloading = true; location.reload();
   });
-  window.addEventListener('load', () => {
+  /* ولا يُنتظَر حَدَثُ load: index.html يُنزِّل bank.bin وkeys.bin أوّلًا
+     ثمّ يُلحِق app.js بالصفحة — فحينَ يَجري هذا السطرُ يَكون load قد مضى
+     (قِيس: load عند ٢٦٧ مِل، وهذا السطرُ عند ٣٥٤ وreadyState «complete»).
+     فالمستمِعُ لا يَعمَل أبدًا، وعاملُ الخدمةِ لم يُسجَّلْ قطُّ منذ كُتِب:
+     لا عملَ بلا إنترنت، ولا شريطَ تحديث، و«ثبّت أُفق» تُعطي تطبيقًا
+     يَحتاج الشبكةَ في كلِّ مرّة. والعِلّةُ في المرفوعِ نفسِه لا في الفصل. */
+  /* وINSTALL_DIAG لم تُعرَّفْ في أيِّ ملفّ: كانت تُسنَد ولا تُعلَن. ولم
+     يَظهَرْ ذلك قطُّ لأنّ المستمِعَ الميّتَ لم يَبلُغْها. فلمّا أُحيِيَ
+     بانَ الاستثناءُ في الحال — عِلّةٌ ثانيةٌ كانت تَختبِئ خلفَ الأولى. */
+  const INSTALL_DIAG = window.INSTALL_DIAG = (window.INSTALL_DIAG || {});
+  const regSW = () => {
     navigator.serviceWorker.register('./sw.js').then(reg => {
       INSTALL_DIAG.sw = true;
       if (reg.waiting) { SW_WAITING = reg.waiting; showUpdateBar(); }
@@ -6456,7 +6528,9 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
         if (!document.hidden) { try { reg.update(); } catch (e) {} }
       });
     }).catch(() => { INSTALL_DIAG.sw = false; });
-  });
+  };
+  if (document.readyState === 'complete') regSW();
+  else window.addEventListener('load', regSW);
 }
 
 
@@ -6474,32 +6548,102 @@ const ERRFAM = [
   { k: 'calc', t: 'حسابٌ غيرُ مضبوط',
     w: 'الطريقُ كان صحيحًا والعددُ انحرف. خطؤك في التنفيذ لا في الفهم.',
     tags: ['miscalculated','added','multiplied','half','total','calc','div','mult','sub',
-           'nodiv','nohalf','nosq','nosqrt','shift','double','quarter','sum','count','add'] },
+           'nodiv','nohalf','nosq','nosqrt','shift','double','quarter','sum','count','add',
+           'power','off',
+           /* وهذه قُرِئت تعليلاتُها قبل إلحاقِها: «نسيتَ أخذ الجذر» و«التربيعُ
+              لازم» و«نسيتَ مشتقّة الداخل» و«نسيتَ الحدّ الأوسط» — حدٌّ من
+              القانونِ لم يَدخُلِ الحسابَ. وهي أخواتُ nosq وnohalf وnosqrt
+              القائمةِ هنا، فأُلحِقت بها لا بـpart: ما اختارَه ليس جوابًا
+              صحيحًا ناقصًا، بل تنفيذًا سقَطت منه خطوة — كما قُضِي في «half»
+              من قبلُ: «لا يوجدُ نصفٌ في القانون» زَلّةُ تنفيذٍ لا غيرُها. */
+           'no_square','no_half','not_rooted','squared','middle','chain','coef'] },
   { k: 'dir', t: 'العلاقةُ صحيحةٌ والاتّجاهُ مقلوب',
     w: 'رأيتَ العلاقةَ كما هي، وقلبتَ ترتيبَها. والترتيبُ جزءٌ من العلاقة.',
-    tags: ['order','reverse','inverted','flip','swap','reversed','inverse'] },
+    tags: ['order','reverse','inverted','flip','swap','reversed','inverse',
+           'step','bigger','before','after','precedes'] },
   { k: 'opp', t: 'اخترتَ النقيض',
     w: 'الفكرةُ عندك، والإشارةُ انقلبت. راجِع كلمةَ النفي قبل الخيارات.',
-    tags: ['opposite','negate','deny','sign'] },
+    tags: ['opposite','negate','deny','sign','sign_error'] },
   { k: 'part', t: 'جوابٌ صحيحٌ ناقص',
     w: 'ما اخترتَه صحيحٌ في جزئه، والسؤالُ يطلب تمامَه. تقرأ السؤال ولا تُكمِله.',
-    tags: ['partial','part','one','half','incomplete'] },
+    tags: ['partial','part','one','incomplete',
+           'ignored','forgot','dropped','detail','narrow'] },
   { k: 'invent', t: 'أضفتَ ما ليس في النصّ',
     w: 'ما اخترتَه معقولٌ في نفسه، ولا دليلَ عليه في النصّ. الجوابُ ما يُلزِمه النصّ لا ما يحتمله.',
-    tags: ['invent','add','contradict','irrelevant','unrel','over','overreach','claim','assume','blame'] },
+    tags: ['invent','contradict','irrelevant','unrel','over','overreach','claim','assume','blame',
+           'notsaid','unnecessary_uncertainty','notmentioned','broad',
+           /* و«extreme» و«invalid» تعليلاتُهما دَعوى لا يَحمِلها المعطى:
+              «لا ينعدم أبدًا» و«لا يلزم» و«الاحتمالُ لا يكون سالبًا». */
+           'extreme','invalid'] },
   { k: 'unit', t: 'وحداتٌ لم تُحوَّل',
     w: 'حسابُك صحيحٌ ووحدتُك ناقصة. حوِّل أوّلًا ثمّ احسب — خطوةٌ واحدةٌ تنجّي الحلَّ كلَّه.',
     tags: ['units','unit'] },
   { k: 'near', t: 'خلطُ القاعدتَين المتجاورتَين',
     w: 'أخذتَ القاعدةَ المجاورةَ للمطلوبة. وهذا يُصلَح بتسميةِ المطلوب قبل الاختيار.',
     tags: ['meaning','form','logic','group','mismatch','analogy_mismatch','comparison_mismatch',
-           'odd_one_mismatch','context_error_mismatch','clause','word','tense','def'] },
+           'odd_one_mismatch','context_error_mismatch','clause','word','tense','def',
+           /* وهذه قُرِئت تعليلاتُها قبل إلحاقِها. وكان «cause» و«effect»
+              سيُلحَقانِ بقلبِ الاتّجاه ظنًّا، فبانَ أنّهما تصحيحُ واقعةٍ
+              لا قلبُ علاقةٍ: «سببُها فيروسٌ». */
+           'comparison_error','base','type','function','equal','zero','repeat',
+           'punnett','other','bias','criterion','rule','mark','pair',
+           'organelle','term','constant','belongs','structure','size','level',
+           'sound','tone','pattern','cause','effect','incorrect',
+           /* ودُفعةُ التحصيليِّ: قُرِئت تعليلاتُها كلُّها قبل الإلحاق، وهي
+              صورةٌ واحدةٌ — قاعدةٌ أو مصطلحٌ مجاورٌ للمطلوب:
+              «هذا مع الترتيب» (perm · comb · factorial)، و«هذا التوازي»
+              و«هذا التوالي» (parallel · series)، و«تلك نتيجة Rr × Rr»
+              (cross)، و«هذا المتساوي» (mitosis · meiosis)، و«وظيفةُ
+              الجولجي» و«ينظّم سكّر الدم» (organ · gland · hormone · mito)،
+              و«أوسع من الفصيلة» (rank · phylum · kingdom · family)،
+              و«الأيونيةُ بين فلزٍّ ولافلزّ» (bond · acid · state)،
+              و«شارل يَربِط الحجمَ بالحرارة» (law)، و«الأدينين مع
+              الثايمين» (pairing)، و«التداخلُ تراكبُ موجتَين»
+              (phenomenon · position · phase · process). */
+           'perm','permutation','comb','combination','factorial','cross','relation',
+           'classify','shape','mitosis','meiosis','mito','bond','law','rank','position',
+           'property','factor','acid','family','organ','hormone','phase','process',
+           'organism','pairing','phylum','gland','kingdom','phenomenon','parallel',
+           'series','valence'] },
   { k: 'read', t: 'قراءةٌ لم تُكمَل',
     w: 'الخيارُ الذي أخذتَه يَظهُر صحيحًا إن قُرِئ أوّلُ السؤال وحده.',
     tags: ['reading_distractor','wrong','trap','surface','literal','first','start'] },
   { k: 'lin', t: 'حسبتَها خطّيّةً وهي ليست كذلك',
     w: 'العلاقةُ أُسّيّةٌ أو تربيعيّة، فالمضاعفةُ لا تُضاعِف النتيجة.',
-    tags: ['linear','square','cube','direct'] }
+    tags: ['linear','square','cube','direct'] },
+  /* وهذه عادةٌ قِيسَت ولم تُخترَع: ستّةُ آلافِ مُشتِّتٍ تعليلُه «هذه المساحةُ
+     لا المحيط» أو «هذا الزمن» أو «هذه المشتقّةُ لا الدالّةُ الأصليّة» —
+     كميّةٌ في السؤالِ فعلًا وليست المطلوبة. وكانت كلُّها تَسقُط من
+     التشخيصِ صامتةً لأنّ وُسومَها تُسمّي الكميّةَ لا نوعَ الخطأ. */
+  { k: 'qty', t: 'أجَبتَ بكميّةٍ أُخرى من السؤال',
+    w: 'العددُ الذي اخترتَه موجودٌ في السؤالِ فعلًا، وليس هو المطلوب.'
+       + ' سَمِّ المطلوبَ بكلمةٍ قبل أن تَحسُب — تُنجِّيك هذه وحدَها.',
+    tags: ['mass','object','area','moles','speed','average','value','time',
+           'diff','odds','ratio','specific','place','cost','perimeter',
+           'median','weight','angle','accel','percent','root','volume',
+           'density','radius','height','width','length','pressure','water',
+           'copied','molarity','charge','freq','period','last','copy',
+           'second','derivative','read',
+           /* ودُفعةُ التحصيليِّ: كلُّ تعليلٍ منها «هذا الزخم» أو «هذه
+              المقاومة» أو «هذا الشغلُ لا القدرة» أو «هذا المولُ الواحد» —
+              مقدارٌ في السؤالِ فعلًا وليس المطلوب، وهو ما سُمِّيَت به هذه
+              العائلة. ولم يُلحَق إلّا ما شَهِد له تعليلُه: فـ«capacity»
+              و«delta» و«gravity» أكثرُ تعليلاتِها «أهملتَ…» فتلك زَلّةُ
+              تنفيذٍ، فأُفرِدت بوَسمِ skipped_ في البنكِ ورُدَّت إلى calc،
+              وبَقِيَ هنا ما تعليلُه «هذه المسافة» و«هذا فرقُ الحرارة». */
+           'momentum','impulse','resistance','voltage','volt','current','energy',
+           'kinetic','potential','ke','force','gravity','work','output','focal',
+           'distance','rate','pct','sd','variance','atomic','protons','proton','poh',
+           'vacuum','circum','circ','gcd','one_mole','mol','reactants','somatic',
+           'neutral','final','substituted','delta','turns'] },
+  { k: 'tru', t: 'صحيحٌ في نفسِه وليس جوابَ السؤال',
+    w: 'ما اخترتَه صحيحٌ لا يُنكَر، والسؤالُ يَطلُب غيرَه.'
+       + ' أعِدْ قراءةَ المطلوبِ لا الخيارات.',
+    tags: ['true','none','valid','factual','correct_but',
+           /* و«أقلُّ ورودًا» و«قليلُ الورود» في بابِ الشائعِ من الأسئلة،
+              و«كلتاهما لها جدار» حين يُسأل عن الفارق: ما اختارَه حقٌّ في
+              نفسِه، والسؤالُ يَطلُب أكثرَها ورودًا أو ما يُفرِّق بينهما. */
+           'less','rare','shared'] }
 ];
 const ERRTAG = (() => { const m = {}; ERRFAM.forEach(f => f.tags.forEach(t => m[t] = f)); return m; })();
 /* الوَسمُ الذي لا عائلةَ له يَسقُط من التشخيصِ كلِّه: shopDiagnosis يَتخطّاه،
@@ -6517,14 +6661,28 @@ const ERRTAG = (() => { const m = {}; ERRFAM.forEach(f => f.tags.forEach(t => m[
 const ERRFUZZ = [
   ['calc',  ['miscalc','calc','arith','sum_','_sum','added','subtract','divided','divide',
              'multipl','product','doubl','halv','half_step','off_by','rounded',
+             // و«skipped» وَسمُ ما أُفرِد في البنكِ لأنّ تعليلَه «أهملتَ
+             // الجاذبية» أو «أغفَلتَ الحرارةَ النوعيّةَ من الضرب»: حدٌّ من
+             // القانونِ لم يَدخُلِ الحسابَ. ولا يُلتبَس بـ«skip» وحدَه،
+             // فتعليلُه «حدٌّ زائد» وهو نقيضُه.
+             'skipped',
              'coefficient']],
   ['dir',   ['revers','invert','inverse','swap','flip','direction','wrong_order','order_',
-             'dir']],
-  ['opp',   ['opposite','contra','negat','antonym','complement']],
-  ['part',  ['partial','incomplete','only_','_only','raw','unchanged']],
+             'dir','bigger','smaller','before_','after_']],
+  ['opp',   ['opposite','contra','negat','antonym','complement','sign']],
+  ['part',  ['partial','incomplete','only_','_only','raw','unchanged',
+             'ignor','forgot','dropp','omit','missed','left_out','detail',
+             'narrow','one_of','only_one']],
   ['invent',['invent','assume','unsupported','overreach','leap','not_stated','fabricat',
-             'claim']],
-  ['unit',  ['unit','conversion','convert']],
+             'claim','broad','_all','all_','everyth','always']],
+  ['unit',  ['unit','conversion','convert','decimal','rounded_to','place_value']],
+  /* والعائلتانِ الجديدتانِ تُسبِقانِ «near»، لأنّ مفاتيحَ «near» واسعةٌ
+     (confus · different · same) فتَبتلِع أسماءَ الكميّاتِ لو تَقدَّمت. */
+  ['qty',   ['mass','area','volum','perimet','median','weight','angle','accel',
+             'percent','speed','densit','radius','height','width','length',
+             'pressur','temperat','moles','molar','odds','averag','copied',
+             'copy_','water','wavelen']],
+  ['tru',   ['_true','true_','factual','valid_']],
   ['near',  ['mismatch','near_miss','confus','collocation','synonym','adjacent',
              'different','same','compare','fit','agreement','max','range','mean',
              // وأسماءُ العلاقاتِ في التناظُر — material_of_tool وplace_of_use —
@@ -6532,7 +6690,10 @@ const ERRFUZZ = [
              // صِيَغُ الفعلِ: future_form وpast_form خلطُ قاعدةٍ بجارتِها.
              // و«place» وحدَها تُترَك لأنّها تَصلُح للمنزلةِ العدديّةِ أيضًا.
              'form','_of_','whole','_place','place_','user_','agent_',
-             'material','context','l1_','marker']],
+             'material','context','l1_','marker',
+             'wrong_','bias','criteri','swapped_concept','organelle','belongs',
+             'pattern','constant','structure','prep','verb','aspect','sense',
+             'article']],
   ['read',  ['misread','literal','surface','first_heard','first_seen','skim']],
   ['lin',   ['linear']],
 ];
@@ -6558,7 +6719,16 @@ function stNew(skillId) {
   return { skill: skillId, phase: 'key', dwell: 0, errs: [], shopAt: 0,
            shopStep: 0, shopPick: null, twinOk: 0, started: S.day, seal: null, round: 0 };
 }
-function stCur() { return S.st || null; }
+function stCur() {
+  /* ممرٌّ فكرتُه من مسارٍ آخَر: يُطرَح هو وجلستُه. وهذا يُصلِح الحالةَ
+     المحفوظةَ في الأجهزةِ التي وقَع فيها العَطَبُ قبل هذا الإصلاح —
+     فزيادةُ «st» إلى TRACK_FIELDS تَمنَع تكرارَه ولا تُصلِح ما حُفِظ. */
+  if (S.st && S.st.skill) {
+    const sk = SKILLS[S.st.skill];
+    if (!sk || sk.track !== S.track) { S.st = null; S.session = null; }
+  }
+  return S.st || null;
+}
 
 /* المهارةُ التالية في الممرّ: أضعفُ ما له مفتاحٌ ومحتوًى ولم يُختَم */
 function corridorNext() {
@@ -6682,6 +6852,9 @@ function stSeal() {
 function shopCur() {
   const st = stCur(); if (!st) return null;
   const e = shopErrs()[st.shopAt]; if (!e) return null;
+  /* خطأٌ محفوظٌ على فكرةٍ من مسارٍ آخَر لا يُعاد: وإلّا أعادته الورشةُ
+     ثمّ سحَبت twinFor أسئلةً أُخرى من تلك الفكرةِ الغريبةِ بعدَه. */
+  if (!okQid(e.qid)) return null;
   const q = byQ(e.qid); if (!q) return null;
   const ri = q.choices.findIndex(c => c.c);
   const pick = e.pick == null ? -1 : e.pick;
