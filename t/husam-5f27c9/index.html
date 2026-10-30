@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>أُفق ستيب — للمستر حسام</title>
+<meta name="theme-color" content="#340166">
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;600&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#0E1017; --ink:#D6D9E6; --soft:#9195AB; --faint:#666B82;
+  --glow:#B79BD6; --glow-dim:rgba(183,155,214,.14); --glow-line:rgba(183,155,214,.32);
+  --line:rgba(255,255,255,.075); --edge:rgba(255,255,255,.14);
+  --glass:linear-gradient(158deg,rgba(255,255,255,.062),rgba(255,255,255,.022));
+  --display:'Readex Pro',system-ui,sans-serif;
+  --body:'IBM Plex Sans Arabic',system-ui,sans-serif;
+  --r:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--void); color:var(--ink); font-family:var(--body);
+  font-size:16.5px; line-height:1.95; letter-spacing:.004em;
+  background-image:
+    radial-gradient(900px 520px at 72% -8%, rgba(183,155,214,.14), transparent 62%),
+    radial-gradient(700px 420px at 8% 102%, rgba(132,140,203,.07), transparent 60%);
+  background-attachment:fixed;
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 20px 90px}
+header{padding:52px 0 26px;text-align:center}
+.mark{width:64px;height:64px;margin:0 auto 18px;display:block;
+  filter:drop-shadow(0 10px 26px rgba(183,155,214,.26))}
+h1{font-family:var(--display);font-weight:600;font-size:30px;line-height:1.5;
+  margin:0 0 8px;letter-spacing:-.01em}
+.sub{color:var(--soft);font-size:15px;margin:0}
+.hail{margin:26px auto 0;max-width:560px;color:var(--soft);font-size:15.5px}
+.hail b{color:var(--ink);font-weight:500}
+
+section{margin:40px 0 0;padding:26px 24px;border-radius:var(--r);
+  background:var(--glass);border:1px solid var(--line);
+  box-shadow:0 18px 46px rgba(0,0,0,.34)}
+.eyebrow{color:var(--glow);font-size:12.5px;letter-spacing:.09em;
+  text-transform:none;margin:0 0 8px;font-weight:500}
+h2{font-family:var(--display);font-weight:400;font-size:21.5px;line-height:1.6;
+  margin:0 0 16px;letter-spacing:-.005em}
+h3{font-family:var(--display);font-weight:400;font-size:16.5px;margin:26px 0 8px;
+  color:var(--ink)}
+p{margin:0 0 15px}
+p:last-child{margin-bottom:0}
+strong{font-weight:600;color:#EDEFF8}
+em{font-style:normal;color:var(--glow)}
+.q{color:var(--soft)}
+hr{border:0;border-top:1px solid var(--line);margin:24px 0}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px;margin:18px 0 4px}
+.stat{padding:14px 12px;border-radius:12px;background:rgba(255,255,255,.032);
+  border:1px solid rgba(255,255,255,.055);text-align:center}
+.stat .n{font-family:var(--display);font-size:22px;color:var(--glow);display:block;line-height:1.3}
+.stat .l{font-size:12.5px;color:var(--faint);line-height:1.5}
+
+table{width:100%;border-collapse:collapse;margin:16px 0 6px;font-size:14.5px}
+th,td{text-align:right;padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--faint);font-weight:500;font-size:13px}
+td.num{font-family:var(--display);color:var(--glow);white-space:nowrap}
+
+ol.flow{counter-reset:s;list-style:none;padding:0;margin:14px 0 0}
+ol.flow li{counter-increment:s;position:relative;padding:0 42px 16px 0;
+  border-right:1px solid var(--line);margin-right:13px}
+ol.flow li:last-child{border-right-color:transparent;padding-bottom:0}
+ol.flow li::before{content:counter(s);position:absolute;right:-13px;top:1px;
+  width:26px;height:26px;border-radius:50%;background:var(--void);
+  border:1px solid var(--glow-line);color:var(--glow);
+  font-family:var(--display);font-size:12.5px;display:grid;place-items:center}
+ol.flow b{display:block;font-weight:600;color:#EDEFF8;margin-bottom:2px}
+ol.flow span{color:var(--soft);font-size:14.5px}
+
+.quote{margin:16px 0;padding:14px 16px;border-radius:12px;
+  background:rgba(183,155,214,.07);border:1px solid var(--glow-line)}
+.quote .lbl{color:var(--glow);font-size:12.5px;margin-bottom:4px}
+.quote p{margin:0;font-size:15px}
+.en{direction:ltr;text-align:left;font-family:var(--display);font-weight:300}
+
+ul.plain{list-style:none;padding:0;margin:12px 0 0}
+ul.plain li{padding:0 20px 11px 0;position:relative;color:var(--soft)}
+ul.plain li::before{content:'';position:absolute;right:4px;top:13px;width:5px;height:5px;
+  border-radius:50%;background:var(--glow);opacity:.75}
+ul.plain b{color:var(--ink);font-weight:500}
+
+.go{margin:44px 0 0;padding:32px 24px;text-align:center;border-radius:var(--r);
+  background:linear-gradient(158deg,rgba(183,155,214,.15),rgba(183,155,214,.05));
+  border:1px solid var(--glow-line)}
+.go h2{margin-bottom:10px}
+.go p{color:var(--soft);max-width:460px;margin:0 auto 22px}
+.btn{display:inline-block;padding:14px 30px;border-radius:13px;
+  background:rgba(183,155,214,.2);border:1px solid var(--glow-line);
+  color:#E4DCF2;font-family:var(--display);font-size:16px;text-decoration:none;
+  transition:background .18s ease,transform .18s ease}
+.btn:hover{background:rgba(183,155,214,.3);transform:translateY(-1px)}
+.go small{display:block;margin-top:16px;color:var(--faint);font-size:13px;line-height:1.8}
+
+footer{margin:46px 0 0;text-align:center;color:var(--faint);font-size:13px;line-height:2}
+footer b{color:var(--soft);font-weight:500}
+
+@media (max-width:600px){
+  body{font-size:16px}
+  .wrap{padding:0 16px 70px}
+  header{padding:38px 0 18px}
+  h1{font-size:25px}
+  section{padding:22px 18px;margin-top:30px}
+  h2{font-size:19.5px}
+  table{font-size:13.5px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <svg class="mark" viewBox="0 0 512 512" role="img" aria-label="أُفق">
+    <defs>
+      <linearGradient id="tl" x1="0.78" y1="0" x2="0.1" y2="1">
+        <stop offset="0" stop-color="#553E78"/><stop offset="0.55" stop-color="#2F2242"/>
+        <stop offset="1" stop-color="#191324"/>
+      </linearGradient>
+      <linearGradient id="hz" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#B79BD6" stop-opacity="0.34"/>
+        <stop offset="0.28" stop-color="#B79BD6" stop-opacity="0.95"/>
+        <stop offset="0.5" stop-color="#C7B1DF" stop-opacity="1"/>
+        <stop offset="0.72" stop-color="#B79BD6" stop-opacity="0.95"/>
+        <stop offset="1" stop-color="#B79BD6" stop-opacity="0.34"/>
+      </linearGradient>
+    </defs>
+    <rect width="512" height="512" rx="114" fill="url(#tl)"/>
+    <rect x="1.5" y="1.5" width="509" height="509" rx="113" fill="none"
+          stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="3"/>
+    <g transform="translate(256,262) scale(0.72) translate(-256,-256)">
+      <path d="M26,410 Q256,296 486,410" fill="none" stroke="url(#hz)"
+            stroke-width="21" stroke-linecap="round"/>
+      <path d="M268,132 L268,304 Q268,350 232,368" fill="none" stroke="#D6D9E6"
+            stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="235" y="21" width="54" height="54" rx="9"
+            transform="rotate(45 262 48)" fill="#D6D9E6"/>
+      <circle cx="232" cy="368" r="23" fill="#B79BD6"/>
+    </g>
+  </svg>
+  <h1>أُفق ستيب</h1>
+  <p class="sub">تدريبُ اختبارِ ستيب للغةِ الإنجليزيّة</p>
+  <p class="hail">
+    أهلًا <b>بالمستر حسام</b>. هذه صفحةٌ كُتِبت لك وحدَك، لأنّك ستَنظُر
+    في أُفق بعينِ معلِّمِ لغةٍ لا بعينِ طالب. وفيها أربعةُ أبوابٍ تَشرَح
+    ما بُنِي ولماذا بُنِي هكذا، ثمّ البابُ الخامسُ يَفتَح لك التطبيقَ
+    لتَتجوَّل فيه كما تشاء.
+  </p>
+</header>
+
+<section>
+  <p class="eyebrow">الباب الأوّل</p>
+  <h2>أُفق منارةٌ تُعلِّم، لا مقياسٌ يَحكُم</h2>
+
+  <p>
+    أكثرُ تطبيقاتِ التحضيرِ للاختباراتِ تَفعَل شيئًا واحدًا: تَعرِض سؤالًا،
+    وتَقول صوابٌ أو خطأ، وتُعطيك نسبةً في الآخِر. وهذا <em>قياس</em>،
+    والقياسُ لا يُعلِّم. الطالبُ الذي أخطأ ثلاثين سؤالًا يَخرُج منه بعِلمٍ
+    واحد: أنّه أخطأ ثلاثين سؤالًا.
+  </p>
+  <p>
+    وأُفق مبنيٌّ على نقيضِ ذلك. فيه قاعدةٌ لا تُخرَق: <strong>لا يُعرَض على
+    الطالبِ سؤالٌ في فكرةٍ قبل أن يُدرَّس مفتاحُها.</strong> المفتاحُ أوّلًا،
+    ثمّ المثالُ المحلول، ثمّ الأسئلة. ولا نسبةَ تُعرَض في منتصفِ الطريق،
+    ولا رسالةَ تَقول «حاوِلْ مرّةً أُخرى» — فإشعارُ الطالبِ بالفشلِ ليس
+    خطوةً في التعليم.
+  </p>
+  <p>
+    والفرقُ يَظهَر في موضعٍ بعينِه: <strong>كلُّ خيارٍ خاطئٍ في البنكِ يَحمِل
+    سطرًا يَشرَح لماذا بدا صحيحًا.</strong> لا «إجابةٌ خاطئة» بل جملةٌ تُسمّي
+    ما كان في ذهنِ الطالبِ حين اختارَه. وهذا ما يَجعَل الخطأَ مادّةَ درسٍ
+    لا عقوبة.
+  </p>
+
+  <div class="quote">
+    <div class="lbl">مثالٌ من البنك — سؤالُ حروفِ جرّ</div>
+    <p class="en">“Consistent” takes “with”, not “for”.</p>
+    <p class="q" style="margin-top:6px">
+      الطالبُ لم يُخطِئ عشوائيًّا: اختارَ حرفًا يَصلُح مع كلماتٍ أُخرى.
+      والسطرُ يُسمّي القاعدةَ لا الغلطة.
+    </p>
+  </div>
+
+  <p>
+    وأُفق مبنيٌّ أصلًا لابني <strong>محمد</strong>، وهو طالبٌ حقيقيٌّ
+    يَستعمِله كلَّ يوم. فكلُّ قرارٍ فيه كان جوابًا عن سؤال: أينفَعُه هذا؟
+  </p>
+</section>
+
+<section>
+  <p class="eyebrow">الباب الثاني</p>
+  <h2>الممرّ: ثماني محطّاتٍ لكلِّ فكرة</h2>
+
+  <p>
+    الفكرةُ الواحدةُ — «الأزمنة» مثلًا — لا تُفتَح بقائمةِ أسئلة. تُفتَح
+    بممرٍّ أحاديِّ الاتّجاه، يَمشي فيه الطالبُ ثماني محطّاتٍ لا يَرجِع
+    بينها:
+  </p>
+
+  <ol class="flow">
+    <li><b>المفتاح</b><span>قاعدةُ الفكرةِ في فقرةٍ واحدة، مع الفخِّ الأشيعِ فيها وعددِه من البنكِ نفسِه.</span></li>
+    <li><b>مثالٌ محلول</b><span>سؤالٌ تُعرَض خطواتُه كاملةً — يَرى الطريقَ قبل أن يَسلُكه.</span></li>
+    <li><b>أكمِلِ الخطوة</b><span>السؤالُ نفسُه وقد غابَت منه خطوةٌ، فيُكمِلها.</span></li>
+    <li><b>على مهارتك</b><span>أوّلُ سؤالٍ يَحلُّه وحدَه.</span></li>
+    <li><b>خمسُ أفكار</b><span>بوّابةٌ قصيرةٌ تَقيس أنّ الفكرةَ ثَبَتت.</span></li>
+    <li><b>الورشة</b><span>لا تُفتَح إلّا إن أخطأ. وهي أثمنُ ما في التطبيق — وبابُها الثالثُ أدناه.</span></li>
+    <li><b>ثلاثُ خطوات</b><span>يُعيد بناءَ الحلِّ بعد الورشةِ ليَختِم بإصابة.</span></li>
+    <li><b>سؤالُ الامتياز</b><span>سؤالٌ من الدرجةِ الخامسةِ يُحَلُّ بالقاعدةِ وحدَها — فتُختَم الفكرة.</span></li>
+  </ol>
+
+  <hr>
+  <p class="q">
+    والمحطّةُ السادسةُ لا تُفتَح إن لم يُخطِئ. أي أنّ الطالبَ المُتقِنَ
+    يَمُرُّ سريعًا، والمُتعثِّرَ يَقِف حيث تَعثَّر وحدَه — لا حيث قرَّر
+    التطبيقُ أن يَقِف الجميع.
+  </p>
+</section>
+
+<section>
+  <p class="eyebrow">الباب الثالث</p>
+  <h2>الورشة: أن يُسمَّى للطالبِ ما يَفعَله، لا ما أخطأ فيه</h2>
+
+  <p>
+    حين يُخطِئ الطالبُ مرَّتَين في محطّةٍ واحدة، يَسأل أُفق سؤالًا لا
+    تَسأله التطبيقاتُ عادةً: <strong>أهذانِ خطآنِ منفصلان، أم عادةٌ
+    واحدةٌ ظَهَرت مرَّتَين؟</strong>
+  </p>
+  <p>
+    وكلُّ خيارٍ خاطئٍ في البنكِ مُصنَّفٌ في <em>أحدَ عشرَ بابًا من أبوابِ
+    الخطأ</em> — لا بمضمونِه بل بنوعِه. فإن تكرَّر البابُ نفسُه، قالت
+    الورشةُ للطالبِ اسمَ عادتِه والخطوةَ التي تُصلِحها.
+  </p>
+
+  <div class="quote">
+    <div class="lbl">ما يَراه الطالبُ على الشاشة</div>
+    <p><strong>عادةٌ واحدةٌ تكرّرت ٣ مرّات</strong></p>
+    <p style="margin-top:4px"><em>المطابقةُ تُؤخَذ من المُجاوِر</em></p>
+    <p class="q" style="margin-top:4px">سَمِّ رأسَ المُسنَدِ إليه قبل أن تختارَ الفعل — لا أقربَ اسمٍ إليه.</p>
+  </div>
+
+  <p>
+    وكان هذا التشخيصُ إلى وقتٍ قريبٍ أخشنَ ممّا ينبغي: بابُ «خلطُ
+    القاعدتَين المتجاورتَين» وحدَه يَبتلِع ١٣٢٤ خيارًا خاطئًا في نحوِ
+    ستيب، فكان الطالبُ يَسمَع الجملةَ نفسَها سواءٌ أخطأ في المطابقةِ أم في
+    أدواتِ التعريف. فجُزِّئ البابُ إلى <strong>ثمانيةِ تشخيصاتٍ</strong>،
+    كلُّ واحدٍ يُسمّي خطوةً مختلفة:
+  </p>
+
+  <ul class="plain">
+    <li><b>المطابقة</b> — سَمِّ رأسَ المُسنَدِ إليه قبل أن تختارَ الفعل.</li>
+    <li><b>الصيغة</b> — اسألْ أوّلًا: أيَطلُب هذا الموضعُ فعلًا مُسنَدًا؟</li>
+    <li><b>المعدودُ وغيرُ المعدود</b> — فغيرُ المعدودِ لا يَقبَل a وan.</li>
+    <li><b>الأداةُ بالصوت</b> — انظُرْ إلى أوّلِ صوتٍ يُنطَق لا إلى أوّلِ حرفٍ يُكتَب.</li>
+    <li><b>التعريفُ والتنكير</b> — اسألْ: أيَعرِف السامعُ أيَّها؟</li>
+    <li><b>الزمنُ من قرينتِه</b> — ابحَثْ عن قرينةِ الزمنِ في الجملةِ ثمّ اختَرْ.</li>
+    <li><b>بِناءٌ لا أداةَ له</b> — الرياضةُ والوجباتُ والأسماءُ العامّة.</li>
+    <li><b>الكلمةُ من بابٍ مُجاور</b> — أَلِلعاقلِ أم لغيرِه، أَوَصفٌ أم موصول؟</li>
+  </ul>
+
+  <hr>
+  <p>
+    وهذه صورةُ أبوابِ الخطأِ في ستيبَ بالأرقام، محسوبةً من البنكِ نفسِه
+    (١٠٬٢٨٦ خيارًا خاطئًا):
+  </p>
+  <table>
+    <tr><th>بابُ الخطأ</th><th>النصيب</th><th>ما يَعنيه</th></tr>
+    <tr><td>خلطُ القاعدتَين المتجاورتَين</td><td class="num">٤٤٪</td><td class="q">أخذَ القاعدةَ المجاورةَ للمطلوبة</td></tr>
+    <tr><td>أضافَ ما ليس في النصّ</td><td class="num">٢٠٪</td><td class="q">دَعوى لا يَحمِلها النصُّ المقروء</td></tr>
+    <tr><td>اختارَ النقيض</td><td class="num">١٥٪</td><td class="q">قلبَ إشارةَ ما يقولُه النصّ</td></tr>
+    <tr><td>الترتيبُ مقلوب</td><td class="num">٩٪</td><td class="q">العلاقةُ صحيحةٌ والترتيبُ معكوس</td></tr>
+    <tr><td>جوابٌ صحيحٌ ناقص</td><td class="num">٥٪</td><td class="q">جزءٌ من الجوابِ لا كلُّه</td></tr>
+    <tr><td>قراءةٌ لم تُكمَل</td><td class="num">٣٪</td><td class="q">يَصِحّ لو وقَفَ عند نصفِ الجملة</td></tr>
+  </table>
+  <p class="q" style="margin-top:10px">
+    وهذه الأرقامُ وحدَها رسالةٌ للمعلِّم: <strong>الطالبُ السعوديُّ في ستيبَ
+    لا يَجهَل الإنجليزيّةَ في ٤٤٪ من أخطائِه — بل يَعرِف قاعدتَين ولا
+    يُميِّز أيَّهما يُطلَب.</strong> وهذا تدريبٌ مختلفٌ عن الحفظ.
+  </p>
+</section>
+
+<section>
+  <p class="eyebrow">الباب الرابع</p>
+  <h2>ما في داخلِ التطبيق</h2>
+
+  <div class="grid">
+    <div class="stat"><span class="n">٣٬٤٢٩</span><span class="l">سؤالًا</span></div>
+    <div class="stat"><span class="n">١٣</span><span class="l">فكرةً ومفتاحًا</span></div>
+    <div class="stat"><span class="n">٧٦</span><span class="l">قطعةَ قراءة</span></div>
+    <div class="stat"><span class="n">١٠٬٢٨٦</span><span class="l">شرحًا لخيارٍ خاطئ</span></div>
+  </div>
+
+  <h3>الأفكارُ الثلاثَ عشرةَ في ثلاثِ مراحل</h3>
+  <table>
+    <tr><th>المرحلة</th><th>الأفكار</th><th>الأسئلة</th></tr>
+    <tr>
+      <td><strong>الأساس</strong><br><span class="q">تركيبٌ ومفردات</span></td>
+      <td>معنى المفردة · الأزمنة · الأفعال المركّبة · التطابق · حروف الجر · أدوات التعريف</td>
+      <td class="num">١٬٥٨٣</td>
+    </tr>
+    <tr>
+      <td><strong>البناء</strong><br><span class="q">قراءةٌ وتحليل</span></td>
+      <td>الاستنتاج · الفكرة الرئيسة · التفاصيل · ترتيب الجمل · الترقيم والحروف الكبيرة</td>
+      <td class="num">١٬٣٤١</td>
+    </tr>
+    <tr>
+      <td><strong>الجاهزيّة</strong><br><span class="q">قبل الاختبار</span></td>
+      <td>الاستماع · إدارة الوقت</td>
+      <td class="num">٥٠٥</td>
+    </tr>
+  </table>
+
+  <h3>كيف يُدار الوقتُ في البنك</h3>
+  <p>
+    الأسئلةُ مرتّبةٌ على خمسِ درجاتٍ من السهولةِ إلى الامتياز، ويَسحَب
+    التطبيقُ من الدرجةِ التي تُناسِب موضعَ الطالبِ في الفكرةِ لا من
+    الخلطِ كلِّه. وتوزيعُها اليومَ: <strong>١٤٪ سهل · ١١٪ وسط · ٧٥٪
+    صعب</strong>.
+  </p>
+
+  <h3>وما يَلزَمُك أن تَعرِفه قبل أن تَحكُم</h3>
+  <p>
+    لن أقولَ لك إنّ كلَّ شيءٍ تامّ. فهذه مواضعُ ضَعفٍ أعرِفُها وأعمَل
+    عليها، وأُحِبّ أن تَراها بعينِك لا أن تَكتشِفها بعدَ أن أمدَحَ لك
+    التطبيق:
+  </p>
+  <ul class="plain">
+    <li><b>الدرجةُ الوسطى نحيفة.</b> ١١٪ فقط، فالطالبُ يَقفِز من السهلِ إلى الصعبِ بلا درجةٍ بينهما. وهذا أوّلُ ما أُعالِجه.</li>
+    <li><b>الاستماع ٢٧٧ سؤالًا</b> — أقلُّ ممّا ينبغي لبابٍ يُثقِل الطلّابَ في الاختبار.</li>
+    <li><b>القِطَعُ ٧٦ بمتوسّطِ أربعةِ أسئلةٍ للقطعة.</b> أي أنّ الطالبَ يَقرَأ نصًّا كاملًا مقابلَ أربعةِ أسئلة، وهو عائدٌ ضعيفٌ على وقتِه. والعلاجُ زيادةُ أسئلةِ القِطَعِ القائمةِ لا إضافةُ قِطَعٍ جديدة.</li>
+    <li><b>التطبيقُ تحتَ التطوير.</b> ما تَراه اليومَ قد يَتغيَّر غدًا — وهذا مقصود.</li>
+  </ul>
+</section>
+
+<div class="go">
+  <h2>الضوءُ الأخضر</h2>
+  <p>
+    تجوَّلْ كما تشاء، وافتَحْ ما تشاء. اكتُبِ اسمَك في أوّلِ شاشةٍ
+    ثمّ امضِ — ولا شيءَ في التطبيقِ يَنكسِر بالتجربة، وكلُّ ما تَفعَله
+    محفوظٌ على جهازِك وحدَه ولا يُرسَل إلى أحد.
+  </p>
+  <a class="btn" href="../../step/">افتَحْ أُفق ستيب ›</a>
+  <small>
+    وإن أردتَ أن تَراه كما يَراه الطالبُ في المفيد: أكمِلْ فكرةً واحدةً
+    من أوّلِها إلى آخِرِها، وأخطِئْ عمدًا مرَّتَين في المحطّةِ الرابعة —
+    فتَنفتِح لك الورشة.
+  </small>
+</div>
+
+<footer>
+  <b>أُفق</b> — عرفات الراجحي<br>
+  صفحةٌ خاصّةٌ غيرُ مُدرَجةٍ في محرّكاتِ البحث، ولا يَصِل إليها إلّا من
+  يَملِك رابطَها.<br>
+  ملاحظاتُك أثمنُ ما يُمكِن أن تُعطيَني.
+</footer>
+
+</div>
+</body>
+</html>
