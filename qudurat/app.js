@@ -257,10 +257,10 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '15.30.0';
+const APP_VERSION = '15.31.0';
 const APP_DATE = 'الجمعة ٣٠ أكتوبر ٢٠٢٦';
-const APP_STAMP = 'الجمعة ٣٠ أكتوبر ٢٠٢٦ · ١٠:٠٩ م';
-const APP_BUILD = 207;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_STAMP = 'الجمعة ٣٠ أكتوبر ٢٠٢٦ · ١٠:٤١ م';
+const APP_BUILD = 208;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -6628,7 +6628,7 @@ const ERRFAM = [
               وتعليلُها «المدى فرقٌ لا أكبر قيمة». فما رُوجِع
               يُسمّى، ولا يُترَك للحَظّ. */
            'agreement', 'article', 'aspect', 'association_mismatch', 'collocation', 'completion_mismatch', 'different', 'formula', 'formula_wrong', 'material', 'near_miss', 'prep_wrong', 'sense', 'synonym_mismatch', 'verb', 'word_form', 'wrong_criterion', 'near', 'meaning','form','logic','group','mismatch','analogy_mismatch','comparison_mismatch',
-           'odd_one_mismatch','context_error_mismatch','clause','word','tense','def',
+           'odd_one_mismatch','clause','word','tense','def',
            /* وهذه قُرِئت تعليلاتُها قبل إلحاقِها. وكان «cause» و«effect»
               سيُلحَقانِ بقلبِ الاتّجاه ظنًّا، فبانَ أنّهما تصحيحُ واقعةٍ
               لا قلبُ علاقةٍ: «سببُها فيروسٌ». */
@@ -6693,7 +6693,13 @@ const ERRFAM = [
   { k: 'tru', t: 'صحيحٌ في نفسِه وليس جوابَ السؤال',
     w: 'ما اخترتَه صحيحٌ لا يُنكَر، والسؤالُ يَطلُب غيرَه.'
        + ' أعِدْ قراءةَ المطلوبِ لا الخيارات.',
-    tags: ['tru', 'true','none','valid','factual','correct_but',
+    tags: [
+           /* ٨٠٩ مُشتِّتاتِ «الخطأ السياقيّ»: السؤالُ «أيُّ
+              الكلماتِ لا يستقيمُ بها المعنى؟» وتعليلُ كلِّ مُشتِّتٍ
+              «مُستقيمةٌ في موضعها» — فهو حقٌّ في نفسِه لا جوابُ
+              السؤال. وكان في near فتقول الورشةُ «خلطتَ القاعدتَين
+              المتجاورتَين» في تسعِ مئةٍ وتسعةٍ وعشرينَ موضعًا. */
+           'context_error_mismatch', 'tru', 'true','none','valid','factual','correct_but',
            /* و«أقلُّ ورودًا» و«قليلُ الورود» في بابِ الشائعِ من الأسئلة،
               و«كلتاهما لها جدار» حين يُسأل عن الفارق: ما اختارَه حقٌّ في
               نفسِه، والسؤالُ يَطلُب أكثرَها ورودًا أو ما يُفرِّق بينهما. */
