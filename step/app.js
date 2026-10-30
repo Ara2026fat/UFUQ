@@ -257,10 +257,10 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '15.28.0';
+const APP_VERSION = '15.29.0';
 const APP_DATE = 'الجمعة ٣٠ أكتوبر ٢٠٢٦';
-const APP_STAMP = 'الجمعة ٣٠ أكتوبر ٢٠٢٦ · ٦:١٠ م';
-const APP_BUILD = 205;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_STAMP = 'الجمعة ٣٠ أكتوبر ٢٠٢٦ · ٩:١٥ م';
+const APP_BUILD = 206;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -6545,7 +6545,14 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 const ERRFAM = [
   { k: 'calc', t: 'حسابٌ غيرُ مضبوط',
     w: 'الطريقُ كان صحيحًا والعددُ انحرف. خطؤك في التنفيذ لا في الفهم.',
-    tags: ['miscalculated','added','multiplied','half','total','calc','div','mult','sub',
+    tags: [
+           /* وهذه ثُبِّتت صريحةً بعد مراجعةِ تعليلاتِها واحدًا
+              واحدًا: كانت تَصِل إلى العائلةِ نفسِها بالتضمينِ،
+              أي بمصادفةِ حرفٍ في اسمِها. والتضمينُ أصابَ فيها
+              وأخطأَ في غيرِها — «max» وقَعت في «خلطُ القاعدتَين»
+              وتعليلُها «المدى فرقٌ لا أكبر قيمة». فما رُوجِع
+              يُسمّى، ولا يُترَك للحَظّ. */
+           'coefficient', 'coefficients', 'divide', 'divided', 'doubled', 'half_step', 'skipped_capacity', 'subtract', 'subtracted', 'miscalculated','added','multiplied','half','total','calc','div','mult','sub',
            'nodiv','nohalf','nosq','nosqrt','shift','double','quarter','sum','count','add',
            'power','off',
            /* وهذه قُرِئت تعليلاتُها قبل إلحاقِها: «نسيتَ أخذ الجذر» و«التربيعُ
@@ -6557,28 +6564,70 @@ const ERRFAM = [
            'no_square','no_half','not_rooted','squared','middle','chain','coef'] },
   { k: 'dir', t: 'العلاقةُ صحيحةٌ والاتّجاهُ مقلوب',
     w: 'رأيتَ العلاقةَ كما هي، وقلبتَ ترتيبَها. والترتيبُ جزءٌ من العلاقة.',
-    tags: ['order','reverse','inverted','flip','swap','reversed','inverse',
+    tags: [
+           /* وهذه ثُبِّتت صريحةً بعد مراجعةِ تعليلاتِها واحدًا
+              واحدًا: كانت تَصِل إلى العائلةِ نفسِها بالتضمينِ،
+              أي بمصادفةِ حرفٍ في اسمِها. والتضمينُ أصابَ فيها
+              وأخطأَ في غيرِها — «max» وقَعت في «خلطُ القاعدتَين»
+              وتعليلُها «المدى فرقٌ لا أكبر قيمة». فما رُوجِع
+              يُسمّى، ولا يُترَك للحَظّ. */
+           'direction', 'spend_reversed', 'dir', 'order','reverse','inverted','flip','swap','reversed','inverse',
            'step','bigger','before','after','precedes'] },
   { k: 'opp', t: 'اخترتَ النقيض',
     w: 'الفكرةُ عندك، والإشارةُ انقلبت. راجِع كلمةَ النفي قبل الخيارات.',
-    tags: ['opposite','negate','deny','sign','sign_error'] },
+    tags: [
+           /* وهذه ثُبِّتت صريحةً بعد مراجعةِ تعليلاتِها واحدًا
+              واحدًا: كانت تَصِل إلى العائلةِ نفسِها بالتضمينِ،
+              أي بمصادفةِ حرفٍ في اسمِها. والتضمينُ أصابَ فيها
+              وأخطأَ في غيرِها — «max» وقَعت في «خلطُ القاعدتَين»
+              وتعليلُها «المدى فرقٌ لا أكبر قيمة». فما رُوجِع
+              يُسمّى، ولا يُترَك للحَظّ. */
+           'complement', 'contra', 'opp', 'opposite','negate','deny','sign','sign_error'] },
   { k: 'part', t: 'جوابٌ صحيحٌ ناقص',
     w: 'ما اخترتَه صحيحٌ في جزئه، والسؤالُ يطلب تمامَه. تقرأ السؤال ولا تُكمِله.',
-    tags: ['partial','part','one','incomplete',
+    tags: [
+           /* وهذه ثُبِّتت صريحةً بعد مراجعةِ تعليلاتِها واحدًا
+              واحدًا: كانت تَصِل إلى العائلةِ نفسِها بالتضمينِ،
+              أي بمصادفةِ حرفٍ في اسمِها. والتضمينُ أصابَ فيها
+              وأخطأَ في غيرِها — «max» وقَعت في «خلطُ القاعدتَين»
+              وتعليلُها «المدى فرقٌ لا أكبر قيمة». فما رُوجِع
+              يُسمّى، ولا يُترَك للحَظّ. */
+           'mark_dropped', 'marks_dropped', 'partial_pair', 'partial','part','one','incomplete',
            'ignored','forgot','dropped','detail','narrow'] },
   { k: 'invent', t: 'أضفتَ ما ليس في النصّ',
     w: 'ما اخترتَه معقولٌ في نفسه، ولا دليلَ عليه في النصّ. الجوابُ ما يُلزِمه النصّ لا ما يحتمله.',
-    tags: ['invent','contradict','irrelevant','unrel','over','overreach','claim','assume','blame',
+    tags: [
+           /* وهذه ثُبِّتت صريحةً بعد مراجعةِ تعليلاتِها واحدًا
+              واحدًا: كانت تَصِل إلى العائلةِ نفسِها بالتضمينِ،
+              أي بمصادفةِ حرفٍ في اسمِها. والتضمينُ أصابَ فيها
+              وأخطأَ في غيرِها — «max» وقَعت في «خلطُ القاعدتَين»
+              وتعليلُها «المدى فرقٌ لا أكبر قيمة». فما رُوجِع
+              يُسمّى، ولا يُترَك للحَظّ. */
+           'assumed_equal', 'invented', 'invented_mark', 'not_stated', 'unsupported', 'invent','contradict','irrelevant','unrel','over','overreach','claim','assume','blame',
            'notsaid','unnecessary_uncertainty','notmentioned','broad',
            /* و«extreme» و«invalid» تعليلاتُهما دَعوى لا يَحمِلها المعطى:
               «لا ينعدم أبدًا» و«لا يلزم» و«الاحتمالُ لا يكون سالبًا». */
            'extreme','invalid'] },
   { k: 'unit', t: 'وحداتٌ لم تُحوَّل',
     w: 'حسابُك صحيحٌ ووحدتُك ناقصة. حوِّل أوّلًا ثمّ احسب — خطوةٌ واحدةٌ تنجّي الحلَّ كلَّه.',
-    tags: ['units','unit'] },
+    tags: [
+           /* وهذه ثُبِّتت صريحةً بعد مراجعةِ تعليلاتِها واحدًا
+              واحدًا: كانت تَصِل إلى العائلةِ نفسِها بالتضمينِ،
+              أي بمصادفةِ حرفٍ في اسمِها. والتضمينُ أصابَ فيها
+              وأخطأَ في غيرِها — «max» وقَعت في «خلطُ القاعدتَين»
+              وتعليلُها «المدى فرقٌ لا أكبر قيمة». فما رُوجِع
+              يُسمّى، ولا يُترَك للحَظّ. */
+           'unit_error', 'units','unit'] },
   { k: 'near', t: 'خلطُ القاعدتَين المتجاورتَين',
     w: 'أخذتَ القاعدةَ المجاورةَ للمطلوبة. وهذا يُصلَح بتسميةِ المطلوب قبل الاختيار.',
-    tags: ['meaning','form','logic','group','mismatch','analogy_mismatch','comparison_mismatch',
+    tags: [
+           /* وهذه ثُبِّتت صريحةً بعد مراجعةِ تعليلاتِها واحدًا
+              واحدًا: كانت تَصِل إلى العائلةِ نفسِها بالتضمينِ،
+              أي بمصادفةِ حرفٍ في اسمِها. والتضمينُ أصابَ فيها
+              وأخطأَ في غيرِها — «max» وقَعت في «خلطُ القاعدتَين»
+              وتعليلُها «المدى فرقٌ لا أكبر قيمة». فما رُوجِع
+              يُسمّى، ولا يُترَك للحَظّ. */
+           'agreement', 'article', 'aspect', 'association_mismatch', 'collocation', 'completion_mismatch', 'different', 'formula', 'formula_wrong', 'material', 'near_miss', 'prep_wrong', 'sense', 'synonym_mismatch', 'verb', 'word_form', 'wrong_criterion', 'near', 'meaning','form','logic','group','mismatch','analogy_mismatch','comparison_mismatch',
            'odd_one_mismatch','context_error_mismatch','clause','word','tense','def',
            /* وهذه قُرِئت تعليلاتُها قبل إلحاقِها. وكان «cause» و«effect»
               سيُلحَقانِ بقلبِ الاتّجاه ظنًّا، فبانَ أنّهما تصحيحُ واقعةٍ
@@ -6605,10 +6654,17 @@ const ERRFAM = [
            'series','valence'] },
   { k: 'read', t: 'قراءةٌ لم تُكمَل',
     w: 'الخيارُ الذي أخذتَه يَظهُر صحيحًا إن قُرِئ أوّلُ السؤال وحده.',
-    tags: ['reading_distractor','wrong','trap','surface','literal','first','start'] },
+    tags: [
+           /* وهذه ثُبِّتت صريحةً بعد مراجعةِ تعليلاتِها واحدًا
+              واحدًا: كانت تَصِل إلى العائلةِ نفسِها بالتضمينِ،
+              أي بمصادفةِ حرفٍ في اسمِها. والتضمينُ أصابَ فيها
+              وأخطأَ في غيرِها — «max» وقَعت في «خلطُ القاعدتَين»
+              وتعليلُها «المدى فرقٌ لا أكبر قيمة». فما رُوجِع
+              يُسمّى، ولا يُترَك للحَظّ. */
+           'clock_misread', 'misread', 'reading_distractor','wrong','trap','surface','literal','first','start'] },
   { k: 'lin', t: 'حسبتَها خطّيّةً وهي ليست كذلك',
     w: 'العلاقةُ أُسّيّةٌ أو تربيعيّة، فالمضاعفةُ لا تُضاعِف النتيجة.',
-    tags: ['linear','square','cube','direct'] },
+    tags: ['lin', 'linear','square','cube','direct'] },
   /* وهذه عادةٌ قِيسَت ولم تُخترَع: ستّةُ آلافِ مُشتِّتٍ تعليلُه «هذه المساحةُ
      لا المحيط» أو «هذا الزمن» أو «هذه المشتقّةُ لا الدالّةُ الأصليّة» —
      كميّةٌ في السؤالِ فعلًا وليست المطلوبة. وكانت كلُّها تَسقُط من
@@ -6616,7 +6672,7 @@ const ERRFAM = [
   { k: 'qty', t: 'أجَبتَ بكميّةٍ أُخرى من السؤال',
     w: 'العددُ الذي اخترتَه موجودٌ في السؤالِ فعلًا، وليس هو المطلوب.'
        + ' سَمِّ المطلوبَ بكلمةٍ قبل أن تَحسُب — تُنجِّيك هذه وحدَها.',
-    tags: ['mass','object','area','moles','speed','average','value','time',
+    tags: ['qty', 'mass','object','area','moles','speed','average','value','time',
            'diff','odds','ratio','specific','place','cost','perimeter',
            'median','weight','angle','accel','percent','root','volume',
            'density','radius','height','width','length','pressure','water',
@@ -6637,7 +6693,7 @@ const ERRFAM = [
   { k: 'tru', t: 'صحيحٌ في نفسِه وليس جوابَ السؤال',
     w: 'ما اخترتَه صحيحٌ لا يُنكَر، والسؤالُ يَطلُب غيرَه.'
        + ' أعِدْ قراءةَ المطلوبِ لا الخيارات.',
-    tags: ['true','none','valid','factual','correct_but',
+    tags: ['tru', 'true','none','valid','factual','correct_but',
            /* و«أقلُّ ورودًا» و«قليلُ الورود» في بابِ الشائعِ من الأسئلة،
               و«كلتاهما لها جدار» حين يُسأل عن الفارق: ما اختارَه حقٌّ في
               نفسِه، والسؤالُ يَطلُب أكثرَها ورودًا أو ما يُفرِّق بينهما. */
