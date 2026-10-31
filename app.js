@@ -257,10 +257,10 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '15.34.0';
+const APP_VERSION = '15.35.0';
 const APP_DATE = 'السبت ٣١ أكتوبر ٢٠٢٦';
-const APP_STAMP = 'السبت ٣١ أكتوبر ٢٠٢٦ · ٤:٠٠ ص';
-const APP_BUILD = 211;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_STAMP = 'السبت ٣١ أكتوبر ٢٠٢٦ · ٥:٠٠ ص';
+const APP_BUILD = 212;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -6646,6 +6646,15 @@ const ERRFAM = [
               يُسمّى، ولا يُترَك للحَظّ. */
            'agreement', 'article', 'aspect', 'association_mismatch', 'collocation', 'completion_mismatch', 'different', 'formula', 'formula_wrong', 'material', 'near_miss', 'prep_wrong', 'sense', 'synonym_mismatch', 'verb', 'word_form', 'wrong_criterion', 'near', 'meaning','form','logic','group','mismatch','analogy_mismatch','comparison_mismatch',
            'odd_one_mismatch','clause','word','tense','def',
+           /* وfuture_form كان يَصِل إلى هذه العائلةِ بمصادفةِ
+              حرفٍ: اسمُه يَحتوي «form» فيُمسِكه ERRFUZZ. فلو
+              حُذِف «form» يومًا أو سبَقه وَسمٌ آخَرُ يَحتويه،
+              تَغيَّر مَصيرُ مُشتِّتاتِه بلا إنذار. ووَكيلٌ نبَّه
+              عليه حينَ شغَّل errFam نفسَها ولم يَكتَفِ بقراءةِ
+              الجدول. وهو صِيَغُ المستقبلِ المُتزاحِمةُ: will
+              مكانَ المضارعِ في الجَدوَلِ المُقرَّر — وهو خلطُ
+              قاعدتَين مُجاورتَين بعينِه. */
+           'future_form',
            /* وهذه قُرِئت تعليلاتُها قبل إلحاقِها. وكان «cause» و«effect»
               سيُلحَقانِ بقلبِ الاتّجاه ظنًّا، فبانَ أنّهما تصحيحُ واقعةٍ
               لا قلبُ علاقةٍ: «سببُها فيروسٌ». */
@@ -6699,6 +6708,12 @@ const ERRFAM = [
            'density','radius','height','width','length','pressure','water',
            'copied','molarity','charge','freq','period','last','copy',
            'second','derivative','read',
+           /* وmolar كان يَصِل بالتضمينِ من «molarity»: تعليلُه
+              «هذه الكتلةُ المولِيّة» — أي أنّ الطالبَ أجابَ
+              بكَمِّيّةٍ أُخرى من السؤالِ لا بالمطلوب، وهو بابُ
+              هذه العائلةِ بعينِه. فأُثبِت صريحًا بعدَ قراءةِ
+              تعليلِه، لا تُرِك لمصادفةِ حرف. */
+           'molar',
            /* ودُفعةُ التحصيليِّ: كلُّ تعليلٍ منها «هذا الزخم» أو «هذه
               المقاومة» أو «هذا الشغلُ لا القدرة» أو «هذا المولُ الواحد» —
               مقدارٌ في السؤالِ فعلًا وليس المطلوب، وهو ما سُمِّيَت به هذه
