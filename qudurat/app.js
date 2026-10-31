@@ -257,10 +257,10 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '15.33.0';
-const APP_DATE = 'الجمعة ٣٠ أكتوبر ٢٠٢٦';
-const APP_STAMP = 'الجمعة ٣٠ أكتوبر ٢٠٢٦ · ١١:٢٥ م';
-const APP_BUILD = 210;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_VERSION = '15.34.0';
+const APP_DATE = 'السبت ٣١ أكتوبر ٢٠٢٦';
+const APP_STAMP = 'السبت ٣١ أكتوبر ٢٠٢٦ · ٤:٠٠ ص';
+const APP_BUILD = 211;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
