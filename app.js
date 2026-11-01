@@ -257,10 +257,10 @@ const FREE_LIMIT = 0;
 
 /* ══════ نسخة أُفق ══════
    يُرفع الرقم مع كل تحديث، ويظهر في «عن أُفق»، ويُستعمل لكشف الجديد. */
-const APP_VERSION = '15.35.0';
-const APP_DATE = 'السبت ٣١ أكتوبر ٢٠٢٦';
-const APP_STAMP = 'السبت ٣١ أكتوبر ٢٠٢٦ · ٥:٠٠ ص';
-const APP_BUILD = 212;   /* يطابق رقم ufuq-vNN في sw.js */
+const APP_VERSION = '15.36.0';
+const APP_DATE = 'الأحد ١ نوفمبر ٢٠٢٦';
+const APP_STAMP = 'الأحد ١ نوفمبر ٢٠٢٦ · ٣:١٤ م';
+const APP_BUILD = 213;   /* يطابق رقم ufuq-vNN في sw.js */
 
 const AR = '٠١٢٣٤٥٦٧٨٩';
 const isLTR = s => {
@@ -2932,15 +2932,24 @@ const LEAD_BADGE = {
    فلا حجم يُحمَّل، ولا كلفة استضافة، ويعمل بلا إنترنت بعد أول فتح.
    والنصّ لا يُرى إلا بعد الإجابة — وإلا صار قراءةً لا استماعًا. */
 const SPEAK = {
-  ok: () => typeof speechSynthesis !== 'undefined',
+  /* ok() تَسأَل: أمَوجودٌ المِحرابُ؟ لا: أيَخرُج منه صوتٌ؟ وبينهما
+     فَرقٌ يَقَع: متصفِّحٌ يَعرِف speechSynthesis ولا صوتَ فيه
+     (getVoices فارغةٌ) يُعطي الطالبَ زرًّا يَضغَطه فلا يَسمَع شيئًا
+     ولا يَرى نصًّا — في مئتَينِ واثنَينِ وتسعينَ سؤالًا. وهو أسوأُ
+     من غيابِ النطقِ أصلًا، لأنّ غيابَه له بديلٌ مكتوب.
+     فصار الحُكمُ بالتجربةِ لا بالوُجود: إن لم يَبدَأِ النطقُ أو
+     أخفَق، كُشِف النصُّ. */
+  ok: () => typeof speechSynthesis !== 'undefined' && !SPEAK.dead,
+  dead: false,
   voice: null,
   pick() {
     if (this.voice) return this.voice;
     const vs = speechSynthesis.getVoices() || [];
-    this.voice = vs.find(v => /^en-GB/i.test(v.lang))
+    /* ولا يُحفَظ الإخفاقُ: getVoices تَرجِع فارغةً أوّلَ مرّةٍ في
+       كروم ثمّ تُملأ، فلو حُفِظ null لَبَقِي أبدًا. */
+    return (this.voice = vs.find(v => /^en-GB/i.test(v.lang))
               || vs.find(v => /^en-US/i.test(v.lang))
-              || vs.find(v => /^en/i.test(v.lang)) || null;
-    return this.voice;
+              || vs.find(v => /^en/i.test(v.lang)) || null);
   },
   say(text, rate) {
     if (!this.ok()) return false;
@@ -2952,10 +2961,21 @@ const SPEAK = {
       u.rate = rate || 0.92;
       u.onend = () => { S.speaking = false; const b = document.getElementById('playbtn');
         if (b) b.classList.remove('on'); };
+      let began = false;
+      u.onstart = () => { began = true; };
+      u.onerror = () => { this.fail(); };
       S.speaking = true;
       speechSynthesis.speak(u);
+      /* وإن لم يَبدَأْ بعدَ ثانيةٍ ونصفٍ فلا صوتَ ثَمَّ: يُكشَف النصُّ */
+      setTimeout(() => { if (!began) this.fail(); }, 1500);
       return true;
-    } catch (e) { return false; }
+    } catch (e) { this.fail(); return false; }
+  },
+  fail() {
+    if (this.dead) return;
+    this.dead = true; S.speaking = false;
+    try { speechSynthesis.cancel(); } catch (e) {}
+    try { render(); } catch (e) {}
   },
   stop() { try { speechSynthesis.cancel(); } catch (e) {} S.speaking = false; }
 };
