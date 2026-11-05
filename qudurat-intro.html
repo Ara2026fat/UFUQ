@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>أُفق القدرات — تعريف</title>
+<meta name="description" content="تعريف بتطبيق أُفق القدرات ودورة كاملة لتجربته.">
+<link rel="icon" href="favicon.png">
+<style>
+:root{
+  --bg:#0B1220; --bg2:#111B2E; --ink:#E8EEF8; --soft:#A9B8CE;
+  --line:rgba(170,195,230,.16); --glow:#7FA8D9; --card:rgba(255,255,255,.045);
+  --ok:#6FCF97; --warn:#E8B964;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]){
+    --bg:#F6F8FC; --bg2:#FFFFFF; --ink:#16202F; --soft:#54657E;
+    --line:rgba(20,40,70,.13); --glow:#2F6FB5; --card:rgba(20,45,80,.035);
+    --ok:#1E8A52; --warn:#9A6B10;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B1220; --bg2:#111B2E; --ink:#E8EEF8; --soft:#A9B8CE;
+  --line:rgba(170,195,230,.16); --glow:#7FA8D9; --card:rgba(255,255,255,.045);
+  --ok:#6FCF97; --warn:#E8B964;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:
+    radial-gradient(1100px 620px at 78% -8%,color-mix(in srgb,var(--glow) 16%,transparent),transparent 62%),
+    linear-gradient(175deg,var(--bg) 0%,var(--bg2) 100%);
+  background-color:var(--bg);
+  background-attachment:fixed; color:var(--ink);
+  font-family:"SF Arabic","Noto Naskh Arabic",system-ui,"Segoe UI",Tahoma,sans-serif;
+  font-size:17px; line-height:1.95; -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:760px; margin:0 auto; padding:0 16px 72px}
+header{padding:52px 0 8px; text-align:center}
+.mark{
+  width:62px;height:62px;margin:0 auto 18px;border-radius:19px;
+  display:grid;place-items:center;font-size:27px;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--glow) 30%,transparent),transparent);
+  border:1px solid var(--line);
+  box-shadow:0 10px 34px -16px color-mix(in srgb,var(--glow) 60%,transparent);
+}
+h1{font-size:clamp(27px,6.4vw,38px); margin:0 0 6px; letter-spacing:-.4px; font-weight:650}
+.sub{color:var(--soft); margin:0; font-size:16.5px}
+h2{
+  font-size:20px; margin:42px 0 12px; font-weight:620;
+  padding-bottom:9px; border-bottom:1px solid var(--line);
+}
+h3{font-size:16.5px; margin:22px 0 6px; font-weight:620}
+p{margin:0 0 15px}
+.lead{font-size:18.5px}
+.soft{color:var(--soft)}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:17px;
+  padding:19px 21px; margin:18px 0;
+}
+.q{
+  background:var(--card); border:1px solid var(--line);
+  border-right:3px solid var(--glow); border-radius:13px;
+  padding:16px 19px; margin:14px 0;
+}
+.q .stem{font-weight:600; margin-bottom:11px}
+.ch{
+  display:flex; gap:10px; align-items:flex-start; padding:7px 0;
+  border-top:1px solid var(--line); font-size:15.6px;
+}
+.ch:first-of-type{border-top:0}
+.ch b{flex:0 0 auto; font-weight:620; min-width:5.4em}
+.ch.right b{color:var(--ok)}
+.ch .why{color:var(--soft); font-size:14.8px; line-height:1.75}
+.steps{margin:13px 0 0; padding:0; list-style:none; font-size:15.6px}
+.steps li{padding:6px 0 6px 0; border-top:1px dashed var(--line); color:var(--soft)}
+.steps li:first-child{border-top:0}
+.steps li.last{color:var(--ink)}
+table{width:100%; border-collapse:collapse; margin:14px 0; font-size:15.6px}
+th,td{text-align:right; padding:9px 8px; border-bottom:1px solid var(--line)}
+th{color:var(--soft); font-weight:600; font-size:14.6px}
+td.n{font-variant-numeric:tabular-nums; color:var(--soft); width:5.4em}
+ol.tour{margin:0; padding:0 0 0 0; list-style:none; counter-reset:s}
+ol.tour>li{
+  counter-increment:s; position:relative; padding:0 52px 20px 0;
+  border-right:1px solid var(--line); margin-right:17px;
+}
+ol.tour>li:last-child{border-right-color:transparent; padding-bottom:4px}
+ol.tour>li::before{
+  content:counter(s); position:absolute; right:-17px; top:2px;
+  width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center; font-size:15px; font-weight:650;
+  background:var(--bg2); border:1px solid var(--line); color:var(--glow);
+}
+ol.tour .look{color:var(--soft); font-size:15.4px}
+ol.tour .look b{color:var(--ink); font-weight:620}
+.ask{counter-reset:a; margin:0; padding:0; list-style:none}
+.ask li{
+  counter-increment:a; background:var(--card); border:1px solid var(--line);
+  border-radius:14px; padding:15px 18px; margin:0 0 11px;
+}
+.ask li::before{
+  content:"سؤال " counter(a); display:block; color:var(--glow);
+  font-size:13.4px; font-weight:650; letter-spacing:.3px; margin-bottom:5px;
+}
+.cta{
+  display:block; text-align:center; text-decoration:none;
+  background:linear-gradient(140deg,color-mix(in srgb,var(--glow) 88%,#fff 12%),var(--glow));
+  color:#07121F; font-weight:700; font-size:18.5px;
+  padding:17px 22px; border-radius:16px; margin:26px 0 10px;
+  box-shadow:0 14px 34px -16px color-mix(in srgb,var(--glow) 75%,transparent);
+}
+.cta span{display:block; font-size:14px; font-weight:600; opacity:.72; margin-top:3px}
+.note{
+  border-right:3px solid var(--warn); padding:3px 15px 3px 0; margin:16px 0;
+  color:var(--soft); font-size:16px;
+}
+footer{
+  margin-top:50px; padding-top:20px; border-top:1px solid var(--line);
+  text-align:center; color:var(--soft); font-size:13.6px; line-height:2.1;
+}
+@media(max-width:430px){
+  body{font-size:16.2px}
+  .wrap{padding:0 15px 60px}
+  ol.tour>li{padding-left:0; padding-right:46px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="mark">◐</div>
+  <h1>أُفق القدرات</h1>
+  <p class="sub">رفيقُ طالبِ الثانويّةِ في اختبارِ القدرات — لفظيٌّ وكمّيّ</p>
+</header>
+
+<p class="lead">أستاذ إبراهيم، هذه صفحةُ تعريفٍ قبلَ أن تَفتَح التطبيق:
+فيها فكرتُه، وما في بنكِ أسئلتِه بالأرقام، ودورةٌ كاملةٌ تَمشيها في
+عَشرِ دقائقَ لتَحكُم عليه، وثلاثةُ أسئلةٍ أريدُ رأيَك فيها بعينِها.</p>
+
+<h2>الفكرة في سطرَين</h2>
+<p>أكثرُ تطبيقاتِ القدراتِ تَقيس: تُعطي الطالبَ أسئلةً ثمّ درجةً.
+<b>أُفق لا يَقيس، يُعلِّم.</b> فالسؤالُ عندَه ذريعةٌ للشرح، والشرحُ هو
+المُنتَج: ما القاعدةُ، وكيف تُطبَّق هنا، <b>ومن أين جاء الجوابُ
+الخطأُ الذي اخترتَه أنت</b>.</p>
+
+<div class="note">وقاعدةٌ لا يُخالِفها: <b>لا يُشعَر الطالبُ بأنّه فشِل.</b>
+ستَرى هذا في شاشةِ التشخيصِ بعدَ أن تُخطِئ قصدًا.</div>
+
+<h2>شرحُ سؤالٍ كما يَراه الطالب</h2>
+<p class="soft">هذا سؤالٌ حقيقيٌّ من البنكِ (جبر، الدرجةُ الرابعة)،
+وتعليلاتُه ليست أمثلةً كتَبتُها لهذه الصفحةِ — هي ما في التطبيق:</p>
+
+<div class="q">
+  <div class="stem">لدى محمد ٣٠ ريالًا، ويريد أن يشتري دفترين ومجموعة من
+  الأقلام، سعر الدفتر ٦ ريالات وسعر القلم ٠٫٧٥ ريال. فما أكبر عدد من
+  الأقلام يمكن شراؤه؟</div>
+
+  <div class="ch right"><b>٢٤ قلمًا</b><span class="why">الصواب</span></div>
+  <div class="ch"><b>٢٦ قلمًا</b><span class="why">٢٦ يَزيد قلمَين على ما
+  يَحتمِله الباقي، و٢٤ قلمًا تَستنفِد الثمانيةَ عشَرَ ريالًا كلَّها.</span></div>
+  <div class="ch"><b>٢٠ قلمًا</b><span class="why">عشرونَ قلمًا ثمنُها ١٥
+  ريالًا، وتبقى ثلاثةٌ بلا شراء.</span></div>
+  <div class="ch"><b>٦ أقلام</b><span class="why">٦ هو سعرُ الدفترِ نُقِلَ
+  جوابًا، والمطلوبُ عددُ الأقلامِ من ١٨ ÷ ٠٫٧٥.</span></div>
+
+  <ol class="steps">
+    <li>المبلغُ مقيَّدٌ، فيُنزَع الثابتُ أوّلًا ثمّ يُقسَم الباقي على
+    سعرِ الوحدة.</li>
+    <li>فثمنُ الدفترَين: ٢ × ٦ = ١٢ ريالًا، والباقي ٣٠ − ١٢ = ١٨ ريالًا.</li>
+    <li>ثمّ ١٨ ÷ ٠٫٧٥، والقسمةُ على ثلاثةِ أرباعٍ ضربٌ في أربعةِ أثلاث.</li>
+    <li class="last">فالصواب: ٢٤ قلمًا، وهو أكبرُ عددٍ يَحتمِله المبلغ —
+    وتعليلُ «٢٦ قلمًا»: ٢٦ يَزيد قلمَين على ما يَحتمِله الباقي، و٢٤
+    قلمًا تَستنفِد الثمانيةَ عشَرَ ريالًا كلَّها.</li>
+  </ol>
+</div>
+
+<p>الخطوةُ الأولى تُسمّي القاعدةَ لا الجوابَ، والأخيرةُ تَقول الصوابَ
+<b>ثمّ تُسمّي خطأَ خيارٍ بعينِه</b>. فالذي يَقرَأُ الشرحَ هو الذي
+اختارَ الخطأَ، وهو أحقُّ الناسِ بأن يَعرِف من أين جاء اختيارُه.</p>
+
+<h2>ما في البنك — ٧٦٣٦ سؤالًا</h2>
+<p class="soft">كلُّها قدراتٌ فقط. ولكلِّ سؤالٍ شرحٌ، ولكلِّ خيارٍ خاطئٍ
+تعليلٌ يُسمّي الخطأ.</p>
+
+<table>
+<tr><th colspan="2">كمّي · ٤١٩٥</th><th colspan="2">لفظي · ٢٨٦٨</th></tr>
+<tr><td>جبر</td><td class="n">٥٦٥</td><td>تناظر لفظي</td><td class="n">١٠٩٤</td></tr>
+<tr><td>مقارنات</td><td class="n">٥٠٩</td><td>المفردة الشاذّة</td><td class="n">٤٩٤</td></tr>
+<tr><td>نِسَب مئويّة</td><td class="n">٤٤٨</td><td>استيعاب مقروء</td><td class="n">٤٦٤</td></tr>
+<tr><td>هندسة</td><td class="n">٤١٨</td><td>الخطأ السياقيّ</td><td class="n">٤٥٤</td></tr>
+<tr><td>متتابعات</td><td class="n">٤١٢</td><td>إكمال الجمل</td><td class="n">٣٦٢</td></tr>
+<tr><td>قراءة بيانات</td><td class="n">٣٨٠</td><td class="soft" colspan="2"></td></tr>
+<tr><td>متوسّطات</td><td class="n">٣٧٢</td><td class="soft" colspan="2"></td></tr>
+<tr><td>احتمالات</td><td class="n">٣٧٠</td><td class="soft" colspan="2"></td></tr>
+<tr><td>تناسُب</td><td class="n">٣٦٢</td><td class="soft" colspan="2"></td></tr>
+<tr><td>نِسَب</td><td class="n">٣٥٩</td><td class="soft" colspan="2"></td></tr>
+</table>
+
+<h2>دورةٌ كاملةٌ في عَشرِ دقائق</h2>
+<p class="soft">امشِ هذه الخطواتَ بالترتيب. تحتَ كلِّ خطوةٍ ما أرجو أن
+تَنظُر فيه — فالتطبيقُ يُحكَم عليه من هنا لا من شكلِه.</p>
+
+<ol class="tour">
+  <li>
+    <h3>اكتبِ اسمَك</h3>
+    <p class="look">أو اضغطْ «تخطّي — ادخل بلا اسم». ولا تسجيلَ ولا
+    بريدَ ولا كلمةَ سِرّ: التطبيقُ يَعمَل على الجهازِ وحدَه، وبلا
+    إنترنتٍ بعدَ أوّلِ فتحة.</p>
+  </li>
+  <li>
+    <h3>ابدأِ «رحلة التفكير» — ١٢ سؤالًا</h3>
+    <p class="look">هذا تشخيصُ البداية. <b>أخطِئْ في بعضِها قصدًا</b>،
+    فذلك أصدَقُ اختبارٍ للتطبيق.</p>
+  </li>
+  <li>
+    <h3>اقرأْ خريطتَك بعدَ التشخيص</h3>
+    <p class="look">انظُرْ كيف يُخبِرك أنّك في الأساسيّات:
+    <b>«البدايةُ من الأساسيّات، وهذا طبيعيٌّ تمامًا»</b> — ثلاثُ مراحلَ
+    (الأساسيّات · البناء · الجاهزيّة)، وأقوى ما ظهَر، ومن أين تبدأ. ولا
+    درجةَ، ولا «رسبتَ».</p>
+  </li>
+  <li>
+    <h3>انظُرْ في الخطّة</h3>
+    <p class="look">تُبنى من موعدِ اختبارِك: عددُ الجلساتِ أسبوعيًّا،
+    ودقائقُ الجلسةِ، وتوزيعُ المهاراتِ على المراحل، <b>ومحطّتُك
+    القادمة</b>.</p>
+  </li>
+  <li>
+    <h3>ابدأْ جلستَك الأولى — وأخطِئْ عن قصد</h3>
+    <p class="look">هذه هي الخطوةُ التي أريدُ حُكمَك عليها. اختَرْ
+    خيارًا خاطئًا، ثمّ اقرأِ الشرحَ: <b>هل يُعلِّم طالبَك، أم يُخبِره
+    بالجوابِ فقط؟</b> ثمّ أعِدْها في سؤالٍ كمّيٍّ وسؤالٍ لفظيٍّ.</p>
+  </li>
+  <li>
+    <h3>وإن أردتَ الإعدادات</h3>
+    <p class="look">الهدفُ من الدرجة، والمظهرُ، وتقريرٌ أسبوعيٌّ لوليِّ
+    الأمرِ <b>لا يَحوي درجاتَ الطالبِ ولا أخطاءَه</b> — أيّامَ نشاطِه وما
+    يَحتاج وقتًا أطولَ فقط.</p>
+  </li>
+</ol>
+
+<a class="cta" href="qudurat/">افتحِ التطبيق الآن
+<span>ويَعمَل على الجوّالِ والحاسب — ويُثبَّت كتطبيقٍ بلا إنترنت</span></a>
+
+<h2>وما لم يَثبُتْ بعد — بصراحة</h2>
+<p>قبلَ أن تَحكُم، أحقُّ ما تَعرِفه هو موضعُ الضعف:</p>
+<div class="card">
+  <p><b>١. درجاتُ الصعوبةِ اجتهادٌ لم يُعايَرْ.</b> كلُّ سؤالٍ له درجةٌ
+  من واحدٍ إلى خمسةٍ، وهي تقديرٌ لم يُقابَلْ باختبارٍ حقيقيٍّ ولا
+  بأداءِ طالبٍ واحد. فإن قلتَ إنّها مُغلَّطةٌ فأنتَ المُحِقُّ حتّى
+  يَثبُتَ العكس.</p>
+  <p><b>٢. البنكُ مَيّالٌ إلى الصعوبة.</b> في الجبرِ ٤٣٢ سؤالًا من ٥٦٥ في
+  الدرجتَينِ الرابعةِ والخامسةِ، و٦٣ فقط في الأولى والثانية. والطالبُ
+  المبتدئُ يَحتاج سُلَّمًا، وهذا أقربُ إلى جدار. وهو أوّلُ ما سنُعالِج.</p>
+  <p><b>٣. لم يُجرِّبه إلّا طالبٌ واحد.</b> ابني محمد. ولا دليلَ بعدُ
+  على أنّه يَرفَع درجةً.</p>
+  <p class="soft" style="margin:0">وما ثبَت: ٤٧ فحصًا آليًّا تَعمَل على
+  البنكِ عندَ كلِّ تعديلٍ، كلُّ فحصٍ منها وُلِد من عَطَبٍ حقيقيٍّ
+  وُجِد فيه — سؤالٌ له جوابانِ صحيحان، أو تعليلٌ يُخالِف أرقامَ سؤالِه،
+  أو مفتاحٌ يُعرَف من شكلِ خيارِه.</p>
+</div>
+
+<h2>ثلاثةُ أسئلةٍ أرجو رأيَك فيها</h2>
+<p class="soft">لا تَقُلْ لي «جميل» — فهذا لا يُصلِح شيئًا. هذه الثلاثةُ
+هي التي لا أستطيعُ الحُكمَ فيها وأنتَ تَستطيع:</p>
+<ol class="ask">
+  <li>هل التوزيعُ بين المهاراتِ يُشبِه اختبارَ قياسٍ الحقيقيَّ، أم فيه
+  مهارةٌ مُتخَمةٌ وأخرى ناقصة؟</li>
+  <li>افتحْ عشرةَ أسئلةٍ كمّيّةٍ من الدرجةِ الرابعة: هل هذه فعلًا درجةُ
+  قياسٍ الرابعة، أم أصعبُ منها أو أسهل؟</li>
+  <li>اقرأْ شرحَ خمسةِ أسئلةٍ أخطأتَ فيها قصدًا: هل الشرحُ يُعلِّم
+  طالبَك شيئًا، أم يُخبِره بالجوابِ فقط؟</li>
+</ol>
+<p>والسؤالُ الثاني أهمُّها. وإن وجَدتَ سؤالًا مُعطَبًا أو شرحًا خاطئًا
+فاكتُبْ لي رقمَه — ففي التطبيقِ زرُّ «أرسل ملاحظة» داخلَ الإعدادات.</p>
+
+<footer>
+  أُفق القدرات · بنكٌ من ٧٦٣٦ سؤالًا · ٤٧ فحصًا آليًّا<br>
+  ARAFAT ALRAJHI © 2026
+</footer>
+
+</div>
+</body>
+</html>
