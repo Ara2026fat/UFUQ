@@ -201,3 +201,13 @@ body[data-page="exam"] button.card.stack > b { display: block; }
 .mentor-more{margin-top:6px;padding-top:8px;border-top:1px dashed #E6CF8E;display:flex;flex-direction:column;gap:6px}
 .wk-card .wk-strip{margin:0}
 .mentor-more[hidden]{display:none}
+
+/* شعار أفق كشخصية المرشد: يتحرك حسب الموقف، والصورة نفسها لا تتغير */
+.ms-av{flex:none;width:50px;height:auto;filter:drop-shadow(0 6px 8px rgba(18,48,107,.28));transform-origin:50% 90%}
+.ms-av.cheerful{animation:msFloat 3.2s ease-in-out infinite}
+.ms-av.push{animation:msPush 1.6s ease-in-out infinite}
+.ms-av.cheer{animation:msJump 1.3s ease-in-out infinite}
+@keyframes msFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-4px) rotate(2deg)}}
+@keyframes msPush{0%,100%{transform:scale(1) rotate(0)}30%{transform:scale(1.1) rotate(-4deg)}60%{transform:scale(1.06) rotate(3deg)}}
+@keyframes msJump{0%,100%{transform:translateY(0) scale(1,1)}20%{transform:translateY(0) scale(1.06,.94)}50%{transform:translateY(-10px) scale(.97,1.05)}75%{transform:translateY(0) scale(1.05,.95)}}
+@media (prefers-reduced-motion:reduce){.ms-av{animation:none!important}}
