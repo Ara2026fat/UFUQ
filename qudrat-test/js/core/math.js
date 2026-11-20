@@ -19,7 +19,7 @@ function mathPart(s) {
 export function rich(text = '') {
   return esc(text)
     .split('$')
-    .map((seg, i) => (i % 2 ? `<span class="mx">${mathPart(seg)}</span>` : seg))
+    .map((seg, i) => (i % 2 ? `<span class="mx">${mathPart(seg)}</span>` : seg.replace(/\^\{([^{}]+)\}/g, '<sup>$1</sup>').replace(/√\{([^{}]+)\}/g, '<span class="rad">√<span class="radin">$1</span></span>')))
     .join('')
     .replace(/\n/g, '<br>');
 }

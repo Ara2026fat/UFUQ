@@ -65,6 +65,7 @@ applyPrefs();
 shell.view.append(h('footer', { class: 'foot' }, h('div', { class: 'foot-links' }, h('a', { href: '#/help' }, 'المساعدة'), h('a', { href: '#/privacy' }, 'الخصوصية'), h('a', { href: '#/terms' }, 'الشروط'), h('a', { href: '#/settings' }, 'الإعدادات'), isStaff() ? null : h('a', { href: '#/staff' }, 'دخول الفريق'))));
 
 function render() {
+  window.__qkNav = (window.__qkNav || 0) + 1;
   const ctx = parse();
   // keep each role inside its own area
   const role = repo.role();
@@ -77,7 +78,7 @@ function render() {
   const pure = ctx.path.startsWith('/learn/') || ctx.path.startsWith('/solve') || (ctx.path === '/practice' && !isStaff()); // clean focus page: no tab bar, header, icons or install bar
   document.body.classList.toggle('pure-mode', pure);
   let ex = document.getElementById('pure-exit');
-  if (pure && !ex) { ex = document.createElement('a'); ex.id = 'pure-exit'; ex.href = '#/'; ex.textContent = 'خروج'; document.body.append(ex); }
+  if (pure && !ex) { ex = document.createElement('a'); ex.id = 'pure-exit'; ex.href = '#/'; ex.textContent = '› رجوع'; ex.addEventListener('click', (e) => { if (history.length > 1 && window.__qkNav > 1) { e.preventDefault(); history.back(); } }); document.body.append(ex); }
   if (ex) { ex.hidden = !pure; ex.href = ctx.path === '/practice' ? '#/' : '#/topics'; }
   { const P = ctx.path; document.body.dataset.page = P === '/' ? 'journey' : /^\/(learn-hub|unit|topics|ustaz-lessons|courses?|lesson|learn)/.test(P) ? 'learn' : /^\/(practice|mistakes|ideas|solve)/.test(P) ? 'train' : P.startsWith('/exam') ? 'exam' : /^\/(more|settings|help|privacy|terms|plan|progress|map)/.test(P) ? 'more' : 'other'; }
   shell.render(ctx.path);

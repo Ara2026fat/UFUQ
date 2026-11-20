@@ -211,3 +211,8 @@ body[data-page="exam"] button.card.stack > b { display: block; }
 @keyframes msPush{0%,100%{transform:scale(1) rotate(0)}30%{transform:scale(1.1) rotate(-4deg)}60%{transform:scale(1.06) rotate(3deg)}}
 @keyframes msJump{0%,100%{transform:translateY(0) scale(1,1)}20%{transform:translateY(0) scale(1.06,.94)}50%{transform:translateY(-10px) scale(.97,1.05)}75%{transform:translateY(0) scale(1.05,.95)}}
 @media (prefers-reduced-motion:reduce){.ms-av{animation:none!important}}
+
+/* back button */
+.top-back{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;margin-inline-end:6px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink-2,#14234A);cursor:pointer;flex:none}
+.top-back[hidden]{display:none}
+.top-back svg{width:22px;height:22px}

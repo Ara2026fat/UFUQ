@@ -21,6 +21,10 @@ const BT = [
   { l: 'أختبر', i: 'clipcheck', to: '/exam', m: (p) => p.startsWith('/exam') },
   { l: 'المزيد', i: 'list', to: '/more', m: (p) => /^\/(more|settings|help|report)/.test(p) },
 ];
+let visits = 0;
+const ROOTS = ['/', '/learn-hub', '/practice', '/exam', '/more', '/t'];
+const canBack = (p) => !ROOTS.includes(p.split('?')[0]);
+export function goBack(fallback = '/') { if (visits > 1) history.back(); else go(fallback); }
 export function createShell() {
   const role = () => repo.role();
   const sideNav = h('nav', { class: 'side-nav', 'aria-label': 'التنقل' });
@@ -40,18 +44,22 @@ export function createShell() {
     onChange: (e) => { repo.setRole(e.target.value); go(ROLES[e.target.value].home); },
   }, Object.entries(ROLES).filter(([k]) => k !== 'admin').map(([k, v]) => h('option', { value: k }, v.label)));
 
+  const viewBtn = h('button', { class: 'btn sm', type: 'button', onClick: () => { const toStu = role() !== 'student'; repo.setRole(toStu ? 'student' : 'teacher'); go(toStu ? '/' : '/t'); } }, 'عرض كطالب');
+  const backBtn = h('button', { class: 'top-back', type: 'button', 'aria-label': 'رجوع', hidden: true, onClick: () => goBack() }, h('span', { html: icon('arrow') }));
   const el = h('div', { class: 'app' },
     h('aside', { class: 'side' }, brand(), sideNav,
       null),
     h('div', { class: 'col' },
-      h('header', { class: 'top' }, h('a', { class: 'brand brand-top', href: '#/', 'aria-label': 'أفق قدرات كمي ولفظي' }, h('img', { class: 'logo-img', src: 'icons/logo-sm.png?v=4', alt: '', width: 68, height: 51 }), h('span', { class: 'brand-words' }, h('b', null, 'أفق'), h('small', null, 'قدرات كمي ولفظي'))), h('span', { class: 'spacer' }), h('span', { class: 'beta-pill', title: 'النسخة التجريبية' }, 'نسخة تجريبية'), h('a', { class: 'gear', href: '#/settings', 'aria-label': 'الإعدادات', title: 'الإعدادات' }, h('span', { html: icon('sliders') })), ),
-      isStaff() ? h('div', { class: 'demo-bar' }, h('span', null, 'وضع الفريق'), picker, h('button', { class: 'btn ghost sm', onClick: () => { lockStaff(); location.hash = '#/'; location.reload(); } }, 'خروج')) : null,
+      h('header', { class: 'top' }, backBtn, h('a', { class: 'brand brand-top', href: '#/', 'aria-label': 'أفق قدرات كمي ولفظي' }, h('img', { class: 'logo-img', src: 'icons/logo-sm.png?v=4', alt: '', width: 68, height: 51 }), h('span', { class: 'brand-words' }, h('b', null, 'أفق'), h('small', null, 'قدرات كمي ولفظي'))), h('span', { class: 'spacer' }), h('span', { class: 'beta-pill', title: 'النسخة التجريبية' }, 'نسخة تجريبية'), h('a', { class: 'gear', href: '#/settings', 'aria-label': 'الإعدادات', title: 'الإعدادات' }, h('span', { html: icon('sliders') })), ),
+      isStaff() ? h('div', { class: 'demo-bar' }, h('span', null, 'وضع الفريق'), viewBtn, h('button', { class: 'btn ghost sm', onClick: () => { lockStaff(); location.hash = '#/'; location.reload(); } }, 'خروج')) : null,
       view),
     tabbar, btabs);
 
   function render(path) {
     const r = role();
     picker.value = r === 'admin' ? 'teacher' : r;
+    viewBtn.textContent = r === 'student' ? 'العودة للوحة الفريق' : 'عرض كطالب';
+    visits++; backBtn.hidden = !canBack(path);
     const items = NAV[r];
     sideNav.replaceChildren(...items.map((n) => link(n, path)));
     const cur = (n) => (n.exact ? path === n.to : path.startsWith(n.base || n.to.split('?')[0]));
