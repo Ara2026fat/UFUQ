@@ -11,6 +11,7 @@ import { GUIDE } from '../../data/guide.js';
 import { playFiles } from '../../core/speech.js';
 import { isTrial, practiceLeft } from '../../core/trial.js';
 import { getPart, setPart, PARTS, topicInPart, skillInPart } from '../../store/part.js';
+import { isStaff } from '../../core/staff.js';
 
 const AR = (n) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
 const fmt = (t) => { const [h_, m] = t.split(':').map(Number); return `${AR(h_ % 12 === 0 ? 12 : h_ % 12)}:${AR(String(m).padStart(2, '0'))} ${h_ >= 12 ? 'م' : 'ص'}`; };
@@ -109,7 +110,8 @@ function mentorCard(nx, done, total, redraw) {
   const today = new Date().toDateString();
   let hidden = false; try { hidden = localStorage.getItem('qk_mentor_x') === today; } catch (e) { /* */ }
   let force = false; try { force = sessionStorage.getItem('qk_mentor_force') === '1'; } catch (e) { /* */ }
-  const need = force || (!hidden && (!planned || SPECIAL.includes(id)));
+  let always = true; try { always = localStorage.getItem('qk_mentor_always') !== '0'; } catch (e) { /* */ }
+  const need = force || isStaff() || (!hidden && (always || !planned || SPECIAL.includes(id)));
   const week = h('div', { class: 'wk-strip', role: 'img', 'aria-label': 'نشاطك في آخر سبعة أيام' }, strip.map((d) => h('span', { class: `wk-d${d.on ? ' on' : ''}${d.today ? ' today' : ''}` }, h('i', null), h('small', null, DAYS[d.dow]))));
   if (!need) {
     const chip = h('button', { class: 'ms-chip', type: 'button', 'aria-label': 'المرشد', onClick: () => { try { sessionStorage.setItem('qk_mentor_force', '1'); localStorage.removeItem('qk_mentor_x'); } catch (e) { /* */ } redraw && redraw(); } },
@@ -169,6 +171,6 @@ function homeInner(redraw) {
     pswitch,
     tabbed({ key: 'home', tabs: [
       { id: 'today', label: 'اليوم', render: () => h('div', { class: 'stack' }, heroN, M.slim) },
-      { id: 'journey', label: 'رحلتي', render: () => h('div', { class: 'stack' }, h('section', { class: 'card stack wk-card' }, h('div', { class: 'row between' }, h('h3', { style: 'margin:0' }, 'نشاطك هذا الأسبوع'), M.streak ? h('span', { class: 'badge ok' }, `${AR(M.streak)} أيام متتالية`) : null), M.week), journeyCard(), trialN) },
-      { id: 'tools', label: 'أدواتي', render: () => h('div', { class: 'stack' }, vbanner(), gridN) }] }));
+      { id: 'journey', label: 'رحلتي', render: () => h('div', { class: 'stack' }, M.slim, h('section', { class: 'card stack wk-card' }, h('div', { class: 'row between' }, h('h3', { style: 'margin:0' }, 'نشاطك هذا الأسبوع'), M.streak ? h('span', { class: 'badge ok' }, `${AR(M.streak)} أيام متتالية`) : null), M.week), journeyCard(), trialN) },
+      { id: 'tools', label: 'أدواتي', render: () => h('div', { class: 'stack' }, M.slim, vbanner(), gridN) }] }));
 }

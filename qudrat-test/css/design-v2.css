@@ -284,3 +284,19 @@ body.exam-live .q-meta, body.exam-live .listen { display: none !important; }
 .ex-sheet .card { max-width: 420px; width: 100%; }
 .opt.picked { border-color: var(--teal); background: color-mix(in srgb, var(--teal) 14%, var(--paper)); }
 .opt.picked .ltr-letter { background: var(--teal); color: #fff; }
+
+/* الشريط العلوي على الجوالات الصغيرة: لا يتجاوز العرض ولا يُقصّ «؟» أو الإعدادات */
+.top .brand-top{min-width:0;flex:0 1 auto;overflow:hidden}
+.top .brand-words{min-width:0;white-space:nowrap}
+.top .help-btn,.top .gear,.top .top-back{flex:none}
+@media (max-width:430px){
+  .top{gap:4px !important;padding-inline:8px !important}
+  .top .brand-words small{display:none}
+  .top .beta-pill{font-size:.62rem !important;padding:2px 6px !important}
+  .top .top-back,.top .help-btn{width:34px;height:34px}
+  .top .gear{width:34px !important}
+}
+@media (max-width:360px){
+  .top .beta-pill{display:none}
+  .top .brand-top .logo-img{width:44px !important;height:33px !important}
+}
