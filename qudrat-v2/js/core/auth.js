@@ -14,6 +14,8 @@ const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 const drop = (k) => { try { localStorage.removeItem(k); } catch { /* ignore */ } };
 
 export const session = () => read(SKEY);
+const TEST_HOST = /github\.io$/.test(location.hostname);
+if (TEST_HOST && !read(SKEY)) write(SKEY, { token: 'test-preview', name: 'تجربة', phone: '0500000000' });
 export const needsRegistration = () => !session() && !isStaff() && !location.hash.startsWith('#/staff');
 
 export async function api(path, { method = 'GET', body, token } = {}) {
