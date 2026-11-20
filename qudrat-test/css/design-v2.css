@@ -149,3 +149,42 @@ body[data-page="exam"] button.card.stack > b { display: block; }
 :root[data-part="verbal"] body[data-page="journey"] .hero, :root[data-part="verbal"] body[data-page="journey"] .rich .hero { background: radial-gradient(120% 70% at 50% 135%, rgba(233,182,74,.9) 0, rgba(233,182,74,.3) 38%, transparent 62%), linear-gradient(180deg, #4A1226 0%, #6E1D3B 70%, #7F2848 100%) !important; }
 :root[data-part="verbal"] body[data-page="journey"] .hero .ring::before { background: #6E1D3B !important; }
 :root[data-part="verbal"] body[data-page="exam"] .page-head { background: linear-gradient(180deg, #4A1226, #6E1D3B); }
+
+/* ===== جدولي: بطاقات جلسات بدل القوائم الأصلية ===== */
+.plan-block{background:#fff;border:1px solid #E8DFC8;border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:12px;box-shadow:0 10px 24px -18px rgba(18,48,107,.35)}
+.pb-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.pb-head h2{margin:0;font-family:var(--u-disp,inherit);font-size:1.25rem;color:#12306B}
+.pb-head small{color:#6A7A99}
+.pb-total{flex:none;background:#FBF3DC;border:1px solid #E6CF8E;color:#7A5A0E;border-radius:99px;padding:4px 12px;font-size:.82rem;white-space:nowrap}
+.pb-total b{font-size:1.05rem;margin-inline-end:3px}
+.sess{position:relative;display:flex;flex-direction:column;gap:10px;padding:12px 14px 12px 12px;border-radius:16px;background:linear-gradient(180deg,#FBFCFF,#F4F7FD);border:1px solid #DCE5F5;border-inline-start:5px solid #2E6FDB}
+.sess[data-kind="review"]{border-inline-start-color:#C9A24A}
+.sess[data-kind="ideas"]{border-inline-start-color:#7B8FB8}
+.sess-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sess-time{position:relative;display:inline-flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #CBD7EE;border-radius:14px;padding:6px 16px;cursor:pointer;min-height:48px}
+.sess-time-show{font-size:1.45rem;font-weight:800;color:#12306B;letter-spacing:.02em}
+.sess-time input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0;margin:0;font-size:16px}
+.sess-del{width:38px;height:38px;border-radius:50%;border:1.5px solid #E5D3D0;background:#fff;color:#B5483A;font-size:1.3rem;line-height:1;cursor:pointer}
+.sess-kinds{display:flex;gap:6px;flex-wrap:wrap}
+.sess-kind{flex:1 1 auto;border:1.5px solid #CBD7EE;background:#fff;color:#12306B;border-radius:12px;padding:9px 10px;font:inherit;font-weight:700;font-size:.9rem;cursor:pointer;min-height:44px}
+.sess-kind[aria-checked="true"]{background:linear-gradient(180deg,#2E6FDB,#17469E);border-color:#17469E;color:#fff;box-shadow:0 6px 12px -8px rgba(23,70,158,.7)}
+.sess-dur{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#4B5F82;font-weight:700;font-size:.9rem}
+.stepper{display:inline-flex;align-items:center;background:#fff;border:1.5px solid #CBD7EE;border-radius:14px;overflow:hidden}
+.stepper button{width:46px;height:44px;border:0;background:transparent;color:#17469E;font-size:1.5rem;font-weight:700;cursor:pointer}
+.stepper button:active{background:#EAF0FC}
+.stepper .sv{min-width:74px;text-align:center;font-weight:700;color:#12306B}
+.stepper .sv b{font-size:1.2rem}
+.sess-add{border:1.5px dashed #C9A24A;background:#FFFBF0;color:#7A5A0E;border-radius:14px;padding:12px;font:inherit;font-weight:800;cursor:pointer;min-height:48px}
+.exam-box{align-items:stretch}
+.exam-box h2{margin:0;font-family:var(--u-disp,inherit);font-size:1.25rem;color:#12306B}
+.exam-cd{text-align:center;font-size:1rem;color:#4B5F82;padding:14px;border-radius:16px;background:linear-gradient(180deg,#FFFBF0,#FBF3DC);border:1px solid #E6CF8E}
+.exam-cd b{display:block;font-size:2.4rem;line-height:1.2;color:#7A5A0E}
+.exam-date{font:inherit;font-size:1.1rem;padding:13px;border-radius:14px;border:1.5px solid #CBD7EE;background:#fff;color:#12306B;width:100%;text-align:center;min-height:50px}
+.sess{border-inline-start:1px solid #DCE5F5;overflow:hidden}
+.sess::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:5px;background:#2E6FDB}
+.sess[data-kind="review"]::before{background:#C9A24A}
+.sess[data-kind="ideas"]::before{background:#7B8FB8}
+.sess{padding-inline-start:18px}
+.sess-kinds{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.sess-kind{padding:9px 4px;font-size:.82rem;line-height:1.35}
+.stack>h1:first-child{margin-top:14px}
