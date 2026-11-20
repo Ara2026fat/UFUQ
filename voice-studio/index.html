@@ -1,0 +1,157 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>أفق — ورشة أصوات المرشد</title>
+<style>
+:root{--ink:#14234A;--bl:#1F63D6;--gold:#C9A24A;--ok:#2e9d62;--bad:#c0392b}
+*{box-sizing:border-box}body{font-family:Tahoma,system-ui,sans-serif;background:#f6f1e4;color:var(--ink);margin:0;padding:14px;line-height:1.7;max-width:760px;margin-inline:auto}
+h1{font-size:1.3rem;margin:0 0 2px}small,.mut{color:#5b6478}
+.card{background:#fff;border:1.5px solid #e3d3a3;border-radius:16px;padding:14px;margin:12px 0}
+input,select,textarea{font:inherit;width:100%;padding:9px;border:1.5px solid #d9cfae;border-radius:10px;background:#fff;margin:4px 0}
+button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:11px 16px;background:var(--bl);color:#fff;cursor:pointer}
+button.s{background:#fff;color:#143F9E;border:1.5px solid var(--bl)}button:disabled{opacity:.45;cursor:not-allowed}
+button.yes{background:var(--ok)}button.no{background:#fff;color:var(--bad);border:1.5px solid var(--bad)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.bar>*{flex:0 0 auto}.grow>*{flex:1 1 130px}
+label{display:flex;gap:6px;align-items:center}label input{width:auto;margin:0}
+details>summary{cursor:pointer;font-weight:700}
+#txt{font-size:1.35rem;line-height:2.1;min-height:140px;font-family:'Amiri','Traditional Arabic',Tahoma,serif}
+.prog{height:10px;background:#efe6c9;border-radius:9px;overflow:hidden}.prog i{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
+.st{font-weight:700;min-height:1.6em}.ok{color:var(--ok)}.err{color:var(--bad)}.warn{color:#a06a00}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{font-size:.78rem;padding:5px 9px;border-radius:99px;border:1.5px solid #d9cfae;background:#fff;color:var(--ink);font-weight:600}
+.chip.a{background:#e4f6ec;border-color:var(--ok)}.chip.f{background:#fdeceb;border-color:var(--bad)}.chip.g{border-color:var(--bl)}.chip.cur{outline:3px solid var(--gold)}
+.id{font-family:monospace;direction:ltr;display:inline-block;color:#5b6478;font-size:.85rem}
+</style></head><body>
+<h1>أفق — ورشة أصوات المرشد</h1>
+<small>eleven_v3 · الثبات ١٫٠ · التشابه ٠٫٨. المفتاح لا يُحفظ. النصوص وحالات الاعتماد والأصوات تُحفظ في هذا المتصفح، فلا تضيع إن أغلقت الصفحة.</small>
+
+<details class="card" id="setup" open><summary>الإعداد (المفتاح والصوت)</summary>
+<input id="key" type="password" placeholder="مفتاح ElevenLabs (sk_…)" style="direction:ltr">
+<select id="voice"><option value="">اضغط «حمّل أصواتي» ثم اختر صوت المرشد</option></select>
+<input id="custom" placeholder="أو الصق معرّف صوت (Voice ID)" style="direction:ltr">
+<div class="bar"><button id="mine" class="s">حمّل أصواتي</button><span id="tmsg" class="st"></span></div>
+<label><input type="checkbox" id="allah" checked> تفخيم لفظ الجلالة تلقائياً</label>
+<label>الثبات <input id="stab" type="number" step="0.1" min="0" max="1" value="1" style="width:80px"></label>
+</details>
+
+<div class="card">
+<div class="bar"><b id="cnt"></b><span class="mut" id="sum"></span></div>
+<div class="prog"><i id="pg"></i></div>
+</div>
+
+<div class="card" id="rev">
+<div class="bar"><b id="ttl"></b><span class="id" id="cid"></span></div>
+<textarea id="txt" aria-label="نص النطق (مشكّل)"></textarea>
+<small>النص هنا هو ما يُنطق. التشكيل مُضاف مسبقاً، عدّله كما تشاء. النص المعروض في التطبيق يُؤخذ منه بلا تشكيل.</small>
+<div class="bar grow"><button id="gen" class="s">ولّد الصوت</button><button id="play" class="s" disabled>▶ استمع</button></div>
+<div class="st" id="msg"></div>
+<div class="bar grow"><button id="yes" class="yes" disabled>✓ موافق وانتقل للتالية</button><button id="no" class="no" disabled>✗ خطأ، سأعدّل</button></div>
+<div class="bar grow"><button id="prev" class="s">السابقة</button><button id="next" class="s">التالية</button></div>
+</div>
+
+<div class="card"><b>كل الجمل</b>
+<div class="chips" id="chips" style="margin-top:8px"></div>
+<small>أخضر معتمدة · أحمر تحتاج تعديلاً · أزرق مولَّدة ولم تُعتمد · رمادي لم تُولَّد.</small>
+</div>
+
+<div class="card"><div class="bar grow">
+<button id="dl">نزّل المعتمد (zip)</button><button id="dlt" class="s">نزّل النصوص فقط (json)</button></div>
+<small id="dlmsg"></small></div>
+
+<script>
+const BASE=[
+["g_welcome","أَهْلًا بِكَ فِي أُفُق. أَنَا مُرْشِدُكَ فِي هَذِهِ الرِّحْلَة. سَنَبْنِي خُطَّتَكَ خُطْوَةً بِخُطْوَة، وَأَنَا مَعَكَ حَتَّى يَوْمِ الِاخْتِبَار."],
+["g_plan_exam","أَوَّلُ خُطْوَة: حَدِّدْ مَوْعِدَ اخْتِبَارِك. عِنْدَهَا أَحْسُبُ لَكَ كَمْ يَوْمًا بَقِي، وَأُرَتِّبُ لَكَ الْمَرَاحِل."],
+["g_plan_sessions","الْخُطْوَةُ الثَّانِيَة: اخْتَرْ عَدَدَ جَلَسَاتِكَ الْيَوْمِيَّةِ وَوَقْتَهَا. جَلْسَةٌ قَصِيرَةٌ مُنْتَظِمَةٌ أَفْضَلُ مِنْ سَاعَاتٍ مُتَفَرِّقَة."],
+["g_first_session","الْآنَ ابْدَأْ أَوَّلَ جَلْسَةِ تَدْرِيب. لَا تَهْتَمَّ بِالنَّتِيجَةِ الْيَوْم، الْمُهِمُّ أَنْ تَبْدَأ."],
+["g_morning","صَبَاحُ الْخَيْر. ابْدَأْ يَوْمَكَ بِجَلْسَةٍ قَصِيرَة، فَالذِّهْنُ فِي الصَّبَاحِ أَصْفَى مَا يَكُون."],
+["g_today_start","حَانَ وَقْتُ جَلْسَتِك. ابْدَأِ الْآن، وَعَشْرُ دَقَائِقَ تَكْفِي لِتُبْقِيَ عَادَتَكَ حَيَّة."],
+["g_small_steps","لَا تَنْظُرْ إِلَى الْجَبَلِ كُلِّه. رَكِّزْ عَلَى جَلْسَةِ الْيَوْمِ فَقَط، وَغَدًا لَهَا جَلْسَتُهَا."],
+["g_night","اقْتَرَبَ اللَّيْل. جَلْسَةٌ خَفِيفَةٌ قَبْلَ النَّوْمِ تُثَبِّتُ مَا تَعَلَّمْتَهُ الْيَوْم."],
+["g_round_done","أَحْسَنْت، أَتْمَمْتَ جَلْسَة. كُلُّ جَلْسَةٍ تُقَرِّبُكَ خُطْوَةً مِنْ دَرَجَتِك."],
+["g_all_done","أَتْمَمْتَ جَلَسَاتِ الْيَوْمِ كُلَّهَا. اسْتَرِحْ، وَعُدْ غَدًا لِنُكْمِلَ وَنُحَافِظَ عَلَى سِلْسِلَتِك."],
+["g_streak_3","ثَلَاثَةُ أَيَّامٍ مُتَتَالِيَة. بَدَأَتْ عَادَتُكَ تَتَشَكَّل، فَلَا تَكْسِرْهَا."],
+["g_streak_7","أُسْبُوعٌ كَامِلٌ مِنَ الِاسْتِمْرَار. هَذَا مَا يَصْنَعُ الْفَرْقَ بَيْنَ مَنْ يَحْلُمُ بِالدَّرَجَةِ وَمَنْ يَصِلُ إِلَيْهَا."],
+["g_missed","فَاتَتْكَ الْأَيَّامُ الْمَاضِيَة، وَلَا بَأْس. الْمُهِمُّ أَنْ تَعُودَ الْيَوْم. جَلْسَةٌ قَصِيرَةٌ تَكْفِي."],
+["g_comeback","سَعِيدٌ بِرُؤْيَتِكَ مَرَّةً أُخْرَى. لِنُكْمِلْ مِنْ حَيْثُ تَوَقَّفْنَا."],
+["g_mistake","الْخَطَأُ لَيْسَ خَسَارَة، الْخَطَأُ يَدُلُّكَ عَلَى مَا تَحْتَاجُه. افْهَمْ لِمَاذَا أَخْطَأْت ثُمَّ أَعِدِ الْمُحَاوَلَة."],
+["g_guess","إِذَا خَمَّنْتَ الْإِجَابَةَ فَسَجِّلْ ذَلِك. التَّخْمِينُ الصَّحِيحُ لَا يَعْنِي أَنَّكَ أَتْقَنْتَ الْفِكْرَة."],
+["g_rush","الِاسْتِعْجَالُ يُضَيِّعُ عَلَامَاتٍ تَعْرِفُ حَلَّهَا. خُذْ نَفَسًا، وَاقْرَأِ السُّؤَالَ مَرَّةً أُخْرَى."],
+["g_mastery","الْإِتْقَانُ لَا يُقَاسُ بِعَدَدِ الدَّقَائِق، بَلْ بِأَنْ تَفْهَمَ الْفِكْرَةَ وَتَحُلَّهَا بِنَفْسِك."],
+["g_mini_exam","الْمُحَاكَاةُ تُدَرِّبُكَ عَلَى الْإِيقَاعِ نَفْسِه: وَقْتٌ مُحَدَّدٌ وَضَغْطٌ حَقِيقِيّ. خُذْهَا بِجِدِّيَّة."],
+["g_exam_near","اقْتَرَبَ مَوْعِدُ اخْتِبَارِك. رَكِّزْ عَلَى أَخْطَائِكَ الْآن، وَلَا تَفْتَحْ مَوَادَّ جَدِيدَةً كَثِيرَة."],
+["g_final_days","هَذِهِ أَيَّامُكَ الْأَخِيرَة. رَاجِعْ أَخْطَاءَكَ وَأَفْكَارَ الْحَلّ، وَارْتَحْ جَيِّدًا قَبْلَ الِاخْتِبَار."],
+["g_trial","أَنْتَ الْآنَ فِي النُّسْخَةِ التَّجْرِيبِيَّة. جَرِّبْ بِحُرِّيَّة، وَسَتَجِدُ الدَّوْرَةَ الْكَامِلَةَ بِانْتِظَارِكَ حِينَ تُقَرِّر."],
+["g_trial_end","انْتَهَتْ جَلَسَاتُ الْيَوْمِ التَّجْرِيبِيَّة. عُدْ غَدًا، وَرَاجِعْ أَخْطَاءَكَ فِي الْأَثْنَاء."],
+["g_verbal","فِي اللَّفْظِيّ، اقْرَأِ السِّيَاقَ قَبْلَ الْخِيَارَات. الْمَعْنَى يَقُودُكَ إِلَى الْإِجَابَة."],
+["g_quant","فِي الْكَمِّيّ، اكْتُبِ الْمُعْطَيَاتِ أَوَّلًا. نِصْفُ الْحَلِّ يَبْدَأُ مِنْ تَرْتِيبِ مَا أَمَامَك."],
+["g_tired","إِنْ شَعَرْتَ بِالتَّعَبِ فَخُذِ اسْتِرَاحَةً قَصِيرَة. الْعَقْلُ الْمُرْتَاحُ يَتَعَلَّمُ أَسْرَع."]
+];
+const $=s=>document.querySelector(s);
+const SK='ufuq_voice_studio_v1';
+let S;try{S=JSON.parse(localStorage.getItem(SK))||{}}catch{S={}}
+S.t=S.t||{};S.st=S.st||{};S.at=S.at||{};          // t: نص معدّل، st: a|f، at: النص الذي وُلّد به الصوت
+const save=()=>{try{localStorage.setItem(SK,JSON.stringify(S))}catch{}};
+const txt=i=>S.t[BASE[i][0]]??BASE[i][1];
+const plain=t=>t.replace(/[ً-ٰٟـ]/g,'');
+// تخزين الأصوات في IndexedDB
+const db=new Promise(r=>{const q=indexedDB.open('ufuq_voice',1);q.onupgradeneeded=()=>q.result.createObjectStore('a');q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)});
+const dbOp=async(m,...a)=>{const d=await db;if(!d)return;return new Promise(r=>{const q=d.transaction('a',m==='get'?'readonly':'readwrite').objectStore('a')[m](...a);q.onsuccess=()=>r(q.result);q.onerror=()=>r()})};
+const blobs={};let cur=0,player=null;
+const id=i=>BASE[i][0];
+const prep=t=>$('#allah').checked?t.replace(/\bالله\b/g,'اللَّه'):t;
+const vid=()=>$('#custom').value.trim()||$('#voice').value;
+async function tts(text){const k=$('#key').value.trim();if(!k||!vid()){$('#setup').open=true;throw new Error('الصق المفتاح واختر الصوت من الإعداد')}
+ const r=await fetch('https://api.elevenlabs.io/v1/text-to-speech/'+vid()+'?output_format=mp3_44100_128',{method:'POST',headers:{'xi-api-key':k,'Content-Type':'application/json'},body:JSON.stringify({text:prep(text),model_id:'eleven_v3',voice_settings:{stability:+$('#stab').value,similarity_boost:0.8,style:0,use_speaker_boost:true}})});
+ if(!r.ok)throw new Error('خطأ '+r.status+(r.status===401?' (المفتاح غير صحيح)':''));return await r.blob()}
+const stale=i=>blobs[id(i)]&&S.at[id(i)]!==txt(i);
+function stateOf(i){const k=id(i);if(S.st[k]==='a'&&!stale(i))return'a';if(S.st[k]==='f')return'f';return blobs[k]?'g':'n'}
+function render(){
+ const k=id(cur),has=!!blobs[k],stl=stale(cur);
+ $('#ttl').textContent='جملة '+(cur+1)+' من '+BASE.length;$('#cid').textContent=k;
+ if($('#txt').dataset.k!==k){$('#txt').value=txt(cur);$('#txt').dataset.k=k}
+ $('#gen').textContent=has?'أعد التوليد':'ولّد الصوت';
+ $('#play').disabled=!has;$('#yes').disabled=!has||stl;$('#no').disabled=!has;
+ const a=BASE.filter((_,i)=>stateOf(i)==='a').length;
+ $('#cnt').textContent=a+' من '+BASE.length+' معتمدة';$('#pg').style.width=(a/BASE.length*100)+'%';
+ $('#sum').textContent='';
+ $('#chips').innerHTML='';BASE.forEach((c,i)=>{const b=document.createElement('button');b.className='chip '+({a:'a',f:'f',g:'g',n:''}[stateOf(i)])+(i===cur?' cur':'');b.textContent=(i+1)+(stateOf(i)==='a'?' ✓':'');b.onclick=()=>go(i);$('#chips').append(b)});
+ $('#dl').disabled=!a;
+}
+function msg(t,c){$('#msg').textContent=t;$('#msg').className='st '+(c||'')}
+function go(i){cur=Math.max(0,Math.min(BASE.length-1,i));$('#txt').dataset.k='';msg(blobs[id(cur)]?(stale(cur)?'النص تغيّر، أعد التوليد قبل الاعتماد':''):'','warn');render()}
+function play(){if(!blobs[id(cur)])return;if(player)player.pause();player=new Audio(URL.createObjectURL(blobs[id(cur)]));player.play().catch(()=>msg('اضغط «استمع» للتشغيل','warn'))}
+async function gen(auto){const i=cur,k=id(i),t=$('#txt').value.trim();if(!t){msg('النص فارغ','err');return false}
+ S.t[k]=t;save();$('#gen').disabled=true;msg('جارٍ التوليد…');
+ try{const b=await tts(t);blobs[k]=b;S.at[k]=t;if(S.st[k]==='a')delete S.st[k];save();dbOp('put',b,k);
+  if(cur===i){msg('جاهز. استمع ثم اعتمد أو اطلب التعديل','ok');render();play()}return true}
+ catch(e){msg(e.message,'err');return false}finally{$('#gen').disabled=false}}
+$('#gen').onclick=()=>gen();
+$('#play').onclick=play;
+$('#txt').addEventListener('input',()=>{S.t[id(cur)]=$('#txt').value;save();if(blobs[id(cur)])msg('النص تغيّر، أعد التوليد قبل الاعتماد','warn');render()});
+$('#yes').onclick=async()=>{S.st[id(cur)]='a';save();
+ const nx=BASE.findIndex((_,i)=>i>cur&&stateOf(i)!=='a');
+ if(nx<0){render();msg('انتهت الجمل. نزّل المعتمد من الأسفل','ok');return}
+ go(nx);if(!blobs[id(nx)])await gen(true);else play()};
+$('#no').onclick=()=>{S.st[id(cur)]='f';save();render();msg('عدّل النص (التشكيل أو الصياغة) ثم اضغط «أعد التوليد»','warn');$('#txt').focus()};
+$('#prev').onclick=()=>go(cur-1);$('#next').onclick=()=>go(cur+1);
+$('#mine').onclick=async()=>{const k=$('#key').value.trim();if(!k){$('#tmsg').textContent='الصق المفتاح';return}
+ try{const r=await fetch('https://api.elevenlabs.io/v1/voices',{headers:{'xi-api-key':k}});if(!r.ok)throw new Error(r.status);const j=await r.json();const s=$('#voice');s.innerHTML='';j.voices.forEach(v=>{const o=document.createElement('option');o.value=v.voice_id;o.textContent=v.name+(v.category&&v.category!=='premade'?' ('+v.category+')':'');s.append(o)});$('#tmsg').textContent=j.voices.length+' صوت'}catch(e){$('#tmsg').textContent='خطأ '+e.message}};
+// zip
+const T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc=b=>{let c=~0;for(let i=0;i<b.length;i++)c=T[(c^b[i])&255]^(c>>>8);return ~c>>>0};
+async function zip(files){const enc=new TextEncoder();const parts=[],cd=[];let off=0;
+ for(const f of files){const d=f.data||new Uint8Array(await f.blob.arrayBuffer()),n=enc.encode(f.name),c=crc(d);
+  const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint32(14,c,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,n.length,true);
+  parts.push(h.buffer,n,d);const e=new DataView(new ArrayBuffer(46));e.setUint32(0,0x02014b50,true);e.setUint16(4,20,true);e.setUint16(6,20,true);e.setUint16(8,0x0800,true);e.setUint32(16,c,true);e.setUint32(20,d.length,true);e.setUint32(24,d.length,true);e.setUint16(28,n.length,true);e.setUint32(42,off,true);cd.push(e.buffer,n);off+=30+n.length+d.length}
+ const cs=cd.reduce((a,b)=>a+b.byteLength,0);const z=new DataView(new ArrayBuffer(22));z.setUint32(0,0x06054b50,true);z.setUint16(8,files.length,true);z.setUint16(10,files.length,true);z.setUint32(12,cs,true);z.setUint32(16,off,true);
+ return new Blob([...parts,...cd,z.buffer],{type:'application/zip'})}
+const dlf=(b,n)=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click()};
+function texts(onlyApproved){const o={};BASE.forEach((c,i)=>{if(onlyApproved&&stateOf(i)!=='a')return;const v=txt(i);o[c[0]]={voice:v,text:plain(v),approved:stateOf(i)==='a'}});return o}
+$('#dl').onclick=async()=>{const ids=BASE.map((c,i)=>stateOf(i)==='a'?c[0]:null).filter(Boolean);
+ const idx={};ids.forEach(k=>idx[k]=1);
+ const files=ids.map(k=>({name:k+'.mp3',blob:blobs[k]}));
+ files.push({name:'index.json',data:new TextEncoder().encode(JSON.stringify(idx))});
+ files.push({name:'texts.json',data:new TextEncoder().encode(JSON.stringify(texts(true),null,1))});
+ dlf(await zip(files),'ufuq-guide-voice.zip');$('#dlmsg').textContent='نُزّل: '+ids.length+' صوتاً معتمداً مع النصوص النهائية.'};
+$('#dlt').onclick=()=>{dlf(new Blob([JSON.stringify(texts(false),null,1)],{type:'application/json'}),'ufuq-guide-texts.json')};
+(async()=>{for(const c of BASE){const b=await dbOp('get',c[0]);if(b)blobs[c[0]]=b}
+ const f=BASE.findIndex((_,i)=>stateOf(i)!=='a');go(f<0?0:f);
+ if(!blobs[id(cur)])msg('اضغط «ولّد الصوت» للجملة الأولى. بعد كل «موافق» تُولَّد التالية وتُشغَّل تلقائياً','')})();
+</script></body></html>
