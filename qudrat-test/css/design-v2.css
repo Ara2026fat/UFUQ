@@ -240,3 +240,16 @@ body.help-off .help-btn{display:none!important}
 
 .hp-g{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .hp-g .ab-c{min-height:120px}
+
+/* logo without box */
+.top .brand .logo-img, .brand .logo-img { box-shadow: none !important; border-radius: 0 !important; background: none !important; filter: drop-shadow(0 2px 3px rgba(6,21,71,.28)) !important; }
+
+/* header fit: logo + beta + gear + help in one row */
+.top{gap:6px !important;padding-inline:10px !important}
+.top .brand .logo-img,.brand-top .logo-img{width:52px !important;height:39px !important}
+.top .beta-pill{padding:3px 9px !important;font-size:.72rem !important;white-space:nowrap}
+.top .gear{width:38px !important;min-width:0 !important;padding:0 !important}
+.top .help-btn{width:36px;height:36px;margin:0;font-size:1.1rem}
+.top .top-back{width:36px;height:36px;margin:0}
+.ms-chip{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:4px 14px 4px 10px;border-radius:99px;border:1.5px solid #E0B13A;background:#FFFBEF;color:#8A5A05;font:700 .9rem inherit;cursor:pointer}
+.ms-chip img{height:34px;width:auto}

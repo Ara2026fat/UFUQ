@@ -81,7 +81,7 @@ function guideBtn(id) {
   return b;
 }
 /** المرشد: يبني خطة الطالب، ويحفّزه على الاستمرار، ويعرض أسبوعه. */
-function mentorCard(nx, done, total) {
+function mentorCard(nx, done, total, redraw) {
   const w = jr.where(), sk = jr.streakDays(), strip = jr.weekStrip();
   const DAYS = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'];
   const allDone = !nx && total > 0 && done >= total;
@@ -108,9 +108,14 @@ function mentorCard(nx, done, total) {
   const SPECIAL = ['g_final_days', 'g_exam_near', 'g_missed', 'g_comeback', 'g_streak_3', 'g_streak_7', 'g_all_done'];
   const today = new Date().toDateString();
   let hidden = false; try { hidden = localStorage.getItem('qk_mentor_x') === today; } catch (e) { /* */ }
-  const need = !hidden && (!planned || SPECIAL.includes(id));
+  let force = false; try { force = sessionStorage.getItem('qk_mentor_force') === '1'; } catch (e) { /* */ }
+  const need = force || (!hidden && (!planned || SPECIAL.includes(id)));
   const week = h('div', { class: 'wk-strip', role: 'img', 'aria-label': 'نشاطك في آخر سبعة أيام' }, strip.map((d) => h('span', { class: `wk-d${d.on ? ' on' : ''}${d.today ? ' today' : ''}` }, h('i', null), h('small', null, DAYS[d.dow]))));
-  if (!need) return { slim: null, week, streak: sk.n };
+  if (!need) {
+    const chip = h('button', { class: 'ms-chip', type: 'button', 'aria-label': 'المرشد', onClick: () => { try { sessionStorage.setItem('qk_mentor_force', '1'); localStorage.removeItem('qk_mentor_x'); } catch (e) { /* */ } redraw && redraw(); } },
+      h('img', { src: 'icons/mentor.png?v=2', alt: '', width: 30, height: 34, 'aria-hidden': 'true' }), h('span', null, 'المرشد'));
+    return { slim: chip, week, streak: sk.n };
+  }
   const MOOD = ['g_streak_3', 'g_streak_7', 'g_all_done', 'g_round_done', 'g_mastery'].includes(id) ? 'cheer' : ['g_missed', 'g_comeback', 'g_exam_near', 'g_final_days', 'g_mistake', 'g_rush'].includes(id) ? 'push' : 'cheerful';
   const more = h('div', { class: 'mentor-more', hidden: true },
     planned ? null : h('ol', { class: 'mentor-steps' }, steps.map(([t, ok, to]) => h('li', { class: ok ? 'ok' : '' }, ok ? h('span', null, t) : h('a', { href: to }, t)))),
@@ -120,13 +125,13 @@ function mentorCard(nx, done, total) {
       h('img', { class: `ms-av ${MOOD}`, src: 'icons/mentor.png?v=2', alt: '', width: 54, height: 60, 'aria-hidden': 'true' }),
       h('button', { class: 'ms-txt', type: 'button', 'aria-expanded': 'false', onClick: (e) => { const o = more.hidden; more.hidden = !o; e.currentTarget.setAttribute('aria-expanded', String(o)); slim.classList.toggle('open', o); } }, h('b', null, 'مرشدك'), h('span', null, msg)),
       guideBtn(id),
-      h('button', { class: 'ms-x', type: 'button', 'aria-label': 'إخفاء اليوم', onClick: () => { try { localStorage.setItem('qk_mentor_x', today); } catch (e) { /* */ } slim.remove(); } }, '×')),
+      h('button', { class: 'ms-x', type: 'button', 'aria-label': 'إخفاء اليوم', onClick: () => { try { localStorage.setItem('qk_mentor_x', today); sessionStorage.removeItem('qk_mentor_force'); } catch (e) { /* */ } redraw && redraw(); } }, '×')),
     more);
   return { slim, week, streak: sk.n };
 }
 
 function homeInner(redraw) {
-  const M = mentorCard(eng.nextRound(), eng.roundsDoneToday(), eng.todayRounds().length);
+  const M = mentorCard(eng.nextRound(), eng.roundsDoneToday(), eng.todayRounds().length, redraw);
   const mistakes = repo.mistakes();
   const rs = eng.todayRounds(), nx = eng.nextRound(), done = eng.roundsDoneToday();
   const go = (r, i) => (r.kind === 'ideas' ? `#/ideas?r=${i}` : `#/practice?mode=daily&kind=${r.kind}&r=${i}&part=${getPart()}`);
