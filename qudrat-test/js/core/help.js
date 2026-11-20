@@ -98,6 +98,12 @@ const PAGES = [
 ];
 
 let on = false, sheet;
+export const helpEnabled = () => { try { return localStorage.getItem('qk_help') !== '0'; } catch (e) { return true; } };
+export function setHelpEnabled(v) {
+  try { localStorage.setItem('qk_help', v ? '1' : '0'); } catch (e) { /* */ }
+  document.body.classList.toggle('help-off', !v);
+  if (!v) { on = false; document.body.classList.remove('help-on'); document.querySelectorAll('.help-btn').forEach((b) => b.setAttribute('aria-pressed', 'false')); if (sheet) sheet.classList.remove('open'); }
+}
 const mark = (path) => {
   const root = document.getElementById('view') || document.body;
   const rules = [...ALL, ...(PAGES.find(([re]) => re.test(path)) || [, []])[1]];
@@ -111,10 +117,11 @@ const mark = (path) => {
   });
 };
 const show = (t, d) => {
-  sheet.replaceChildren(h('b', null, t), h('p', null, d), h('button', { type: 'button', class: 'btn sm', onClick: () => sheet.classList.remove('open') }, 'فهمت'));
+  sheet.replaceChildren(h('b', null, t), h('p', null, d), h('div', { class: 'help-act' }, h('button', { type: 'button', class: 'btn sm', onClick: () => sheet.classList.remove('open') }, 'فهمت'), h('button', { type: 'button', class: 'btn sm ghost', onClick: () => setHelpEnabled(false) }, 'إيقاف زر الشرح (يمكنك تفعيله من الإعدادات)')));
   sheet.classList.add('open');
 };
 export function initHelp(headerEl) {
+  document.body.classList.toggle('help-off', !helpEnabled());
   sheet = h('div', { class: 'help-sheet', role: 'dialog', 'aria-live': 'polite' });
   document.body.append(sheet);
   const mkBtn = (extra) => h('button', { class: 'help-btn' + extra, type: 'button', 'aria-pressed': 'false', 'aria-label': 'شرح العناصر', title: 'شرح العناصر' }, '؟');

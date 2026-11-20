@@ -230,3 +230,6 @@ body.help-on [data-help]{outline:3px dashed #C9971C;outline-offset:3px;border-ra
 
 .help-pure{display:none;position:fixed;top:calc(6px + env(safe-area-inset-top,0px));inset-inline-end:12px;z-index:61;margin:0}
 .pure-mode .help-pure{display:block}
+
+body.help-off .help-btn{display:none!important}
+.help-act{display:flex;flex-wrap:wrap;gap:8px}

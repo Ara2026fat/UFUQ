@@ -1,3 +1,4 @@
+import { helpEnabled, setHelpEnabled } from '../../core/help.js';
 import { h, toast } from '../../core/dom.js';
 import { storage } from '../../store/storage.js';
 import { repo } from '../../store/repo.js';
@@ -114,7 +115,8 @@ export function settingsView() {
     h('section', { class: 'card stack' }, h('h2', null, 'المظهر'),
       seg('السمة', 'theme', [['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']]),
       seg('حجم الخط', 'size', [['s', 'صغير'], ['m', 'عادي'], ['l', 'كبير'], ['xl', 'أكبر']]),
-      seg('الحركة', 'calm', [[false, 'عادية'], [true, 'هادئة (أقل حركة)']])),
+      seg('الحركة', 'calm', [[false, 'عادية'], [true, 'هادئة (أقل حركة)']]),
+      (() => { const cur = helpEnabled(); const box = h('div', { class: 'set-seg', role: 'group', 'aria-label': 'زر الشرح' }, [[true, 'مفعّل'], [false, 'متوقف']].map(([v, t]) => h('button', { type: 'button', class: 'btn sm ' + (cur === v ? 'primary' : 'ghost'), 'aria-pressed': String(cur === v), onClick: () => { setHelpEnabled(v); box.querySelectorAll('button').forEach((b, i) => { const on = !!i === !v; b.className = 'btn sm ' + (on ? 'primary' : 'ghost'); b.setAttribute('aria-pressed', String(on)); }); } }, t))); return h('div', { class: 'set-row' }, h('div', { class: 'set-l' }, h('b', null, 'زر الشرح (؟)'), h('small', { class: 'muted' }, 'يشرح لك كل أيقونة في التطبيق. أوقفه متى لم تعد بحاجة إليه.')), box); })()),
     h('section', { class: 'card stack' }, h('h2', null, 'جدولي'),
       h('p', { class: 'muted small' }, 'حدّد أوقات مذاكرتك وتدريبك في اليوم، وعدّلها متى شئت.'),
       h('a', { class: 'btn primary', href: '#/plan' }, 'ضبط جدولي')),
