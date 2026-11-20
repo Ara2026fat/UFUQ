@@ -117,7 +117,7 @@ function mentorCard(nx, done, total) {
     nx ? h('small', { class: 'muted' }, `جلستك القادمة: ${fmt(nx.r.at)}`) : null);
   const slim = h('section', { class: 'mentor-slim', 'aria-label': 'المرشد' },
     h('div', { class: 'ms-row' },
-      h('img', { class: `ms-av ${MOOD}`, src: 'icons/mentor.png?v=1', alt: '', width: 50, height: 63, 'aria-hidden': 'true' }),
+      h('img', { class: `ms-av ${MOOD}`, src: 'icons/mentor.png?v=2', alt: '', width: 54, height: 60, 'aria-hidden': 'true' }),
       h('button', { class: 'ms-txt', type: 'button', 'aria-expanded': 'false', onClick: (e) => { const o = more.hidden; more.hidden = !o; e.currentTarget.setAttribute('aria-expanded', String(o)); slim.classList.toggle('open', o); } }, h('b', null, 'مرشدك'), h('span', null, msg)),
       guideBtn(id),
       h('button', { class: 'ms-x', type: 'button', 'aria-label': 'إخفاء اليوم', onClick: () => { try { localStorage.setItem('qk_mentor_x', today); } catch (e) { /* */ } slim.remove(); } }, '×')),
