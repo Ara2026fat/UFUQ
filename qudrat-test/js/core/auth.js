@@ -9,13 +9,13 @@ import { isStaff } from './staff.js';
 import { REPORT_WHATSAPP } from './brand.js';
 
 const SKEY = 'qk_sess', PKEY = 'qk_dp';
+const TEST_HOST = /github\.io$/.test(location.hostname);
 const read = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
 const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* ignore */ } };
 const drop = (k) => { try { localStorage.removeItem(k); } catch { /* ignore */ } };
 
 export const session = () => read(SKEY);
-const TEST_HOST = /github\.io$/.test(location.hostname);
-if (TEST_HOST && !read(SKEY)) write(SKEY, { token: 'test-preview', name: 'تجربة', phone: '0500000000' });
+if (TEST_HOST) { if (/welcome/.test(location.search)) { try { localStorage.removeItem(SKEY); } catch (e) { /* */ } } else if (!read(SKEY)) write(SKEY, { token: 'test-preview', name: 'تجربة', phone: '0500000000' }); }
 export const needsRegistration = () => !session() && !isStaff() && !location.hash.startsWith('#/staff');
 
 export async function api(path, { method = 'GET', body, token } = {}) {
@@ -38,6 +38,7 @@ const newPin = () => String(Math.floor(1000 + Math.random() * 9000));
 const contactUrl = (t) => `https://wa.me/${REPORT_WHATSAPP}?text=${encodeURIComponent(t)}`;
 
 async function attempt(name, phone) {
+  if (TEST_HOST) return { ok: true, token: 'test-preview', name };
   const pin = read(PKEY) || newPin();
   write(PKEY, pin);
   const reg = await api('/api/register', { method: 'POST', body: { name, phone, pin } });
@@ -57,29 +58,35 @@ async function attempt(name, phone) {
 export function showRegistration() {
   return new Promise((done) => {
     const st = document.createElement('style');
-    st.textContent = `.reg{position:fixed;inset:0;z-index:99999;overflow:auto;display:grid;place-items:center;padding:20px;background:radial-gradient(120% 70% at 50% 0,rgba(255,226,140,.25),transparent 60%),linear-gradient(170deg,#1E5FCB,#143F9E 55%,#0A2160);font-family:var(--font);direction:rtl}
-    .reg form{background:var(--card,#fff);color:var(--ink,#0D3A42);border-radius:22px;padding:24px 20px;max-width:380px;width:100%;display:flex;flex-direction:column;gap:12px;text-align:center;box-shadow:0 20px 50px -14px rgba(0,0,0,.5)}
-    .reg h1{margin:0;font-size:1.35rem}.reg p{margin:0;color:var(--ink-2,#47666C);font-size:.95rem;line-height:1.7}
-    .reg label{text-align:right;font-weight:700;font-size:.92rem;display:flex;flex-direction:column;gap:6px}
-    .reg input{font:inherit;font-size:1.1rem;padding:12px;border-radius:12px;border:2px solid var(--line,#E3DAC6);background:var(--paper,#FAF6EE);color:inherit;width:100%;box-sizing:border-box}
-    .reg input[name=phone]{direction:ltr;text-align:center;letter-spacing:.12em}
-    .reg input:focus-visible,.reg button:focus-visible,.reg a:focus-visible{outline:3px solid #EE8A22;outline-offset:2px}
-    .reg .err{min-height:1.4em;color:var(--bad,#C4432D);font-size:.9rem;font-weight:700}
-    .reg small{color:var(--ink-3,#6B868B);font-size:.8rem}`;
+    st.textContent = `.reg{position:fixed;inset:0;z-index:99999;overflow:auto;display:flex;flex-direction:column;align-items:center;padding:34px 24px 28px;background:radial-gradient(90% 40% at 50% 0,rgba(240,196,92,.28),transparent 70%),linear-gradient(180deg,#EEF3FC 0,#FBF7EE 55%,#F7F0E0 100%);color:#12306B;font-family:var(--font);direction:rtl}
+    .reg .rg-logo{width:132px;height:auto;margin-top:clamp(8px,6vh,54px)}
+    .reg .rg-beta{margin-top:10px;font-size:.78rem;font-weight:700;color:#8A6410;border:1.5px solid #C9A24A;border-radius:99px;padding:3px 12px}
+    .reg form{margin-top:clamp(18px,4vh,36px);max-width:360px;width:100%;display:flex;flex-direction:column;gap:14px;text-align:right}
+    .reg h1{margin:0;font-size:1.7rem;text-align:center;font-family:'Amiri',var(--font),serif;color:#12306B}
+    .reg p{margin:0 0 6px;color:#4B5F82;font-size:.95rem;line-height:1.7;text-align:center}
+    .reg label{font-weight:700;font-size:.88rem;display:flex;flex-direction:column;gap:6px;color:#12306B}
+    .reg input{font:inherit;font-size:1.1rem;padding:13px 14px;border-radius:14px;border:1.5px solid #D9CFB8;background:#fff;color:#12306B;width:100%;box-sizing:border-box}
+    .reg input[name=phone]{direction:ltr;text-align:center;letter-spacing:.1em}
+    .reg input:focus-visible,.reg button:focus-visible,.reg a:focus-visible{outline:3px solid #E5A93A;outline-offset:2px}
+    .reg .err{min-height:1.3em;color:#B73A25;font-size:.88rem;font-weight:700;text-align:center}
+    .reg .rg-go{border:0;border-radius:14px;padding:14px;font:inherit;font-size:1.1rem;font-weight:800;color:#fff;background:linear-gradient(180deg,#2E6FDB,#17469E);box-shadow:0 8px 18px -8px rgba(23,70,158,.6);cursor:pointer}
+    .reg .rg-go:disabled{opacity:.7}
+    .reg .rg-help{margin-top:auto;padding-top:22px;text-align:center;font-size:.82rem;color:#6A7A99;line-height:1.8;max-width:340px}
+    .reg .rg-help a{color:#1C4FB0;font-weight:700;text-decoration:underline;text-underline-offset:3px}`;
     document.head.append(st);
     const name = h('input', { name: 'name', autocomplete: 'name', maxlength: 60, required: true, 'aria-label': 'الاسم' });
     const phone = h('input', { name: 'phone', type: 'tel', inputmode: 'tel', autocomplete: 'tel', maxlength: 16, required: true, placeholder: '05XXXXXXXX', 'aria-label': 'رقم الجوال' });
     const err = h('div', { class: 'err', role: 'alert' });
-    const btn = h('button', { type: 'submit', class: 'btn primary' }, 'ابدأ');
+    const btn = h('button', { type: 'submit', class: 'rg-go' }, 'ابدأ');
     const form = h('form', { novalidate: true },
       h('h1', null, 'أهلاً بك في أفق'),
-      h('p', null, 'اكتب اسمك ورقم جوالك لتبدأ. لا تحتاج رقماً سرياً ولا بريداً.'),
+      h('p', null, 'اسمك ورقم جوالك فقط، وتبدأ.'),
       h('label', null, 'الاسم', name),
       h('label', null, 'رقم الجوال', phone),
-      err, btn,
-      REPORT_WHATSAPP ? h('a', { class: 'btn ghost', target: '_blank', rel: 'noopener', href: contactUrl('أحتاج مساعدة في التسجيل في أفق') }, 'تواصل مع المطوّرين') : null,
-      h('small', null, 'نحفظ اسمك وجوالك ليتابع معك المعلّم ويصلك جديد المنصة. لا نشاركهما مع أحد.'));
-    const box = h('div', { class: 'reg' }, form);
+      err, btn);
+    const help = h('div', { class: 'rg-help' }, 'نحفظ اسمك وجوالك ليتابع معك المعلّم. لا نشاركهما مع أحد.', h('br'),
+      REPORT_WHATSAPP ? h('a', { target: '_blank', rel: 'noopener', href: contactUrl('أحتاج مساعدة في التسجيل في أفق') }, 'تواصل مع المطوّرين') : null);
+    const box = h('div', { class: 'reg' }, h('img', { class: 'rg-logo', src: 'icons/logo-sm.png?v=4', alt: 'أفق' }), h('span', { class: 'rg-beta' }, 'نسخة تجريبية'), form, help);
     document.body.append(box);
     name.focus();
     form.onsubmit = async (e) => {
