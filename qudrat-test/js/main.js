@@ -1,5 +1,6 @@
 import { arabize } from './core/arabize.js';
 import { createShell } from './components/shell.js';
+import { initHelp } from './core/help.js';
 import { route, parse, onRoute, setNotFound } from './core/router.js';
 import { ROLES } from './core/nav.js';
 import { repo } from './store/repo.js';
@@ -60,6 +61,7 @@ route('/staff', () => {
 setNotFound(() => h('div', { class: 'empty' }, h('h2', null, 'الصفحة غير موجودة'), h('a', { class: 'btn primary', href: '#/' }, 'الرئيسية')));
 
 const shell = createShell();
+initHelp(shell.el.querySelector("header.top"));
 document.getElementById('app').replaceChildren(shell.el);
 applyPrefs();
 shell.view.append(h('footer', { class: 'foot' }, h('div', { class: 'foot-links' }, h('a', { href: '#/help' }, 'المساعدة'), h('a', { href: '#/privacy' }, 'الخصوصية'), h('a', { href: '#/terms' }, 'الشروط'), h('a', { href: '#/settings' }, 'الإعدادات'), isStaff() ? null : h('a', { href: '#/staff' }, 'دخول الفريق'))));
