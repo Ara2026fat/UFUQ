@@ -259,3 +259,28 @@ body.help-off .help-btn{display:none!important}
 .hp-g .ab-ic svg{width:30px;height:30px}
 .hp-g .ab-c b{font-size:1.05rem}
 .hp-g .ab-c small{font-size:.82rem;line-height:1.6}
+
+/* ===== محاكاة الاختبار الفعلية ===== */
+body.exam-live .tabbar, body.exam-live .btabs, body.exam-live .dock, body.exam-live .sheet, body.exam-live .top, body.exam-live .demo-bar, body.exam-live .foot, body.exam-live #qk-install, body.exam-live .side, body.exam-live .help-btn, body.exam-live .help-pure, body.exam-live .badge.demo { display: none !important; }
+body.exam-live { --nav-h: 0px; }
+body.exam-live .main { padding-top: 12px; margin: 0 auto; max-width: 760px; }
+body.exam-live .app { grid-template-columns: minmax(0, 1fr) !important; }
+body.exam-live .q-meta, body.exam-live .listen { display: none !important; }
+.exam-root { position: relative; }
+.ex-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ex-clock { font: 800 1.5rem/1 var(--font); font-variant-numeric: tabular-nums; padding: 8px 14px; border-radius: 14px; background: var(--paper-2); border: 2px solid var(--line); }
+.ex-clock.low { color: #b45309; border-color: #f59e0b; }
+.ex-clock.crit { color: #fff; background: #c2410c; border-color: #c2410c; animation: exBlink 1s steps(2) infinite; }
+.ex-clock.big { font-size: 2.6rem; padding: 14px 22px; margin: 4px auto; }
+@keyframes exBlink { 50% { opacity: .65; } }
+@media (prefers-reduced-motion: reduce) { .ex-clock.crit { animation: none; } }
+.ex-pal { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.ex-q { height: 38px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--paper); font: 700 .9rem var(--font); color: var(--ink-2); cursor: pointer; }
+.ex-q.done { background: var(--teal); border-color: var(--teal); color: #fff; }
+.ex-q.flag { box-shadow: 0 0 0 2px #f59e0b; }
+.ex-q.cur { outline: 3px solid var(--ink); outline-offset: 1px; }
+.ex-rules { margin: 0; padding-inline-start: 1.2em; display: grid; gap: 8px; line-height: 1.7; }
+.ex-sheet { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 18px; background: rgba(0,0,0,.45); }
+.ex-sheet .card { max-width: 420px; width: 100%; }
+.opt.picked { border-color: var(--teal); background: color-mix(in srgb, var(--teal) 14%, var(--paper)); }
+.opt.picked .ltr-letter { background: var(--teal); color: #fff; }
