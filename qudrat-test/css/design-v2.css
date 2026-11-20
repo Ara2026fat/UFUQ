@@ -237,3 +237,6 @@ body.help-off .help-btn{display:none!important}
 .hp-h{margin:14px 0 2px;font-size:1rem;color:#8A6410}
 .set-row.hp-row{display:flex!important;flex-direction:row!important;align-items:flex-start;gap:12px}
 .hp-row .set-l{flex:1;min-width:0}
+
+.hp-g{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hp-g .ab-c{min-height:120px}

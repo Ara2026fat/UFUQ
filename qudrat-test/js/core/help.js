@@ -100,9 +100,11 @@ const PAGES = [
 
 
 const NAMES = ['رحلتي', 'أتعلّم', 'داخل الوحدة', 'أتدرّب', 'دفتر أخطائي', 'تقدّمي', 'أختبر', 'المزيد', 'جدولي'];
-const IC = { 'رحلتي': 'home', 'أتعلّم': 'books', 'أتدرّب': 'bolt', 'أختبر': 'clipcheck', 'المزيد': 'list', 'الإعدادات': 'sliders', 'سهم الرجوع': 'arrow', 'خريطة مهاراتي': 'nodes', 'أخطائي': 'xcircle', 'تقدّمي': 'trend', 'مسألة محلولة': 'stairs', 'الدورات': 'book', 'المساعدة': 'book', 'خروج': 'x', 'دروس الأستاذ المصوّرة': 'film', 'دروس الأستاذ': 'film' };
+const IC = { 'رحلتي': 'home', 'أتعلّم': 'books', 'أتدرّب': 'bolt', 'أختبر': 'clipcheck', 'المزيد': 'list', 'الإعدادات': 'sliders', 'سهم الرجوع': 'arrow', 'خريطة مهاراتي': 'nodes', 'أخطائي': 'xcircle', 'تقدّمي': 'trend', 'مسألة محلولة': 'stairs', 'الدورات': 'book', 'المساعدة': 'book', 'خروج': 'x', 'دروس الأستاذ المصوّرة': 'film', 'دروس الأستاذ': 'film',
+  'شعار أفق': 'home', 'نسخة تجريبية': 'star', 'كمي / لفظي': 'calc', 'اليوم': 'clock', 'أدواتي': 'puzzle', 'ابدأ الجولة': 'bolt', 'الدائرة': 'target', 'مرشدك': 'bulb', 'إخفاء': 'x', 'استمع': 'bulb', 'نشاطك هذا الأسبوع': 'flame', 'تاريخ الاختبار': 'clock', 'مجموعة الوحدات': 'list', 'رقم الوحدة': 'list', 'الوحدة': 'book', 'جديد': 'star', 'فيديوهات الأستاذ': 'film', 'تقدّمك في الوحدات': 'trend', 'قيد مراجعة الأستاذ': 'pen', 'الفكرة': 'bulb', 'القاعدة': 'book', 'مثال': 'edit', 'ركن الأستاذ': 'pen', 'تأكّد': 'check', 'شرح الأستاذ': 'film', 'التالي': 'arrow', 'تقدّم الجولة': 'chart', 'اسم المهارة': 'target', 'الخيارات': 'list', 'دفترك نظيف': 'check', 'تدرّب الآن': 'bolt', 'أيام متتالية': 'flame', 'محاولة': 'check', 'دقتك': 'target', 'أخطاء مفتوحة': 'xcircle', 'إتقان المهارات': 'trophy', 'نموّك في آخر ١٤ يوماً': 'trend', 'نشاطك ٢٨ يوماً': 'flame', 'تحتاج انتباهاً': 'xcircle', 'خريطة مهاراتي كاملة': 'nodes', 'محاكاة الاختبار': 'clipcheck', 'نموذج كامل': 'clipcheck', 'قسم كمي': 'calc', 'قسم لفظي': 'book', 'قسم مصغّر': 'clock', 'تقرير الأسبوع': 'users', 'موعد الاختبار': 'clock', 'أيام الدراسة': 'list', 'الإجازة': 'star' };
 const dedupe = (rows) => { const seen = new Set(); return rows.filter(([, , t]) => (seen.has(t) ? false : seen.add(t))); };
-const item = ([, , t, d]) => h('div', { class: 'set-row hp-row' }, IC[t] ? h('span', { class: 'hp-ic', html: icon(IC[t]) }) : h('span', { class: 'hp-ic hp-dot' }, '•'), h('div', { class: 'set-l' }, h('b', null, t), h('small', { class: 'muted' }, d)));
+const card = ([, , t, d]) => h('div', { class: 'ab-c' }, h('span', { class: 'ab-ic', html: icon(IC[t] || 'bulb') }), h('b', null, t), h('small', null, d));
+const grid = (rows) => h('div', { class: 'ab-g hp-g' }, ...dedupe(rows).map(card));
 export const helpEnabled = () => { try { return localStorage.getItem('qk_help') !== '0'; } catch (e) { return true; } };
 export function setHelpEnabled(v) {
   try { localStorage.setItem('qk_help', v ? '1' : '0'); } catch (e) { /* */ }
@@ -115,8 +117,8 @@ const pageRows = (path) => { const hit = PAGES.find(([re]) => re.test(path)); re
 export function helpAll() {
   return h('section', { class: 'card stack' }, h('h2', null, 'شرح الأيقونات'),
     h('p', { class: 'muted small' }, 'اضغط على «؟» في أعلى أي صفحة لترى شرح ما فيها، أو اقرأ هنا شرح كل الصفحات.'),
-    h('h3', { class: 'hp-h' }, 'في كل الصفحات'), ...dedupe(ALL).map(item),
-    ...PAGES.flatMap(([re, rows], i) => [h('h3', { class: 'hp-h' }, NAMES[i]), ...dedupe(rows).map(item)]));
+    h('h3', { class: 'hp-h' }, 'في كل الصفحات'), grid(ALL),
+    ...PAGES.flatMap(([re, rows], i) => [h('h3', { class: 'hp-h' }, NAMES[i]), grid(rows)]));
 }
 export function initHelp(headerEl) {
   document.body.classList.toggle('help-off', !helpEnabled());
@@ -127,7 +129,7 @@ export function initHelp(headerEl) {
     const rows = pageRows(path);
     sheet.replaceChildren(
       h('div', { class: 'hp-top' }, h('b', null, 'شرح هذه الصفحة'), h('button', { type: 'button', class: 'btn sm', onClick: () => sheet.classList.remove('open') }, 'إغلاق')),
-      h('div', { class: 'hp-list' }, ...(rows.length ? rows : dedupe(ALL)).map(item), h('h3', { class: 'hp-h' }, 'في كل الصفحات'), ...dedupe(ALL).map(item)),
+      h('div', { class: 'hp-list' }, rows.length ? grid(rows) : null, h('h3', { class: 'hp-h' }, 'في كل الصفحات'), grid(ALL)),
       h('button', { type: 'button', class: 'btn sm ghost', onClick: () => setHelpEnabled(false) }, 'إيقاف زر الشرح (يمكنك تفعيله من الإعدادات)'));
     sheet.classList.add('open');
   };
