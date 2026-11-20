@@ -188,3 +188,16 @@ body[data-page="exam"] button.card.stack > b { display: block; }
 .sess-kinds{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .sess-kind{padding:9px 4px;font-size:.82rem;line-height:1.35}
 .stack>h1:first-child{margin-top:14px}
+
+/* ===== المرشد المختصر: شريط رفيع يظهر عند الحاجة فقط ===== */
+.mentor-slim{background:linear-gradient(180deg,#FFFBF0,#FBF3DC);border:1px solid #E6CF8E;border-radius:16px;padding:8px 10px}
+.ms-row{display:flex;align-items:center;gap:8px}
+.ms-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:start;background:none;border:0;padding:4px 2px;font:inherit;color:#12306B;cursor:pointer}
+.ms-txt b{font-size:.78rem;color:#8A6410}
+.ms-txt span{font-size:.9rem;line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mentor-slim.open .ms-txt span{-webkit-line-clamp:unset;display:block}
+.mentor-slim .listen{flex:none;padding:6px 12px;min-height:38px}
+.ms-x{flex:none;width:34px;height:34px;border-radius:50%;border:0;background:transparent;color:#8A6410;font-size:1.3rem;cursor:pointer}
+.mentor-more{margin-top:6px;padding-top:8px;border-top:1px dashed #E6CF8E;display:flex;flex-direction:column;gap:6px}
+.wk-card .wk-strip{margin:0}
+.mentor-more[hidden]{display:none}

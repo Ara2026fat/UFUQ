@@ -67,14 +67,14 @@ let GIDX = null;
 const guideIdx = () => (GIDX ? Promise.resolve(GIDX) : fetch('audio/guide/index.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({})).then((m) => (GIDX = m)));
 let gctl = null;
 function guideBtn(id) {
-  const b = h('button', { class: 'btn sm ghost listen later', type: 'button', disabled: true, title: 'الصوت لم يُدشَّن بعد' }, '🔊 استمع — لاحقاً');
+  const b = h('button', { class: 'btn sm ghost listen later', type: 'button', disabled: true, title: 'الصوت لم يُدشَّن بعد' }, 'استمع');
   guideIdx().then((m) => {
     if (!m[id]) return;
-    b.disabled = false; b.classList.remove('later'); b.title = ''; b.textContent = '🔊 استمع';
+    b.disabled = false; b.classList.remove('later'); b.title = ''; b.textContent = 'استمع';
     b.onclick = () => {
-      if (gctl) { gctl.stop(); gctl = null; b.textContent = '🔊 استمع'; return; }
-      b.textContent = '⏹ إيقاف';
-      const end = () => { gctl = null; b.textContent = '🔊 استمع'; };
+      if (gctl) { gctl.stop(); gctl = null; b.textContent = 'استمع'; return; }
+      b.textContent = 'إيقاف';
+      const end = () => { gctl = null; b.textContent = 'استمع'; };
       gctl = playFiles([`audio/guide/${id}.mp3`], { onEnd: end, onFail: end });
     };
   });
@@ -105,15 +105,26 @@ function mentorCard(nx, done, total) {
     ['أتمّ أول جلسة تدريب', sk.ever, nx ? `#/practice?mode=daily&kind=${nx.r.kind}&r=${nx.i}&part=${getPart()}` : '#/practice?mode=quick'],
   ];
   const planned = w.hasExam && sk.ever;
-  return h('section', { class: 'card stack mentor', 'aria-label': 'المرشد' },
-    h('div', { class: 'row between' }, h('h3', { style: 'margin:0' }, 'مرشدك'), sk.n ? h('span', { class: 'badge ok' }, `${AR(sk.n)} أيام متتالية`) : null),
-    h('p', { class: 'mentor-msg' }, msg), guideBtn(id),
-    h('div', { class: 'wk-strip', role: 'img', 'aria-label': 'نشاطك في آخر سبعة أيام' }, strip.map((d) => h('span', { class: `wk-d${d.on ? ' on' : ''}${d.today ? ' today' : ''}` }, h('i', null), h('small', null, DAYS[d.dow])))),
+  const SPECIAL = ['g_final_days', 'g_exam_near', 'g_missed', 'g_comeback', 'g_streak_3', 'g_streak_7', 'g_all_done'];
+  const today = new Date().toDateString();
+  let hidden = false; try { hidden = localStorage.getItem('qk_mentor_x') === today; } catch (e) { /* */ }
+  const need = !hidden && (!planned || SPECIAL.includes(id));
+  const week = h('div', { class: 'wk-strip', role: 'img', 'aria-label': 'نشاطك في آخر سبعة أيام' }, strip.map((d) => h('span', { class: `wk-d${d.on ? ' on' : ''}${d.today ? ' today' : ''}` }, h('i', null), h('small', null, DAYS[d.dow]))));
+  if (!need) return { slim: null, week, streak: sk.n };
+  const more = h('div', { class: 'mentor-more', hidden: true },
     planned ? null : h('ol', { class: 'mentor-steps' }, steps.map(([t, ok, to]) => h('li', { class: ok ? 'ok' : '' }, ok ? h('span', null, t) : h('a', { href: to }, t)))),
     nx ? h('small', { class: 'muted' }, `جلستك القادمة: ${fmt(nx.r.at)}`) : null);
+  const slim = h('section', { class: 'mentor-slim', 'aria-label': 'المرشد' },
+    h('div', { class: 'ms-row' },
+      h('button', { class: 'ms-txt', type: 'button', 'aria-expanded': 'false', onClick: (e) => { const o = more.hidden; more.hidden = !o; e.currentTarget.setAttribute('aria-expanded', String(o)); slim.classList.toggle('open', o); } }, h('b', null, 'مرشدك'), h('span', null, msg)),
+      guideBtn(id),
+      h('button', { class: 'ms-x', type: 'button', 'aria-label': 'إخفاء اليوم', onClick: () => { try { localStorage.setItem('qk_mentor_x', today); } catch (e) { /* */ } slim.remove(); } }, '×')),
+    more);
+  return { slim, week, streak: sk.n };
 }
 
 function homeInner(redraw) {
+  const M = mentorCard(eng.nextRound(), eng.roundsDoneToday(), eng.todayRounds().length);
   const mistakes = repo.mistakes();
   const rs = eng.todayRounds(), nx = eng.nextRound(), done = eng.roundsDoneToday();
   const go = (r, i) => (r.kind === 'ideas' ? `#/ideas?r=${i}` : `#/practice?mode=daily&kind=${r.kind}&r=${i}&part=${getPart()}`);
@@ -150,7 +161,7 @@ function homeInner(redraw) {
   return h('div', { class: 'stack focus-home rich' },
     pswitch,
     tabbed({ key: 'home', tabs: [
-      { id: 'today', label: 'اليوم', render: () => h('div', { class: 'stack' }, heroN, mentorCard(nx, done, rs.length)) },
-      { id: 'journey', label: 'رحلتي', render: () => h('div', { class: 'stack' }, journeyCard(), trialN) },
+      { id: 'today', label: 'اليوم', render: () => h('div', { class: 'stack' }, heroN, M.slim) },
+      { id: 'journey', label: 'رحلتي', render: () => h('div', { class: 'stack' }, h('section', { class: 'card stack wk-card' }, h('div', { class: 'row between' }, h('h3', { style: 'margin:0' }, 'نشاطك هذا الأسبوع'), M.streak ? h('span', { class: 'badge ok' }, `${AR(M.streak)} أيام متتالية`) : null), M.week), journeyCard(), trialN) },
       { id: 'tools', label: 'أدواتي', render: () => h('div', { class: 'stack' }, vbanner(), gridN) }] }));
 }

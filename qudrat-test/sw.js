@@ -1,6 +1,6 @@
 // Offline shell: network-first (always fresh while online), cache fallback when offline.
 // Audio is left to the network (range requests). Bump CACHE to invalidate.
-const CACHE = 'qudrat-shell-v148';
+const CACHE = 'qudrat-shell-v149';
 const OFF = 'ufuq-offline-v1'; // ما حمّله الطالب من الإعدادات للاستخدام بدون إنترنت — لا يُحذف مع تحديث النسخة
 self.addEventListener('install', () => { self.skipWaiting(); });
 self.addEventListener('activate', (e) => e.waitUntil(
