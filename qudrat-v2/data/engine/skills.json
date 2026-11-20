@@ -1,0 +1,164 @@
+[
+{
+"id": "ratios",
+"name": "النسب",
+"prereq": null,
+"stage": "s1",
+"stageName": "الأساسيات",
+"domain": "d_quant_basic",
+"part": "quant"
+},
+{
+"id": "percent",
+"name": "النسب المئوية",
+"prereq": "ratios",
+"stage": "s1",
+"stageName": "الأساسيات",
+"domain": "d_quant_basic",
+"part": "quant"
+},
+{
+"id": "proportion",
+"name": "التناسب",
+"prereq": "ratios",
+"stage": "s1",
+"stageName": "الأساسيات",
+"domain": "d_quant_basic",
+"part": "quant"
+},
+{
+"id": "completion",
+"name": "إكمال الجمل",
+"prereq": null,
+"stage": "s1",
+"stageName": "الأساسيات",
+"domain": "d_verbal_basic",
+"part": "verbal"
+},
+{
+"id": "analogy",
+"name": "التناظر اللفظي",
+"prereq": null,
+"stage": "s1",
+"stageName": "الأساسيات",
+"domain": "d_verbal_basic",
+"part": "verbal"
+},
+{
+"id": "odd_one",
+"name": "المفردة الشاذة",
+"prereq": null,
+"stage": "s1",
+"stageName": "الأساسيات",
+"domain": "d_verbal_basic",
+"part": "verbal"
+},
+{
+"id": "association",
+"name": "الارتباط",
+"prereq": null,
+"stage": "s1",
+"stageName": "الأساسيات",
+"domain": "d_verbal_basic",
+"part": "verbal"
+},
+{
+"id": "comparisons",
+"name": "المقارنات",
+"prereq": "ratios",
+"stage": "s2",
+"stageName": "البناء",
+"domain": "d_quant_adv",
+"part": "quant"
+},
+{
+"id": "averages",
+"name": "المعدلات",
+"prereq": "percent",
+"stage": "s2",
+"stageName": "البناء",
+"domain": "d_quant_adv",
+"part": "quant"
+},
+{
+"id": "geometry",
+"name": "الهندسة",
+"prereq": null,
+"stage": "s2",
+"stageName": "البناء",
+"domain": "d_quant_adv",
+"part": "quant"
+},
+{
+"id": "probability",
+"name": "الاحتمالات",
+"prereq": null,
+"stage": "s2",
+"stageName": "البناء",
+"domain": "d_quant_adv",
+"part": "quant"
+},
+{
+"id": "algebra",
+"name": "الجبر والمعادلات",
+"prereq": null,
+"stage": "s2",
+"stageName": "البناء",
+"domain": "d_quant_adv",
+"part": "quant"
+},
+{
+"id": "sequences",
+"name": "المتتابعات والأنماط",
+"prereq": null,
+"stage": "s2",
+"stageName": "البناء",
+"domain": "d_quant_adv",
+"part": "quant"
+},
+{
+"id": "data_read",
+"name": "تحليل الجداول والرسوم",
+"prereq": "proportion",
+"stage": "s2",
+"stageName": "البناء",
+"domain": "d_quant_adv",
+"part": "quant"
+},
+{
+"id": "reading",
+"name": "استيعاب المقروء",
+"prereq": "completion",
+"stage": "s2",
+"stageName": "البناء",
+"domain": "d_verbal_adv",
+"part": "verbal"
+},
+{
+"id": "context_error",
+"name": "الخطأ السياقي",
+"prereq": "completion",
+"stage": "s2",
+"stageName": "البناء",
+"domain": "d_verbal_adv",
+"part": "verbal"
+},
+{
+"id": "timing",
+"name": "إدارة الوقت",
+"prereq": null,
+"stage": "s3",
+"stageName": "الجاهزية",
+"domain": "d_ready",
+"part": "ready"
+},
+{
+"id": "mock",
+"name": "المحاكاة",
+"prereq": null,
+"stage": "s3",
+"stageName": "الجاهزية",
+"domain": "d_ready",
+"part": "ready"
+}
+]

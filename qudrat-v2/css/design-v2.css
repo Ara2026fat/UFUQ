@@ -1,0 +1,151 @@
+/* ======================================================================
+   أفق — لغة «الشروق» (نسخة اختبار v2)
+   الفكرة: أفق = خط الأفق. السماء في الأعلى، والأرض في الأسفل، وخط ذهبي رفيع يفصل.
+   - سطح واحد بارز في كل صفحة (البطل)، وما حوله هادئ بلا إطارات وظلال متكررة.
+   - الخط: أميري للعناوين الكبيرة والأرقام، وتجوّال للواجهة (قراءة أسهل للأرقام والرياضيات).
+   - الألوان كما هي: كحلي، ذهبي، أزرق (كمي)، عنابي (لفظي).
+   ====================================================================== */
+:root {
+  --u-navy: #14234A; --u-navy-2: #1F3C86; --u-gold: #C9921A; --u-gold-2: #E9B64A;
+  --u-sky: #DCE8F8; --u-paper: #FBF7EE; --u-hair: #E6DAB8; --u-ink-2: #4a5775;
+  --u-disp: 'Amiri', 'Tajawal', serif;
+}
+
+/* ---- الأرضية: سماء تتدرّج إلى ورق دافئ ---- */
+html body { background: linear-gradient(180deg, #D9E7FA 0, #EAF1FB 130px, #F6F3EA 330px, var(--u-paper) 520px) fixed !important; }
+[data-part="verbal"] body, body[data-part="verbal"] { background: linear-gradient(180deg, #F2DDE4 0, #F7ECEF 130px, #F8F2EC 330px, var(--u-paper) 520px) fixed !important; }
+
+/* ---- الرأس: خط الأفق الذهبي تحت الشعار ---- */
+.top { background: transparent !important; box-shadow: none !important; border: 0 !important; position: relative; }
+.top::after { content: ''; position: absolute; inset-inline: 16px; bottom: 0; height: 1px; background: linear-gradient(to left, var(--u-gold), rgba(201,146,26,.12) 80%, transparent); }
+.beta-pill { background: transparent !important; border: 1px solid var(--u-gold) !important; color: var(--u-navy) !important; font-size: .72rem !important; padding: 2px 9px !important; }
+
+/* ---- عناوين الصفحات: أميري + خط أفق ---- */
+body[data-page] .page-head h1, body[data-page] .lt-hero h1, body[data-page] .sec-t, body[data-page="more"] h3.sec-t {
+  font-family: var(--u-disp); font-weight: 700; font-size: 2rem; line-height: 1.25; color: var(--u-navy); margin: 6px 0 4px; letter-spacing: 0; }
+body[data-page] .page-head h1::after, body[data-page] .lt-hero h1::after, body[data-page] h3.sec-t::after {
+  content: ''; display: block; height: 9px; margin-top: 8px;
+  background: radial-gradient(circle at 100% 50%, var(--u-gold) 0 4px, transparent 5px), linear-gradient(to left, var(--u-gold) 0, rgba(201,146,26,.15) 70%, transparent) 0 50% / 100% 1.5px no-repeat; }
+body[data-page] .page-head p, body[data-page] .lt-hero p { color: var(--u-ink-2); line-height: 1.85; font-size: .95rem; max-width: 52ch; text-wrap: pretty; }
+.lt-hero { display: block !important; }
+.lt-hero .lt-logo { display: none; }
+
+/* ---- تبويبات: نص بخط سفلي ذهبي بدل الكبسولات ---- */
+.tb-strip { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; gap: 4px; border-bottom: 1px solid var(--u-hair) !important; border-radius: 0 !important; }
+.tb-btn { background: transparent !important; box-shadow: none !important; border: 0 !important; border-radius: 0 !important; color: var(--u-ink-2) !important; font-weight: 700; padding: 11px 14px !important; position: relative; }
+.tb-btn.on { color: var(--u-navy) !important; }
+.tb-btn.on::after { content: ''; position: absolute; inset-inline: 10px; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background: var(--u-gold); }
+
+/* ---- السطوح: بلا إطارات وظلال متكررة ---- */
+body[data-page] section.card, body[data-page] .card:not(button), body[data-page] .qt, body[data-page] .trial-banner {
+  background: rgba(255,255,255,.62) !important; border: 0 !important; box-shadow: none !important; border-radius: 18px !important; }
+body[data-page] .stack { gap: 14px; }
+
+/* ===================== رحلتي (الرئيسية) ===================== */
+.part-switch { background: rgba(20,35,74,.06) !important; border: 0 !important; box-shadow: none !important; padding: 3px !important; }
+.part-switch button { box-shadow: none !important; }
+body[data-page="journey"] .rich .hero, body[data-page="journey"] .hero {
+  background: radial-gradient(120% 70% at 50% 135%, rgba(233,182,74,.95) 0, rgba(233,182,74,.35) 38%, transparent 62%), linear-gradient(180deg, #14234A 0%, #1B3173 70%, #24408F 100%) !important;
+  color: #fff; border: 0 !important; border-radius: 26px !important; box-shadow: 0 18px 34px -22px rgba(20,35,74,.8) !important; padding: 22px 20px 18px !important; overflow: hidden; position: relative; }
+body[data-page="journey"] .hero::before { content: ''; position: absolute; inset-inline: 0; bottom: 58px; height: 1px; background: linear-gradient(to left, transparent, rgba(255,214,120,.8), transparent); }
+body[data-page="journey"] .hero .sun3d { opacity: .0; display: none; }
+body[data-page="journey"] .hero h2 { font-family: var(--u-disp); font-weight: 700; font-size: 2rem; line-height: 1.2; color: #fff; margin: 2px 0 0; }
+body[data-page="journey"] .hero small, body[data-page="journey"] .hero .focus-kicker { color: rgba(255,255,255,.78) !important; }
+body[data-page="journey"] .hero .ring { --size: 54px; filter: none; }
+body[data-page="journey"] .hero .hero-stats, body[data-page="journey"] .hero .hero-note { color: rgba(255,255,255,.7) !important; border-color: rgba(255,255,255,.18) !important; }
+body[data-page="journey"] .mentor { background: transparent !important; padding: 4px 2px !important; }
+body[data-page="journey"] .mentor h3 { font-family: var(--u-disp); font-size: 1.25rem; color: var(--u-navy); }
+.mentor-msg { font-size: 1.02rem; font-weight: 600; }
+.wk-d i { border-color: #D8C58D !important; background: rgba(255,255,255,.7) !important; }
+.wk-d.on i { background: radial-gradient(circle at 50% 70%, #F6CF6B, var(--u-gold)) !important; border-color: var(--u-gold) !important; box-shadow: 0 0 0 3px rgba(233,182,74,.28) !important; }
+
+/* ===================== أتعلّم: مسار الوحدات ===================== */
+body[data-page="learn"] .lt-list { position: relative; gap: 0 !important; padding-inline-start: 0; }
+body[data-page="learn"] .lt-list::before { content: ''; position: absolute; inset-block: 22px; inset-inline-end: 21px; width: 2px; background: linear-gradient(to bottom, var(--u-gold), rgba(201,146,26,.15)); border-radius: 2px; }
+body[data-page="learn"] .lt-ucard { background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important; border-bottom: 1px solid rgba(230,218,184,.7) !important; padding: 16px 0 !important; gap: 14px !important; position: relative; }
+body[data-page="learn"] .lt-num { width: 44px; height: 44px; border-radius: 50% !important; background: var(--u-paper) !important; border: 2px solid var(--u-gold) !important; color: var(--u-navy) !important; font-family: var(--u-disp); font-size: 1.35rem !important; font-weight: 700; box-shadow: none !important; z-index: 1; display: grid; place-items: center; flex: none; }
+body[data-page="learn"] .lt-ucard.locked .lt-num { border-color: #cdbf95 !important; color: #9aa3b5 !important; }
+body[data-page="learn"] .lt-utitle { font-family: var(--u-disp); font-weight: 700; font-size: 1.28rem; color: var(--u-navy); }
+body[data-page="learn"] .lt-chip { background: transparent !important; border: 1px solid rgba(20,35,74,.18) !important; color: var(--u-ink-2) !important; font-size: .74rem; padding: 1px 9px; }
+body[data-page="learn"] .lt-chip.new { border-color: var(--u-gold) !important; color: #8A5A05 !important; }
+body[data-page="learn"] .lt-go { color: var(--u-gold); font-size: 1.3rem; }
+body[data-page="learn"] .lt-vban { background: var(--u-navy) !important; color: #fff !important; border: 0 !important; box-shadow: none !important; border-radius: 18px !important; }
+body[data-page="learn"] .lt-vban b, body[data-page="learn"] .lt-vban small { color: #fff !important; }
+body[data-page="learn"] .lt-vban small { opacity: .75; }
+body[data-page="learn"] .lt-vban .lt-vic { background: rgba(233,182,74,.2) !important; border-radius: 12px; }
+body[data-page="learn"] .lt-prog { background: rgba(20,35,74,.08) !important; border: 0 !important; height: 10px !important; }
+body[data-page="learn"] .lt-prog small { display: none; }
+body[data-page="learn"] .lt-prog i { background: linear-gradient(to left, var(--u-gold), var(--u-gold-2)) !important; }
+
+/* ===================== أتدرّب: مسرح السؤال ===================== */
+body[data-page="train"] .card { background: rgba(255,255,255,.7) !important; border: 0 !important; box-shadow: 0 1px 0 rgba(20,35,74,.06) !important; }
+body[data-page="train"] .opt, body[data-page="train"] button.opt, body[data-page="train"] .choice {
+  background: rgba(255,255,255,.85) !important; border: 1.5px solid rgba(20,35,74,.12) !important; box-shadow: none !important; border-radius: 16px !important; transition: border-color .15s, background .15s, transform .12s; }
+body[data-page="train"] .opt:hover { border-color: var(--u-gold) !important; }
+body[data-page="train"] .opt:active { transform: scale(.99); }
+body[data-page="train"] .opt .ltr, body[data-page="train"] .opt .letter, body[data-page="train"] .opt > span:first-child { background: var(--u-navy) !important; box-shadow: none !important; color: #fff !important; }
+
+/* ===================== أختبر: جدّية الامتحان ===================== */
+body[data-page="exam"] .page-head { background: linear-gradient(180deg, #14234A, #1B3173); margin: -4px -16px 18px; padding: 22px 20px 22px; border-radius: 0 0 28px 28px; position: relative; overflow: hidden; }
+body[data-page="exam"] .page-head::after { content: ''; position: absolute; inset-inline: 0; bottom: 0; height: 60px; background: radial-gradient(120% 100% at 50% 140%, rgba(233,182,74,.55), transparent 60%); pointer-events: none; }
+body[data-page="exam"] .page-head h1 { color: #fff !important; }
+body[data-page="exam"] .page-head h1::after { background: radial-gradient(circle at 100% 50%, var(--u-gold-2) 0 4px, transparent 5px), linear-gradient(to left, var(--u-gold-2) 0, rgba(233,182,74,.2) 70%, transparent) 0 50% / 100% 1.5px no-repeat; }
+body[data-page="exam"] .page-head p { color: rgba(255,255,255,.8) !important; }
+body[data-page="exam"] button.card.stack { background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--u-hair) !important; border-radius: 0 !important; box-shadow: none !important; padding: 16px 2px !important; text-align: start; gap: 4px !important; }
+body[data-page="exam"] button.card.stack > b { font-family: var(--u-disp); font-size: 1.4rem !important; font-weight: 700; color: var(--u-navy); }
+body[data-page="exam"] button.card.stack > .muted { color: #8A5A05; font-weight: 700; }
+body[data-page="exam"] .stack { gap: 0 !important; }
+
+/* ===================== المزيد: قائمة مجمّعة ===================== */
+body[data-page="more"] .qgrid { display: block !important; }
+body[data-page="more"] .qt { display: grid !important; grid-template-columns: 40px 1fr; column-gap: 14px; align-items: center; background: transparent !important; border-bottom: 1px solid var(--u-hair) !important; border-radius: 0 !important; padding: 14px 2px !important; box-shadow: none !important; animation: none !important; }
+body[data-page="more"] .qt .ic { grid-row: span 2; width: 40px; height: 40px; border-radius: 12px; background: rgba(20,35,74,.07) !important; color: var(--u-navy) !important; display: grid; place-items: center; }
+body[data-page="more"] .qt .ic svg { stroke: var(--u-navy) !important; color: var(--u-navy) !important; width: 22px; height: 22px; }
+body[data-page="more"] .qt b { font-size: 1.05rem; color: var(--u-navy); }
+body[data-page="more"] .qt small { font-size: .82rem; color: var(--u-ink-2); }
+body[data-page="more"] .ad-card { background: var(--u-navy) !important; border-radius: 20px !important; box-shadow: none !important; border: 0 !important; margin-top: 18px; }
+body[data-page="more"] .ad-card .btn { background: var(--u-gold) !important; color: #14234A !important; border: 0 !important; box-shadow: none !important; }
+
+/* ===================== الشريط السفلي ===================== */
+.has-btabs .btabs { background: rgba(251,247,238,.92) !important; border-top: 0 !important; box-shadow: none !important; position: fixed; }
+.has-btabs .btabs::before { content: ''; position: absolute; inset-inline: 0; top: 0; height: 1px; background: linear-gradient(to left, transparent, var(--u-gold), transparent); opacity: .7; }
+.btabs a[aria-current="page"] { background: transparent !important; color: var(--u-navy) !important; }
+.btabs a[aria-current="page"]::before { content: ''; width: 18px; height: 3px; border-radius: 3px; background: var(--u-gold); position: absolute; top: -7px; }
+.btabs a { position: relative; }
+.btabs a[aria-current="page"] .bt-l::after { display: none; }
+
+/* ===================== العربية وRTL ===================== */
+body[data-page] p, body[data-page] .lt-utitle, body[data-page] small, body[data-page] b { overflow-wrap: anywhere; text-wrap: pretty; }
+body[data-page] h1, body[data-page] h2, body[data-page] h3 { text-wrap: balance; }
+.foot { opacity: .8; }
+
+@media (min-width: 768px) {
+  body[data-page="exam"] .page-head { margin-inline: -16px; border-radius: 0 0 36px 36px; }
+  body[data-page="learn"] .lt-list, body[data-page="more"] .qgrid { max-width: 640px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* تصحيحات البطل */
+body[data-page="journey"] .hero .hero-top h2, body[data-page="journey"] .hero .hero-top small { color: #fff !important; }
+body[data-page="journey"] .hero .ring { background: conic-gradient(var(--u-gold-2) calc(var(--p) * 1%), rgba(255,255,255,.18) 0) !important; }
+body[data-page="journey"] .hero .ring::before { background: #1B3173 !important; }
+body[data-page="journey"] .hero .ring b { color: #fff !important; }
+body[data-page="journey"] .hero .focus-btn { box-shadow: 0 6px 0 #9a6b0c, 0 14px 22px -10px rgba(0,0,0,.5); }
+
+/* ---- تحسينات المرحلة الثانية ---- */
+body[data-page="learn"] .lt-list::before { inset-inline-end: auto; inset-inline-start: 21px; }
+body[data-page="learn"] .lt-ucard { flex-direction: row; }
+body[data-page="learn"] .lt-prog { height: 22px !important; background: rgba(20,35,74,.07) !important; }
+body[data-page="learn"] .lt-prog small { display: block; font-size: .76rem; line-height: 22px; color: var(--u-navy); }
+body[data-page="learn"] h2.lt-sec { font-family: 'Tajawal', sans-serif; font-weight: 800; font-size: .95rem; color: var(--u-ink-2); margin: 10px 0 2px; }
+body[data-page="journey"] .mentor { padding: 14px 16px !important; background: rgba(255,255,255,.6) !important; }
+body[data-page="journey"] .hero .ring { width: 58px; height: 58px; }
+body[data-page="journey"] .hero .ring b { font-size: .82rem; }
+body[data-page="train"] .opt, body[data-page="train"] button.opt { padding-block: 17px !important; }
+body[data-page="train"] .card { padding: 20px 18px !important; }
+body[data-page="exam"] button.card.stack > b { display: block; }
+
+/* هوية اللفظي: العنابي يحلّ محل الكحلي في العنصر البارز */
+:root[data-part="verbal"] body[data-page="journey"] .hero, :root[data-part="verbal"] body[data-page="journey"] .rich .hero { background: radial-gradient(120% 70% at 50% 135%, rgba(233,182,74,.9) 0, rgba(233,182,74,.3) 38%, transparent 62%), linear-gradient(180deg, #4A1226 0%, #6E1D3B 70%, #7F2848 100%) !important; }
+:root[data-part="verbal"] body[data-page="journey"] .hero .ring::before { background: #6E1D3B !important; }
+:root[data-part="verbal"] body[data-page="exam"] .page-head { background: linear-gradient(180deg, #4A1226, #6E1D3B); }

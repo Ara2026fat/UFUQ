@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>أفق قدرات كمي ولفظي</title>
+  <meta name="description" content="أفق قدرات كمي ولفظي بإشراف الأستاذ إبراهيم البربري — نسخة تأسيسية">
+  <meta name="theme-color" content="#143F9E">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=4">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="أفق">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <script>try{if(sessionStorage.getItem("qk_splash")==="1")document.documentElement.classList.add("nosplash")}catch(e){}</script>
+  <div id="splash" aria-hidden="true"><img src="icons/icon-192.png?v=4" alt="" width="104" height="104"><h1>أفق قدرات كمي ولفظي</h1><p>بإشراف الأستاذ إبراهيم البربري</p></div>
+  <style>
+    #splash{position:fixed;inset:0;z-index:100000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;direction:rtl;color:#fff;
+      background:radial-gradient(120% 70% at 50% 0%,rgba(255,226,140,.25),transparent 60%),linear-gradient(170deg,#1E5FCB 0%,#143F9E 50%,#0A2160 100%);font-family:Tajawal,'IBM Plex Sans Arabic',system-ui,sans-serif;transition:opacity .5s ease,visibility .5s}
+    #splash img{border-radius:26px;box-shadow:0 6px 0 #0A2160,0 20px 34px -8px rgba(0,0,0,.5);animation:spl 1.6s ease-in-out infinite alternate}
+    #splash h1{margin:14px 0 0;font-size:1.6rem;font-weight:800;text-shadow:0 2px 0 rgba(0,0,0,.2)}
+    #splash p{margin:0;color:#FFE9A0;font-size:1rem;font-weight:500}
+    .nosplash #splash{display:none}
+    #splash.out{opacity:0;visibility:hidden}
+    @keyframes spl{to{transform:translateY(-8px)}}
+    @media (prefers-reduced-motion:reduce){#splash img{animation:none}}
+  </style>
+  <div id="app" aria-live="polite"></div>
+  <noscript>يتطلب التطبيق تفعيل JavaScript.</noscript>
+  <script type="module">
+    // Netlify floats a "Powered by Netlify" chip over the bottom-right corner; keep the tab bar clear of it.
+    if (/\.netlify\.app$/.test(location.hostname)) document.documentElement.style.setProperty('--badge-h', '64px');
+    const t0 = Date.now(), sp = document.getElementById('splash');
+    let seen = false; try { seen = sessionStorage.getItem('qk_splash') === '1'; sessionStorage.setItem('qk_splash', '1'); } catch (e) { /* ignore */ }
+    const fail = (e) => {
+      try { sp && sp.remove(); } catch (_) { /* */ }
+      const d = document.createElement('div');
+      d.style.cssText = 'position:fixed;inset:0;z-index:100001;background:#fff;color:#123;display:grid;place-content:center;gap:12px;padding:24px;text-align:center;direction:rtl;font:16px sans-serif';
+      d.innerHTML = '<h2>تعذّر تشغيل التطبيق</h2><p style="direction:ltr;font-size:12px;opacity:.7"></p><button style="font:inherit;padding:12px 20px;border-radius:99px;border:0;background:#1d4ed8;color:#fff">إعادة التحميل وتنظيف الذاكرة</button>';
+      d.querySelector('p').textContent = String((e && (e.message || e.reason)) || e || '');
+      d.querySelector('button').onclick = async () => {
+        try { (await navigator.serviceWorker.getRegistrations()).forEach((r) => r.unregister()); (await caches.keys()).forEach((k) => caches.delete(k)); } catch (_) { /* */ }
+        location.reload();
+      };
+      document.body.append(d);
+    };
+    setTimeout(() => { if (document.getElementById('splash') && !window.__qkReady) { /* بطيء جدًا */ sp && sp.classList.add('out'); } }, 9000);
+    try { await import('./js/main.js'); } catch (e) { fail(e); throw e; }
+    window.__qkReady = true;
+    if (sp) { const wait = seen ? 0 : Math.max(0, 1800 - (Date.now() - t0)); setTimeout(() => { sp.classList.add('out'); setTimeout(() => sp.remove(), 600); }, wait); }
+  </script>
+</body>
+</html>

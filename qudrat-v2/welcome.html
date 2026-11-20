@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>أفق قدرات كمي ولفظي — عرض للأستاذ</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0F6B78">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: a single reading column on graph paper. The principle first, then how a student learns, then the thing itself: one complete lesson with its voice. */
+:root{
+  --bg:#EEF4F4; --surface:#FFFFFF; --ink:#0C3640; --ink-2:#456268; --line:#D3E0E1;
+  --teal:#0F6B78; --teal-d:#0A4D57; --saffron:#E8851A; --saffron-bg:#FDEBD3; --now:#D9F0F2; --grid:rgba(15,107,120,.08);
+  --f-body:'IBM Plex Sans Arabic','Segoe UI',Tahoma,system-ui,sans-serif;
+  --f-display:'Readex Pro','IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0E1D20; --surface:#15292E; --ink:#E7F1F2; --ink-2:#A5BFC3; --line:#27434A; --teal:#1E93A3; --teal-d:#167583;
+  --saffron:#F4A04B; --saffron-bg:#3A2A14; --now:#1B4650; --grid:rgba(76,198,214,.08); color-scheme:dark;}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.9;
+ background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:26px 26px;
+ padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:max(20px,env(safe-area-inset-top,0px)) 56px}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+h1,h2,h3{font-family:var(--f-display);margin:0;line-height:1.45;text-wrap:balance}
+p{margin:0}
+button{font:inherit;color:inherit}
+a:focus-visible,button:focus-visible{outline:3px solid var(--saffron);outline-offset:2px}
+.brand{font-weight:700;font-size:.95rem;color:var(--teal)}
+.brand small{display:block;font-weight:500;font-size:.78rem;color:var(--ink-2);line-height:1.4}
+.pill{align-self:flex-start;font-size:.78rem;font-weight:600;padding:2px 12px;border-radius:99px;background:var(--saffron-bg);border:1px solid var(--saffron)}
+.hero{display:flex;flex-direction:column;gap:12px}
+.hero h1{font-size:clamp(2.1rem,8vw,3.1rem)}
+.hero .sub{color:var(--ink-2);max-width:34em}
+.principle{border-inline-start:4px solid var(--saffron);padding:4px 16px;font-family:var(--f-display);font-size:1.15rem;line-height:1.8}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:99px;padding:8px 22px;font-weight:700;text-decoration:none;border:1px solid var(--teal);cursor:pointer}
+.btn.pri{background:var(--teal);color:#fff}.btn.pri:hover{background:var(--teal-d)}
+.btn.ghost{background:var(--surface);color:var(--ink)}.btn.ghost:hover{border-color:var(--teal-d)}
+h2{font-size:1.45rem}
+.block{display:flex;flex-direction:column;gap:12px}
+.flow{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;counter-reset:f}
+.flow li{counter-increment:f;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;line-height:1.6;display:flex;flex-direction:column;gap:4px;min-width:0}
+.flow li::before{content:counter(f);font-family:var(--f-display);font-weight:700;font-size:.85rem;width:1.8rem;height:1.8rem;border-radius:50%;background:var(--teal);color:#fff;display:grid;place-items:center}
+.flow b{font-family:var(--f-display)}
+.flow span{color:var(--ink-2);font-size:.92rem}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 16px;line-height:1.6;min-width:0}
+.fact b{display:block;font-family:var(--f-display);font-size:1.5rem;color:var(--teal);line-height:1.3;font-variant-numeric:tabular-nums}
+.fact span{color:var(--ink-2);font-size:.92rem}
+.lesson-h{display:flex;flex-direction:column;gap:6px}
+.lesson-h p{color:var(--ink-2)}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.play{display:inline-flex;align-items:center;gap:10px;border:0;background:var(--teal);color:#fff;font-weight:700;padding:8px 22px 8px 18px;border-radius:99px;cursor:pointer;transition:transform .12s,background .12s}
+.play:hover{background:var(--teal-d)}.play:active{transform:scale(.97)}
+.play svg{width:20px;height:20px;fill:currentColor}
+.play .i-stop{display:none}body.on .play .i-play{display:none}body.on .play .i-stop{display:inline}
+.meter{flex:1;min-width:140px;display:flex;flex-direction:column;gap:2px}
+.meter .t{font-size:.85rem;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.track{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.track i{display:block;height:100%;width:0;background:var(--teal);transition:width .3s}
+.toc{display:flex;flex-wrap:wrap;gap:8px}
+.toc a{background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:2px 14px;font-size:.88rem;color:var(--ink);text-decoration:none;font-weight:500}
+.toc a:hover{border-color:var(--teal)}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px 20px;display:flex;flex-direction:column;gap:6px;scroll-margin-top:84px}
+.sec h3{font-size:1.15rem;display:flex;align-items:center;gap:10px}
+.sec h3 span{font-size:.82rem;width:1.8rem;height:1.8rem;border-radius:50%;background:var(--teal);color:#fff;display:grid;place-items:center;flex:none;font-variant-numeric:tabular-nums}
+.lines{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.lines li{padding:6px 14px;border-radius:12px;border:1px solid transparent;color:var(--ink-2);cursor:pointer;transition:background .2s,color .2s;scroll-margin-block:140px}
+.lines li:hover{border-color:var(--line)}
+.lines li.now{background:var(--now);color:var(--ink);border-color:var(--teal)}
+.ask{border:1px solid var(--saffron);background:var(--saffron-bg);border-radius:16px;padding:14px 18px;display:flex;flex-direction:column;gap:6px}
+.ask b{font-family:var(--f-display)}
+.ask ul{margin:0;padding-inline-start:1.2em}
+.foot{font-size:.82rem;color:var(--ink-2);text-align:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <div class="brand">أفق قدرات كمي ولفظي<small>بإشراف الأستاذ إبراهيم البربري</small></div>
+
+ <header class="hero">
+  <span class="pill">نموذج أولي للمراجعة</span>
+  <h1>تعلّم القدرات الكمي بالفهم، لا بالحفظ</h1>
+  <p class="sub">منصة عربية للطلاب في السعودية والعالم العربي، تعمل على الجوال والحاسوب. هذه الصفحة تعرض فكرتها ودرساً كاملاً واحداً بالنص والصوت، لتحكم عليه قبل أن نبني الباقي.</p>
+  <p class="principle">لا نريد طالباً يحفظ طريقة الحل، بل طالباً يفهم السؤال، ويفكر، ويعرف لماذا أخطأ، وكيف يصل إلى الحل بنفسه.</p>
+  <div class="btns"><a class="btn pri" href="index.html#/learn/frac-full">ابدأ الدرس الموجَّه</a><a class="btn ghost" href="#lesson">اسمع الدرس كاملاً</a><a class="btn ghost" href="index.html">افتح التطبيق</a></div>
+ </header>
+
+ <section class="block" aria-labelledby="h-flow">
+  <h2 id="h-flow">كيف يتعلّم الطالب من خطئه</h2>
+  <ol class="flow">
+   <li><b>يجيب</b><span>سؤال من موضوع يختاره أو تختاره المنصة حسب ضعفه.</span></li>
+   <li><b>يكتشف موضع الخطأ</b><span>رسالة هادئة تبيّن أين انحرف الحل، وسبب محتمل.</span></li>
+   <li><b>يسمع شرحاً آخر</b><span>الفكرة نفسها بطريقة أبسط ومختلفة.</span></li>
+   <li><b>يتأكد بسؤال مشابه</b><span>فإن أخطأ مرة ثانية، يُنبَّه الأستاذ ليضيف شرحاً ثالثاً.</span></li>
+  </ol>
+ </section>
+
+ <section class="block" aria-labelledby="h-now">
+  <h2 id="h-now">ما الموجود الآن</h2>
+  <div class="facts">
+   <div class="fact"><b>15</b><span>موضوعاً لكل منها شرح صوتي قصير (مسودة)</span></div>
+   <div class="fact"><b>1</b><span>درس موجَّه كامل: الكسور. التطبيق يقود الطالب قسماً قسماً ويتأكد من فهمه، وتُكتب أمامه على سبورة متحركة مرسومة آلياً (وليست بخط الأستاذ)</span></div>
+   <div class="fact"><b>11</b><span>موضوعاً لتوليد أسئلة جديدة بلا حدّ</span></div>
+   <div class="fact"><b>دفتر أخطاء</b><span>يجمع ما أخطأ فيه الطالب ويعيده إليه</span></div>
+  </div>
+  <p class="foot" style="text-align:start">كل النصوص والأسئلة الحالية مسودات من فريق البناء، وليست منسوبة إليك قبل أن تعتمدها.</p>
+ </section>
+
+ <section class="block" id="lesson" aria-labelledby="h-lesson">
+  <div class="lesson-h">
+   <h2 id="h-lesson">الدرس: الكسور (للاستماع)</h2>
+   <p>22 جملة في عشرة أقسام، نحو ثلاث دقائق ونصف. اضغط «شغّل الدرس»، أو اضغط أي جملة لتبدأ منها.</p>
+  </div>
+  <div class="bar" role="group" aria-label="مشغّل الدرس">
+   <button class="play" id="play" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M7 4.5v15l13-7.5z"/><path class="i-stop" d="M6 6h12v12H6z"/></svg><span id="lbl">شغّل الدرس</span></button>
+   <div class="meter"><span class="t" id="st">لم يبدأ بعد</span><div class="track"><i id="pg"></i></div></div>
+  </div>
+  <nav class="toc" aria-label="أقسام الدرس"><a href="#s1">الفكرة</a><a href="#s2">التبسيط</a><a href="#s3">توحيد المقامين</a><a href="#s4">الجمع والطرح</a><a href="#s5">الضرب</a><a href="#s6">القسمة</a><a href="#s7">المقارنة</a><a href="#s8">الأخطاء الشائعة</a><a href="#s9">مسألة كلامية</a><a href="#s10">الخلاصة</a></nav>
+  <section class="sec" id="s1"><h3><span>1</span>الفكرة</h3><ol class="lines"><li data-i="0">الكسر يعبّر عن جزء من كل. العدد الذي تحت الخط هو المقام، ويخبرنا إلى كم جزء متساوٍ قُسّم الكل.</li><li data-i="1">والعدد الذي فوق الخط هو البسط، ويخبرنا كم جزءاً أخذنا. فثلاثة أخماس تعني أن الكل قُسّم إلى خمسة أجزاء، وأخذنا منها ثلاثة.</li></ol></section>
+<section class="sec" id="s2"><h3><span>2</span>التبسيط</h3><ol class="lines"><li data-i="2">تبسيط الكسر معناه أن نقسم البسط والمقام على العدد نفسه، فتبقى قيمة الكسر كما هي.</li><li data-i="3">مثال: اثنا عشر على ثمانية عشر. كلا العددين يقبل القسمة على ستة. اثنا عشر مقسومة على ستة تساوي اثنين، وثمانية عشر مقسومة على ستة تساوي ثلاثة. فالكسر يساوي ثلثين.</li></ol></section>
+<section class="sec" id="s3"><h3><span>3</span>توحيد المقامين</h3><ol class="lines"><li data-i="4">لتحويل كسر إلى مقام آخر، اضرب البسط والمقام في العدد نفسه.</li><li data-i="5">مثال: ثلاثة أرباع، نريدها بالأثمان. نضرب البسط والمقام في اثنين، فتصبح ستة أثمان.</li></ol></section>
+<section class="sec" id="s4"><h3><span>4</span>الجمع والطرح</h3><ol class="lines"><li data-i="6">لا نجمع الكسور ولا نطرحها إلا بعد توحيد المقامين. بعد ذلك نجمع البسطين أو نطرحهما، ويبقى المقام كما هو.</li><li data-i="7">مثال على الجمع: ثلثان زائد ربع. المقام المشترك اثنا عشر. ثلثان تساوي ثمانية أجزاء من اثني عشر، والربع ثلاثة أجزاء. المجموع أحد عشر على اثني عشر.</li><li data-i="8">مثال على الطرح: خمسة أسداس ناقص ثلث. الثلث يساوي سدسين. خمسة ناقص اثنين تساوي ثلاثة، فالناتج ثلاثة أسداس. وبالتبسيط يصبح نصفاً.</li></ol></section>
+<section class="sec" id="s5"><h3><span>5</span>الضرب</h3><ol class="lines"><li data-i="9">الضرب أسهل من الجمع. نضرب البسط في البسط، والمقام في المقام. ولا نحتاج إلى توحيد المقامين.</li><li data-i="10">مثال: ثلثان ضرب ثلاثة أرباع. اثنان في ثلاثة تساوي ستة، وثلاثة في أربعة تساوي اثني عشر. ستة على اثني عشر تساوي نصفاً.</li><li data-i="11">ونصيحة لتوفير الوقت: اختصر قبل أن تضرب. هنا يوجد ثلاثة في المقام الأول وثلاثة في البسط الثاني، فيُختصران، ويبقى اثنان على أربعة، أي نصف.</li></ol></section>
+<section class="sec" id="s6"><h3><span>6</span>القسمة</h3><ol class="lines"><li data-i="12">القسمة على كسر تعني الضرب في مقلوبه. نترك الكسر الأول كما هو، ونقلب الكسر الثاني، ثم نضرب.</li><li data-i="13">مثال: نصف مقسوم على ربع. نقلب الربع فيصبح أربعة على واحد. نصف ضرب أربعة يساوي اثنين. والمعنى أن الربع يدخل في النصف مرتين.</li></ol></section>
+<section class="sec" id="s7"><h3><span>7</span>المقارنة</h3><ol class="lines"><li data-i="14">للمقارنة بين كسرين بسرعة، اضرب بالتبادل. اضرب بسط الأول في مقام الثاني، وبسط الثاني في مقام الأول. الناتج الأكبر يدل على الكسر الأكبر.</li><li data-i="15">مثال: ثلاثة أخماس وأربعة أسباع. ثلاثة في سبعة تساوي واحداً وعشرين، وأربعة في خمسة تساوي عشرين. فثلاثة أخماس هي الأكبر.</li></ol></section>
+<section class="sec" id="s8"><h3><span>8</span>الأخطاء الشائعة</h3><ol class="lines"><li data-i="16">الخطأ الأول: جمع المقامين. نصف زائد ثلث ليس اثنين على خمسة. المقامات لا تُجمع أبداً. الجواب الصحيح خمسة أسداس.</li><li data-i="17">الخطأ الثاني: القسمة على كسر من غير قلبه. تذكّر دائماً أن نقلب الكسر الثاني ثم نضرب.</li><li data-i="18">الخطأ الثالث: توحيد المقامين عند الضرب، وهذا يضيّع الوقت ولا حاجة إليه.</li></ol></section>
+<section class="sec" id="s9"><h3><span>9</span>مسألة كلامية</h3><ol class="lines"><li data-i="19">في القدرات تأتي الكسور داخل مسائل كلامية. مثال: ثلاثة أخماس طلاب الفصل ذكور، وعدد الطلاب أربعون. كم عدد الذكور؟</li><li data-i="20">نقسم أربعين على خمسة فنحصل على ثمانية، وهذا هو الخمس الواحد. ثم نضرب في ثلاثة فنحصل على أربعة وعشرين طالباً.</li></ol></section>
+<section class="sec" id="s10"><h3><span>10</span>الخلاصة</h3><ol class="lines"><li data-i="21">للجمع والطرح وحّد المقام. وللضرب اضرب البسط في البسط والمقام في المقام. وللقسمة اقلب الثاني ثم اضرب. وللمقارنة اضرب بالتبادل.</li></ol></section>
+ </section>
+
+ <div class="ask">
+  <b>ما نحتاجه منك يا أستاذ</b>
+  <ul>
+   <li>هل مستوى التفصيل في الدرس مناسب، أم تريده أقصر أو أطول؟</li>
+   <li>هل الأمثلة والترتيب كما تحب أن تشرحها؟ وأي جملة تريد تغيير صياغتها؟</li>
+   <li>هل نُكمل بقية المواضيع على هذا النمط؟</li>
+   <li>مفاتيح إجابات واجبات الكتاب، وترتيب المنهج الذي تراه.</li>
+  </ul>
+ </div>
+ <p class="foot">© 2026 أفق قدرات كمي ولفظي — بإشراف الأستاذ إبراهيم البربري</p>
+</div>
+<script type="module">
+import { ensureAccess } from './js/core/gate.js';
+await ensureAccess();
+const FILES=["audio/frac-full/1.mp3","audio/frac-full/2.mp3","audio/frac-full/3.mp3","audio/frac-full/4.mp3","audio/frac-full/5.mp3","audio/frac-full/6.mp3","audio/frac-full/7.mp3","audio/frac-full/8.mp3","audio/frac-full/9.mp3","audio/frac-full/10.mp3","audio/frac-full/11.mp3","audio/frac-full/12.mp3","audio/frac-full/13.mp3","audio/frac-full/14.mp3","audio/frac-full/15.mp3","audio/frac-full/16.mp3","audio/frac-full/17.mp3","audio/frac-full/18.mp3","audio/frac-full/19.mp3","audio/frac-full/20.mp3","audio/frac-full/21.mp3","audio/frac-full/22.mp3"], GAP=450;
+const lis=[...document.querySelectorAll('.lines li')];
+const btn=document.getElementById('play'), lbl=document.getElementById('lbl'), st=document.getElementById('st'), pg=document.getElementById('pg');
+let cur=null;
+const calm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+function mark(i){lis.forEach((e,k)=>e.classList.toggle('now',k===i)); if(i>=0){lis[i].scrollIntoView({block:'center',behavior:calm?'auto':'smooth'}); pg.style.width=((i+1)/FILES.length*100)+'%'; st.textContent='الجملة '+(i+1)+' من '+FILES.length;}}
+function reset(done){document.body.classList.remove('on');lbl.textContent='شغّل الدرس';mark(-1);if(done){st.textContent='انتهى الدرس';pg.style.width='100%';}else{st.textContent='لم يبدأ بعد';pg.style.width='0';}}
+function stop(){if(cur){cur.stop();cur=null;}}
+function play(from){
+  let i=from,stopped=false,a=null,timer=null;
+  const mk=(u)=>{const e=new Audio(u);e.preload='auto';return e;};
+  let up=FILES[i]?mk(FILES[i]):null;
+  const fail=()=>{stopped=true;cur=null;reset();st.textContent='تعذّر تشغيل الصوت';};
+  const next=()=>{
+    if(stopped)return;
+    if(i>=FILES.length){cur=null;reset(true);return;}
+    mark(i);
+    a=up||mk(FILES[i]);const c=a;up=FILES[i+1]?mk(FILES[i+1]):null;
+    c.onended=()=>{if(stopped)return;i++;timer=setTimeout(next,GAP);};
+    c.onerror=fail;c.play().catch(fail);
+  };
+  cur={stop(){stopped=true;clearTimeout(timer);a&&a.pause();reset();}};
+  document.body.classList.add('on');lbl.textContent='إيقاف';next();
+}
+btn.onclick=()=>{if(cur){stop();return;}play(0);};
+lis.forEach((li,k)=>li.onclick=()=>{stop();play(k);});
+</script>
+</body>
+</html>

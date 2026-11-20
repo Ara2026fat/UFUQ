@@ -1,0 +1,306 @@
+{
+ "items": {
+  "u_geometry:corner": [
+   {
+    "id": "sh_q1",
+    "type": "video",
+    "title": "حل السؤال ١٢٠ — مساحة المستطيل وثلاث دوائر",
+    "src": "media/ustaz/q1.mp4?v=4",
+    "poster": "media/ustaz/q1.jpg?v=4",
+    "duration": 74,
+    "ts": 1762600000000
+   },
+   {
+    "id": "sh_q2",
+    "type": "video",
+    "title": "حل السؤال ٧٤ — مساحة الشكل المظلل",
+    "src": "media/ustaz/q2.mp4?v=4",
+    "poster": "media/ustaz/q2.jpg?v=4",
+    "duration": 64,
+    "ts": 1762600000001
+   },
+   {
+    "id": "sh_q3",
+    "type": "video",
+    "title": "حل السؤال ٤١٢ — قارن بين مساحة الجزء المظلل و٣ط",
+    "src": "media/ustaz/q3.mp4?v=4",
+    "poster": "media/ustaz/q3.jpg?v=4",
+    "duration": 50,
+    "ts": 1762600000002
+   },
+   {
+    "id": "sh_q4",
+    "type": "video",
+    "title": "حل السؤال ٦٧ — مساحة المظلل",
+    "src": "media/ustaz/q4.mp4?v=4",
+    "poster": "media/ustaz/q4.jpg?v=4",
+    "duration": 64,
+    "ts": 1762600000003
+   },
+   {
+    "id": "sh_q9",
+    "type": "video",
+    "title": "حل السؤال ٦٣٦ — طول القوس في الدائرة",
+    "src": "media/ustaz/q9.mp4?v=4",
+    "poster": "media/ustaz/q9.jpg?v=4",
+    "duration": 90,
+    "ts": 1762600000008
+   },
+   {
+    "id": "sh_q11",
+    "type": "video",
+    "title": "حل السؤال ٢٥١ — الزوايا المتقابلة بالرأس",
+    "src": "media/ustaz/q11.mp4?v=5",
+    "poster": "media/ustaz/q11.jpg?v=5",
+    "duration": 53,
+    "ts": 1762600000011
+   },
+   {
+    "id": "sh_q13",
+    "type": "video",
+    "title": "حل السؤال ٢٥٤ — زوايا المثلث",
+    "src": "media/ustaz/q13.mp4?v=5",
+    "poster": "media/ustaz/q13.jpg?v=5",
+    "duration": 29,
+    "ts": 1762600000013
+   },
+   {
+    "id": "sh_q17",
+    "type": "video",
+    "title": "حل السؤال ٢٨٦ — مساحة المثلث داخل الدائرة",
+    "src": "media/ustaz/q17.mp4?v=5",
+    "poster": "media/ustaz/q17.jpg?v=5",
+    "duration": 100,
+    "ts": 1762600000017
+   },
+   {
+    "id": "sh_q21",
+    "type": "video",
+    "title": "حل السؤال ٢٤١ — المثلث القائم",
+    "src": "media/ustaz/q21.mp4?v=5",
+    "poster": "media/ustaz/q21.jpg?v=5",
+    "duration": 54,
+    "ts": 1762600000021
+   },
+   {
+    "id": "sh_q25",
+    "type": "video",
+    "title": "حل السؤال ٢٣٩ — المساحة غير المظللة",
+    "src": "media/ustaz/q25.mp4?v=5",
+    "poster": "media/ustaz/q25.jpg?v=5",
+    "duration": 56,
+    "ts": 1762600000025
+   },
+   {
+    "id": "sh_q26",
+    "type": "video",
+    "title": "حل السؤال ٢٤٣ — زاوية في المربع",
+    "src": "media/ustaz/q26.mp4?v=5",
+    "poster": "media/ustaz/q26.jpg?v=5",
+    "duration": 24,
+    "ts": 1762600000026
+   }
+  ],
+  "u_algebra:corner": [
+   {
+    "id": "sh_q5",
+    "type": "video",
+    "title": "حل السؤال ١٢٢ — الأسس والمعادلات",
+    "src": "media/ustaz/q5.mp4?v=4",
+    "poster": "media/ustaz/q5.jpg?v=4",
+    "duration": 76,
+    "ts": 1762600000004
+   },
+   {
+    "id": "sh_q6",
+    "type": "video",
+    "title": "حل السؤال ٥٣ — الجذور",
+    "src": "media/ustaz/q6.mp4?v=4",
+    "poster": "media/ustaz/q6.jpg?v=4",
+    "duration": 70,
+    "ts": 1762600000005
+   },
+   {
+    "id": "sh_q7",
+    "type": "video",
+    "title": "حل السؤال ٤٧ — قيمة تعبير بالأسس",
+    "src": "media/ustaz/q7.mp4?v=4",
+    "poster": "media/ustaz/q7.jpg?v=4",
+    "duration": 63,
+    "ts": 1762600000006
+   },
+   {
+    "id": "sh_q8",
+    "type": "video",
+    "title": "حل السؤال ٥٣ — الجذور (شرح آخر)",
+    "src": "media/ustaz/q8.mp4?v=4",
+    "poster": "media/ustaz/q8.jpg?v=4",
+    "duration": 70,
+    "ts": 1762600000007
+   },
+   {
+    "id": "sh_q14",
+    "type": "video",
+    "title": "حل السؤال ٢٦٢ — مسألة العدد من رقمين",
+    "src": "media/ustaz/q14.mp4?v=5",
+    "poster": "media/ustaz/q14.jpg?v=5",
+    "duration": 62,
+    "ts": 1762600000014
+   },
+   {
+    "id": "sh_q15",
+    "type": "video",
+    "title": "حل السؤال ٢٦١ — تبسيط كسور تحت الجذر",
+    "src": "media/ustaz/q15.mp4?v=5",
+    "poster": "media/ustaz/q15.jpg?v=5",
+    "duration": 65,
+    "ts": 1762600000015
+   },
+   {
+    "id": "sh_q18",
+    "type": "video",
+    "title": "حل السؤال ٢٣٤ — الجذور والتربيع",
+    "src": "media/ustaz/q18.mp4?v=5",
+    "poster": "media/ustaz/q18.jpg?v=5",
+    "duration": 101,
+    "ts": 1762600000018
+   },
+   {
+    "id": "sh_q27",
+    "type": "video",
+    "title": "حل السؤال ٢٤٦ — مجموع وفرق (كتب أحمد وخالد)",
+    "src": "media/ustaz/q27.mp4?v=5",
+    "poster": "media/ustaz/q27.jpg?v=5",
+    "duration": 109,
+    "ts": 1762600000027
+   },
+   {
+    "id": "sh_q30",
+    "type": "video",
+    "title": "حل السؤال ٢٦٥ — قيمة مقدار بقوى العدد ١",
+    "src": "media/ustaz/q30.mp4?v=6",
+    "poster": "media/ustaz/q30.jpg?v=6",
+    "duration": 58,
+    "ts": 1762600000030
+   }
+  ],
+  "u_percent:corner": [
+   {
+    "id": "sh_q10",
+    "type": "video",
+    "title": "حل السؤال ٦٢٦ — النسبة المئوية (راتب محمد)",
+    "src": "media/ustaz/q10.mp4?v=4",
+    "poster": "media/ustaz/q10.jpg?v=4",
+    "duration": 76,
+    "ts": 1762600000009
+   },
+   {
+    "id": "sh_q16",
+    "type": "video",
+    "title": "حل السؤال ٢٦٤ — النسبة المئوية من عدد",
+    "src": "media/ustaz/q16.mp4?v=5",
+    "poster": "media/ustaz/q16.jpg?v=5",
+    "duration": 57,
+    "ts": 1762600000016
+   },
+   {
+    "id": "sh_q19",
+    "type": "video",
+    "title": "حل السؤال ٢٤٠ — نسبة الزيادة",
+    "src": "media/ustaz/q19.mp4?v=5",
+    "poster": "media/ustaz/q19.jpg?v=5",
+    "duration": 67,
+    "ts": 1762600000019
+   },
+   {
+    "id": "sh_q20",
+    "type": "video",
+    "title": "حل السؤال ٢٣٦ — الزيادة والنقصان بالنسبة",
+    "src": "media/ustaz/q20.mp4?v=5",
+    "poster": "media/ustaz/q20.jpg?v=5",
+    "duration": 62,
+    "ts": 1762600000020
+   }
+  ],
+  "u_proportion:corner": [
+   {
+    "id": "sh_q12",
+    "type": "video",
+    "title": "حل السؤال ٢٥٠ — التناسب الطردي (وجبات الطباخ)",
+    "src": "media/ustaz/q12.mp4?v=5",
+    "poster": "media/ustaz/q12.jpg?v=5",
+    "duration": 61,
+    "ts": 1762600000012
+   }
+  ],
+  "u_frac:corner": [
+   {
+    "id": "sh_q22",
+    "type": "video",
+    "title": "حل السؤال ٢٣٥ — عمليات الكسور العشرية",
+    "src": "media/ustaz/q22.mp4?v=5",
+    "poster": "media/ustaz/q22.jpg?v=5",
+    "duration": 75,
+    "ts": 1762600000022
+   },
+   {
+    "id": "sh_q23",
+    "type": "video",
+    "title": "حل السؤال ٢٣٥ — عمليات الكسور العشرية (شرح آخر)",
+    "src": "media/ustaz/q23.mp4?v=5",
+    "poster": "media/ustaz/q23.jpg?v=5",
+    "duration": 55,
+    "ts": 1762600000023
+   },
+   {
+    "id": "sh_q29",
+    "type": "video",
+    "title": "حل السؤال ٢٧٩ — قسمة عدد أولي على عدد أولي",
+    "src": "media/ustaz/q29.mp4?v=6",
+    "poster": "media/ustaz/q29.jpg?v=6",
+    "duration": 39,
+    "ts": 1762600000029
+   },
+   {
+    "id": "sh_q32",
+    "type": "video",
+    "title": "حل السؤال ٢٩١ — معادلة بالكسور (قيمة س)",
+    "src": "media/ustaz/q32.mp4?v=6",
+    "poster": "media/ustaz/q32.jpg?v=6",
+    "duration": 56,
+    "ts": 1762600000032
+   }
+  ],
+  "u_comparisons:corner": [
+   {
+    "id": "sh_q24",
+    "type": "video",
+    "title": "حل السؤال ٢٣٧ — المقارنة بين قيمتين",
+    "src": "media/ustaz/q24.mp4?v=5",
+    "poster": "media/ustaz/q24.jpg?v=5",
+    "duration": 64,
+    "ts": 1762600000024
+   },
+   {
+    "id": "sh_q31",
+    "type": "video",
+    "title": "حل السؤال ٢٩٣ — المقارنة بين قيمتين",
+    "src": "media/ustaz/q31.mp4?v=6",
+    "poster": "media/ustaz/q31.jpg?v=6",
+    "duration": 68,
+    "ts": 1762600000031
+   }
+  ],
+  "u_probability:corner": [
+   {
+    "id": "sh_q28",
+    "type": "video",
+    "title": "حل السؤال ٢٨٩ — احتمال اختيار كرة بيضاء",
+    "src": "media/ustaz/q28.mp4?v=6",
+    "poster": "media/ustaz/q28.jpg?v=6",
+    "duration": 36,
+    "ts": 1762600000028
+   }
+  ]
+ }
+}
