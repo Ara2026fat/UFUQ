@@ -1,4 +1,4 @@
-import { helpEnabled, setHelpEnabled } from '../../core/help.js';
+import { helpEnabled, setHelpEnabled, helpAll } from '../../core/help.js';
 import { h, toast } from '../../core/dom.js';
 import { storage } from '../../store/storage.js';
 import { repo } from '../../store/repo.js';
@@ -143,8 +143,9 @@ export function settingsView() {
         h('a', { class: 'btn ghost', href: '#/privacy' }, 'سياسة الخصوصية'),
         h('a', { class: 'btn ghost', href: '#/terms' }, 'شروط الاستخدام'))),
     offlinePane(),
-    aboutPane()];
-  const names = ['المظهر', 'جدولي', 'تقدّمي', 'المساعدة', 'الملفات', 'عن التطبيق'];
+    aboutPane(),
+    helpAll()];
+  const names = ['المظهر', 'جدولي', 'تقدّمي', 'المساعدة', 'الملفات', 'عن التطبيق', 'شرح الأيقونات'];
   return h('div', { class: 'stack page-narrow' }, h('div', { class: 'page-head' }, h('h1', null, 'الإعدادات')), tabbed({ key: 'settings', tabs: names.map((label, i) => ({ id: 'T' + i, label, render: () => secs[i] })) }));
 }
 

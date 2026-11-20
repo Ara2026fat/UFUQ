@@ -1,5 +1,6 @@
 /** وضع الشرح: زر «؟» في الأعلى. عند تفعيله يضغط الطالب على أي أيقونة أو مربع فيظهر شرح بسيط له. */
 import { h } from './dom.js';
+import { icon } from './icons.js';
 
 // [محدّد CSS, نص للفلترة (يبدأ بـ = للمطابقة الكاملة), العنوان, الشرح]
 const ALL = [
@@ -14,7 +15,7 @@ const ALL = [
   ['.btabs a', '=المزيد', 'المزيد', 'بقية الأدوات: الدورات، المسألة المحلولة، خريطة مهاراتي، التقرير، المساعدة.'],
 ];
 const PAGES = [
-  [/^\/$/, [
+  [/^\/$/, [ /*رحلتي*/
     ['.part-switch', null, 'كمي / لفظي', 'اختر القسم الذي تتدرّب عليه. لكل قسم جولاته ومهاراته.'],
     ['[role=tab]', '=اليوم', 'اليوم', 'مهمة اليوم: ما تفعله الآن فقط.'],
     ['[role=tab]', '=رحلتي', 'رحلتي', 'أين أنت في خطتك نحو يوم الاختبار.'],
@@ -32,7 +33,7 @@ const PAGES = [
     ['a', 'أخطائي', 'أخطائي', 'أسئلتك التي أخطأتَ فيها لتعيد محاولتها.'],
     ['a', 'مسألة محلولة', 'مسألة محلولة', 'مسألة تُحلّ أمامك خطوة بخطوة لتتعلّم طريقة التفكير.'],
   ]],
-  [/^\/learn-hub/, [
+  [/^\/learn-hub/, [ /*أتعلّم*/
     ['.lt-vban', null, 'دروس الأستاذ المصوّرة', 'كل فيديوهات الأستاذ في مكان واحد. الرقم عدد الدروس.'],
     ['.lt-prog', null, 'تقدّمك في الوحدات', 'كم وحدة أتقنتَ من إجمالي الوحدات.'],
     ['.tb-btn', null, 'مجموعة الوحدات', 'الوحدات مقسّمة إلى مجموعتين. اختر المجموعة.'],
@@ -41,7 +42,7 @@ const PAGES = [
     ['.lt-chip.ustaz', null, 'فيديوهات الأستاذ', 'عدد فيديوهات الأستاذ في هذه الوحدة.'],
     ['.lt-ucard', null, 'الوحدة', 'اضغط لتفتح درس الوحدة.'],
   ]],
-  [/^\/unit\//, [
+  [/^\/unit\//, [ /*داخل الوحدة*/
     ['.lt-draft', null, 'قيد مراجعة الأستاذ', 'هذا الشرح كتبه فريق أفق، والأستاذ ما زال يراجعه، وقد يتغيّر.'],
     ['.lt-steps li', '=الفكرة', 'الفكرة', 'ما هذا الموضوع باختصار.'],
     ['.lt-steps li', '=القاعدة', 'القاعدة', 'القانون الذي تحتاجه.'],
@@ -52,18 +53,18 @@ const PAGES = [
     ['.lt-empty', null, 'شرح الأستاذ', 'لم يُضَف شرح الأستاذ لهذه الوحدة بعد.'],
     ['.lt-nav a', null, 'التالي', 'الانتقال إلى الخطوة التالية.'],
   ]],
-  [/^\/practice/, [
+  [/^\/practice/, [ /*أتدرّب*/
     ['.progress', null, 'تقدّم الجولة', 'رقم السؤال الحالي من أسئلة هذه الجولة.'],
     ['button.x', null, 'خروج', 'تغلق التدريب وتعود. إجاباتك تُحفظ.'],
     ['.q-meta .badge', null, 'اسم المهارة', 'المهارة التي يختبرها هذا السؤال.'],
     ['.listen', null, 'استمع', 'يقرأ لك السؤال بصوت.'],
     ['.opts', null, 'الخيارات', 'اختر إجابتك. تعرف فوراً هل أصبتَ، ثم يظهر الشرح. وإن أخطأتَ يُحفظ السؤال في «أخطائي».'],
   ]],
-  [/^\/mistakes/, [
+  [/^\/mistakes/, [ /*دفتر أخطائي*/
     ['a.btn.primary', null, 'تدرّب الآن', 'يعيد عليك أسئلتك الخاطئة بعد شرح بديل. إذا أجبتَ صح خرج السؤال من الدفتر.'],
     ['.card.empty', null, 'دفترك نظيف', 'لا توجد أخطاء تنتظر المراجعة.'],
   ]],
-  [/^\/progress/, [
+  [/^\/progress/, [ /*تقدّمي*/
     ['.kpi.c1', null, 'أيام متتالية', 'كم يوماً تدرّبتَ دون انقطاع. إن غبتَ يوماً يبدأ العدّ من جديد.'],
     ['.kpi.c2', null, 'محاولة', 'عدد الأسئلة التي حللتَها.'],
     ['.kpi.c3', null, 'دقتك', 'نسبة إجاباتك الصحيحة. المهم أن ترتفع مع الأيام.'],
@@ -74,14 +75,14 @@ const PAGES = [
     ['.weak', null, 'تحتاج انتباهاً', 'أضعف مهاراتك. راجعها أولاً.'],
     ['a.btn.primary', null, 'خريطة مهاراتي كاملة', 'تفتح قائمة بكل مهاراتك وحالة كل واحدة.'],
   ]],
-  [/^\/exam/, [
+  [/^\/exam/, [ /*أختبر*/
     ['.page-head', null, 'محاكاة الاختبار', 'وقت محدد لكل قسم، وبلا شرح أثناء الحل، ولا رجوع إلى قسم انتهى. الشرح يظهر بعد الانتهاء.'],
     ['button.card', 'نموذج كامل', 'نموذج كامل', '٥ أقسام متناوبة كمي ولفظي، كل قسم ٢٤ سؤالاً في ٢٥ دقيقة. يُنصح به قرب الاختبار.'],
     ['button.card', 'قسم كمي', 'قسم كمي', 'قسم كمي واحد بإيقاع الاختبار الحقيقي.'],
     ['button.card', 'قسم لفظي', 'قسم لفظي', 'قسم لفظي واحد بإيقاع الاختبار الحقيقي.'],
     ['button.card', 'قسم مصغّر', 'قسم مصغّر', '١٠ أسئلة في ١٠ دقائق، لمن وقته ضيق.'],
   ]],
-  [/^\/more/, [
+  [/^\/more/, [ /*المزيد*/
     ['a.qt', 'الدورات', 'الدورات', 'مسارات جاهزة بحسب الوقت المتبقي لاختبارك. اختر ما يناسبك.'],
     ['a.qt', 'محاكاة الاختبار', 'محاكاة الاختبار', 'اختبار بالوقت الحقيقي، تدخله من هنا أو من «أختبر».'],
     ['a.qt', 'مسألة محلولة', 'مسألة محلولة', 'مسألة تُحلّ خطوة بخطوة لتتعلّم طريقة التفكير.'],
@@ -90,56 +91,48 @@ const PAGES = [
     ['a.qt', 'الإعدادات', 'الإعدادات', 'المظهر وحجم الخط وتقليل الحركة، وجدولك والمساعدة.'],
     ['a.qt', 'المساعدة', 'المساعدة', 'أسئلة شائعة بإجابات قصيرة: كيف أبدأ، وماذا لو أخطأت.'],
   ]],
-  [/^\/plan/, [
+  [/^\/plan/, [ /*جدولي*/
     ['[role=tab]', 'موعد', 'موعد الاختبار', 'أهم خانة: منها يحسب التطبيق أيام رحلتك.'],
     ['[role=tab]', 'أيام الدراسة', 'أيام الدراسة', 'اختر الأيام التي تذاكر فيها ليناسبك التطبيق.'],
     ['[role=tab]', 'الإجازة', 'الإجازة', 'أيام الراحة التي لا يطالبك فيها التطبيق بشيء.'],
   ]],
 ];
 
-let on = false, sheet;
+
+const NAMES = ['رحلتي', 'أتعلّم', 'داخل الوحدة', 'أتدرّب', 'دفتر أخطائي', 'تقدّمي', 'أختبر', 'المزيد', 'جدولي'];
+const IC = { 'رحلتي': 'home', 'أتعلّم': 'books', 'أتدرّب': 'bolt', 'أختبر': 'clipcheck', 'المزيد': 'list', 'الإعدادات': 'sliders', 'سهم الرجوع': 'arrow', 'خريطة مهاراتي': 'nodes', 'أخطائي': 'xcircle', 'تقدّمي': 'trend', 'مسألة محلولة': 'stairs', 'الدورات': 'book', 'المساعدة': 'book', 'خروج': 'x', 'دروس الأستاذ المصوّرة': 'film', 'دروس الأستاذ': 'film' };
+const dedupe = (rows) => { const seen = new Set(); return rows.filter(([, , t]) => (seen.has(t) ? false : seen.add(t))); };
+const item = ([, , t, d]) => h('div', { class: 'set-row hp-row' }, IC[t] ? h('span', { class: 'hp-ic', html: icon(IC[t]) }) : h('span', { class: 'hp-ic hp-dot' }, '•'), h('div', { class: 'set-l' }, h('b', null, t), h('small', { class: 'muted' }, d)));
 export const helpEnabled = () => { try { return localStorage.getItem('qk_help') !== '0'; } catch (e) { return true; } };
 export function setHelpEnabled(v) {
   try { localStorage.setItem('qk_help', v ? '1' : '0'); } catch (e) { /* */ }
   document.body.classList.toggle('help-off', !v);
-  if (!v) { on = false; document.body.classList.remove('help-on'); document.querySelectorAll('.help-btn').forEach((b) => b.setAttribute('aria-pressed', 'false')); if (sheet) sheet.classList.remove('open'); }
+  if (!v) document.querySelectorAll('.help-sheet').forEach((x) => x.classList.remove('open'));
 }
-const mark = (path) => {
-  const root = document.getElementById('view') || document.body;
-  const rules = [...ALL, ...(PAGES.find(([re]) => re.test(path)) || [, []])[1]];
-  document.querySelectorAll('[data-help]').forEach((e) => { e.removeAttribute('data-help'); e.removeAttribute('data-help-d'); });
-  rules.forEach(([sel, f, t, d]) => {
-    document.querySelectorAll(sel).forEach((el) => {
-      const tx = (el.textContent || '').trim();
-      if (f && (f[0] === '=' ? tx !== f.slice(1) : !tx.includes(f))) return;
-      if (!el.dataset.help) { el.dataset.help = t; el.dataset.helpD = d; }
-    });
-  });
-};
-const show = (t, d) => {
-  sheet.replaceChildren(h('b', null, t), h('p', null, d), h('div', { class: 'help-act' }, h('button', { type: 'button', class: 'btn sm', onClick: () => sheet.classList.remove('open') }, 'فهمت'), h('button', { type: 'button', class: 'btn sm ghost', onClick: () => setHelpEnabled(false) }, 'إيقاف زر الشرح (يمكنك تفعيله من الإعدادات)')));
-  sheet.classList.add('open');
-};
+/** شرح الصفحة الحالية: عناصرها ثم العناصر الثابتة. */
+const pageRows = (path) => { const hit = PAGES.find(([re]) => re.test(path)); return hit ? dedupe(hit[1]) : []; };
+/** القسم الكامل في الإعدادات: كل الصفحات. */
+export function helpAll() {
+  return h('section', { class: 'card stack' }, h('h2', null, 'شرح الأيقونات'),
+    h('p', { class: 'muted small' }, 'اضغط على «؟» في أعلى أي صفحة لترى شرح ما فيها، أو اقرأ هنا شرح كل الصفحات.'),
+    h('h3', { class: 'hp-h' }, 'في كل الصفحات'), ...dedupe(ALL).map(item),
+    ...PAGES.flatMap(([re, rows], i) => [h('h3', { class: 'hp-h' }, NAMES[i]), ...dedupe(rows).map(item)]));
+}
 export function initHelp(headerEl) {
   document.body.classList.toggle('help-off', !helpEnabled());
-  sheet = h('div', { class: 'help-sheet', role: 'dialog', 'aria-live': 'polite' });
+  const sheet = h('div', { class: 'help-sheet', role: 'dialog', 'aria-label': 'شرح الصفحة' });
   document.body.append(sheet);
-  const mkBtn = (extra) => h('button', { class: 'help-btn' + extra, type: 'button', 'aria-pressed': 'false', 'aria-label': 'شرح العناصر', title: 'شرح العناصر' }, '؟');
-  const btn = mkBtn(''), btn2 = mkBtn(' help-pure');
-  const toggle = () => {
-    on = !on; document.body.classList.toggle('help-on', on); [btn, btn2].forEach((b) => b.setAttribute('aria-pressed', String(on))); sheet.classList.remove('open');
-    if (on) show('وضع الشرح', 'اضغط على أي أيقونة أو مربع وسيظهر لك شرحه. اضغط «؟» مرة أخرى للخروج.');
+  const open = () => {
+    const path = location.hash.slice(1).split('?')[0] || '/';
+    const rows = pageRows(path);
+    sheet.replaceChildren(
+      h('div', { class: 'hp-top' }, h('b', null, 'شرح هذه الصفحة'), h('button', { type: 'button', class: 'btn sm', onClick: () => sheet.classList.remove('open') }, 'إغلاق')),
+      h('div', { class: 'hp-list' }, ...(rows.length ? rows : dedupe(ALL)).map(item), h('h3', { class: 'hp-h' }, 'في كل الصفحات'), ...dedupe(ALL).map(item)),
+      h('button', { type: 'button', class: 'btn sm ghost', onClick: () => setHelpEnabled(false) }, 'إيقاف زر الشرح (يمكنك تفعيله من الإعدادات)'));
+    sheet.classList.add('open');
   };
-  btn.addEventListener('click', toggle); btn2.addEventListener('click', toggle); document.body.append(btn2);
-  document.addEventListener('click', (e) => {
-    if (!on || e.target.closest('.help-btn,.help-sheet')) return;
-    const el = e.target.closest('[data-help]');
-    e.preventDefault(); e.stopPropagation();
-    if (el) show(el.dataset.help, el.dataset.helpD); else sheet.classList.remove('open');
-  }, true);
-  headerEl.append(btn);
+  const mk = (x) => h('button', { class: 'help-btn' + x, type: 'button', 'aria-label': 'شرح الصفحة', title: 'شرح الصفحة', onClick: open }, '؟');
+  const btn2 = mk(' help-pure'); document.body.append(btn2);
+  headerEl.append(mk(''));
   addEventListener('hashchange', () => sheet.classList.remove('open'));
-  let tm; const run = () => { clearTimeout(tm); tm = setTimeout(() => mark(location.hash.slice(1).split('?')[0] || '/'), 120); };
-  new MutationObserver(run).observe(document.body, { childList: true, subtree: true });
-  run();
 }
