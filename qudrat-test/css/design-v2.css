@@ -253,3 +253,9 @@ body.help-off .help-btn{display:none!important}
 .top .top-back{width:36px;height:36px;margin:0}
 .ms-chip{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:4px 14px 4px 10px;border-radius:99px;border:1.5px solid #E0B13A;background:#FFFBEF;color:#8A5A05;font:700 .9rem inherit;cursor:pointer}
 .ms-chip img{height:34px;width:auto}
+
+.hp-g .ab-c{align-items:center;text-align:center;padding:16px 10px 12px;min-height:0;gap:6px}
+.hp-g .ab-ic{position:static;width:58px;height:58px;border-radius:18px;margin-bottom:4px}
+.hp-g .ab-ic svg{width:30px;height:30px}
+.hp-g .ab-c b{font-size:1.05rem}
+.hp-g .ab-c small{font-size:.82rem;line-height:1.6}
